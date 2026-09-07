@@ -5,8 +5,8 @@ import type { Lang } from '../../i18n';
 
 export interface LegalDoc { slug: 'privacy' | 'terms'; updated: string; title: Record<Lang, string>; body: Record<Lang, string> }
 
-const OPERATOR = 'Daniel Huang（個人經營）';
-const OPERATOR_EN = 'Daniel Huang (sole operator)';
+const OPERATOR = 'Daniel Huang';
+const OPERATOR_EN = 'Daniel Huang';
 const CONTACT = 'hello@wikibrain.app';
 const REPO = 'https://github.com/wikibrain-app/wikibrain';
 const UPDATED = '2026-09-08';
