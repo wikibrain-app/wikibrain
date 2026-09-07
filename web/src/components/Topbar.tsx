@@ -15,12 +15,13 @@ interface Props {
   onToggleRail: () => void;
   onChat: () => void;
   chatOpen: boolean;
+  isAdmin?: boolean;
 }
 
 export function Topbar(p: Props) {
   const [q, setQ] = useState('');
   const [menu, setMenu] = useState(false);
-  const { t } = useT();
+  const { t, lang } = useT();
   const submit = (e: FormEvent) => { e.preventDefault(); if (q.trim()) p.onSearch(q.trim()); };
   return (
     <header className="flex flex-wrap items-center gap-2 sb:gap-4 border-b border-line bg-paper px-3 sb:px-5 py-2.5">
@@ -47,6 +48,7 @@ export function Topbar(p: Props) {
               <div className="px-3 py-1.5 text-[11px] text-ink-faint">{p.name && <div className="truncate text-[12.5px] font-semibold text-ink">{p.name}</div>}<div className="truncate">{p.email}</div></div>
               <Link to="/settings" className="block px-3 py-2 text-[13px] hover:bg-celadon-mist">{t('topbar.settings')}</Link>
               <Link to="/stats" className="block px-3 py-2 text-[13px] hover:bg-celadon-mist">{t('topbar.stats')}</Link>
+              {p.isAdmin && <Link to="/admin" className="block px-3 py-2 text-[13px] hover:bg-celadon-mist" data-testid="admin-link">{lang === 'en' ? 'Operations' : '營運狀態'}</Link>}
               <Link to="/help" className="block px-3 py-2 text-[13px] hover:bg-celadon-mist">{t('topbar.help')}</Link>
               <button className="block w-full text-left px-3 py-2 text-[13px] hover:bg-celadon-mist" onClick={p.onSignOut}>{t('topbar.signOut')}</button>
             </div>

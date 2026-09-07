@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { Request, Response, NextFunction } from 'express';
 import { pool } from './db.js';
+import { track } from './events.js';
 import { isLang, type Lang } from './lang.js';
 import { config } from './config.js';
 
@@ -17,6 +18,11 @@ export const hashToken = (token: string) => createHash('sha256').update(token).d
 
 // Only the token hash is stored; lookup compares hashes for equality (PRD R8).
 export async function authenticateToken(token: string): Promise<AuthContext | null> {
+  const ctx = await lookupToken(token);
+  if (ctx) track('mcp_connected', { userId: ctx.userId, workspaceId: ctx.workspaceId });
+  return ctx;
+}
+async function lookupToken(token: string): Promise<AuthContext | null> {
   const { rows } = await pool.query<{ id: number; workspace_id: string; user_id: string; label: string; lang: string; scopes: string[] }>(
     `SELECT t.id, t.workspace_id, t.user_id, t.label, t.scopes, w.lang FROM mcp_tokens t JOIN workspaces w ON w.id = t.workspace_id
       WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND (t.expires_at IS NULL OR t.expires_at > now())`,

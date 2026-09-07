@@ -29,3 +29,11 @@ aws s3 ls "s3://${BUCKET_NAME}/${PREFIX}/" --endpoint-url "$AWS_ENDPOINT_URL" | 
   fi
 done
 echo "[backup] done ${FILE}"
+psql "$DATABASE_URL" -q -c "INSERT INTO ops_status (key, value, at) VALUES ('backup', '{\"file\": \"${FILE}\", \"bytes\": ${SIZE}}', now()) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, at = now()" || echo "[backup] could not record status (ops_status table missing?)"
+
+# Weekly restore drill (Mondays, or VERIFY=1): re-download the newest dump and restore it into a scratch database.
+# A failure makes this cron run fail, which shows up red in Railway's cron history.
+if [ "$(date -u +%u)" = "1" ] || [ "${VERIFY:-0}" = "1" ]; then
+  echo "[backup] running restore drill"
+  sh "$(dirname "$0")/verify.sh"
+fi

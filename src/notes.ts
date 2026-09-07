@@ -1,4 +1,5 @@
 import type pg from 'pg';
+import { track } from './events.js';
 import { pool } from './db.js';
 import { pick, type Bilingual, type Lang } from './lang.js';
 
@@ -205,6 +206,7 @@ function assertContentSize(content: string) {
   if (Buffer.byteLength(content, 'utf8') > MAX_CONTENT_BYTES) throw new NoteError('BAD_PATH', { 'zh-TW': '單頁內容超過 1 MB 上限，請拆頁或改為附件', en: 'Page content exceeds the 1 MB limit; split the page or use an attachment' });
 }
 export async function createNote(ws: string, rawPath: string, content: string, actor: Actor) {
+  if (actor.kind === 'mcp' || actor.kind === 'agent') track('first_ai_write', { workspaceId: ws }, { actor: actor.kind, path: rawPath });
   assertContentSize(content);
   const path = normalizePath(rawPath);
   const title = titleFrom(path, content);
@@ -227,6 +229,7 @@ export async function createNote(ws: string, rawPath: string, content: string, a
 }
 
 export async function updateNote(ws: string, rawPath: string, content: string, ifVersion: number, actor: Actor) {
+  if (actor.kind === 'mcp' || actor.kind === 'agent') track('first_ai_write', { workspaceId: ws }, { actor: actor.kind, path: rawPath });
   assertContentSize(content);
   const path = normalizePath(rawPath);
   if (layerOf(path) === 'raw') throw new NoteError('FORBIDDEN', { 'zh-TW': `raw/ 為唯讀來源層，不可更新：${path}`, en: `raw/ is the read-only source layer and cannot be updated: ${path}` });

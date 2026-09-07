@@ -38,7 +38,7 @@ export interface Note extends NoteSummary { content: string; author: string }
 export interface Version { version: number; title: string; author: string; created_at: string; content_md: string }
 export interface SearchHit { path: string; title: string; version: number; snippet: string }
 export interface TokenInfo { id: number; label: string; created_at: string; last_used_at: string | null; revoked_at: string | null; kind?: 'pat' | 'oauth'; expires_at?: string | null }
-export interface Me { user: { id: string; email: string; name: string }; workspace: { id: string; name: string; lang: Lang }; mcpUrl: string }
+export interface Me { user: { id: string; email: string; name: string }; workspace: { id: string; name: string; lang: Lang }; mcpUrl: string; isAdmin?: boolean }
 export interface ZoteroSyncResult { added: string[]; skipped: number; pdfs: number; version: number; errors: string[] }
 export interface ZoteroLink { zotero_user_id: string; username: string | null; key_last4: string; collection_key: string | null; collection_name: string | null; library_version: number; with_pdf: boolean; last_sync_at: string | null; last_result: ZoteroSyncResult | null; last_error: string | null; updated_at: string }
 export interface PlanStatus { plan: 'free' | 'pro'; trial_ends_at: string | null; trial_active: boolean; trial_days_left: number; trial_runs_used: number; trial_runs_free: number; month: string; runs_this_month: number; runs_limit: number | null; can_run: boolean; effective: 'free' | 'pro'; notes_used: number; notes_limit: number; bytes_used: number; bytes_limit: number; tokens_limit: number | null; retention_days: number }
@@ -47,6 +47,16 @@ export interface BillingInfo {
   subscription: { status: string; plan: string; current_period_end: string | null; provider: string; provider_subscription_id: string | null; provider_customer_id?: string | null; raw?: { scheduled_change?: { action?: string; effective_at?: string } | null } | null } | null;
   paddle: { environment: 'sandbox' | 'production'; client_token: string; prices: { month: PriceInfo; year: PriceInfo }; email: string; workspace_id: string } | null;
   error: string | null;
+}
+export type ProbeState = 'ok' | 'slow' | 'fail' | 'not_configured';
+export interface AdminStatus {
+  probes: { name: string; state: ProbeState; ms?: number; detail?: string; at?: string }[];
+  business: { users: number; verified: number; signups_today: number; signups_7d: number; workspaces: { free: number; trial: number; pro: number }; tokens_used: number; oauth_clients: number; jobs_month: number; jobs_failed_month: number; cost_month_usd: number; trial_runs_used: number; notes: number; shares: number };
+  funnel: { totals: Record<string, number>; weekly: { week: string; signup: number; verified: number; mcp_connected: number; first_ai_write: number; upgrade: number; churn: number }[] };
+  issues: { at: string; kind: string; detail: string }[];
+  registry: { service: string; plan: string; price: string; renews_on?: string | null; billing?: string; limits?: string; account?: string; manage_url?: string; notes?: string; days_left: number | null }[];
+  quotas: { service: string; used: string; limit?: string; state: ProbeState; detail?: string }[];
+  generated_at: string;
 }
 export interface ShareInfo { token: string; url: string; created_at: string }
 export interface SharedNote { path: string; title: string; content: string; updated_at: string; layer: 'raw' | 'wiki' | 'schema' }
@@ -134,6 +144,8 @@ export const api = {
   zoteroSync: () => request<{ result: ZoteroSyncResult; link: ZoteroLink }>('POST', '/api/zotero/sync'),
   plan: () => request<PlanStatus>('GET', '/api/plan'),
   billing: () => request<BillingInfo>('GET', '/api/billing'),
+  adminStatus: () => request<AdminStatus>('GET', '/api/admin/status'),
+  adminRegistry: (items: AdminStatus['registry']) => request<{ ok: true }>('PUT', '/api/admin/registry', { items }),
   share: (path: string) => request<{ share: ShareInfo | null }>('GET', `/api/share?path=${encodeURIComponent(path)}`),
   createShare: (path: string) => request<{ share: ShareInfo }>('POST', '/api/share', { path }),
   revokeShare: (path: string) => request<{ revoked: boolean }>('DELETE', `/api/share?path=${encodeURIComponent(path)}`),

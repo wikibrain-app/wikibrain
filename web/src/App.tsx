@@ -15,6 +15,7 @@ import Stats from './pages/Stats';
 import OAuthConsent from './pages/OAuthConsent';
 import Landing from './pages/Landing';
 import Share from './pages/Share';
+import Admin from './pages/Admin';
 
 export default function App() {
   const [me, setMe] = useState<Me | null | undefined>(undefined); // undefined = loading
@@ -44,6 +45,7 @@ export default function App() {
       <Route path="/settings" element={guard(<Settings me={me!} onSignedOut={() => setMe(null)} />)} />
       <Route path="/lint" element={guard(<Lint me={me!} />)} />
       <Route path="/stats" element={guard(<Stats me={me!} />)} />
+      <Route path="/admin" element={guard(<Admin me={me!} />)} />
       <Route path="/oauth/consent" element={guard(<OAuthConsent me={me!} />)} />
       <Route path="/n/*" element={guard(<Workspace me={me!} onSignedOut={() => setMe(null)} />)} />
       <Route path="/graph" element={guard(<Workspace me={me!} onSignedOut={() => setMe(null)} />)} />

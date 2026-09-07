@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { pool } from './db.js';
 import { setPlan } from './plans.js';
+import { track } from './events.js';
 
 /* ── Billing scaffold ──
    Merchant-of-record choice (Q1) is still open, so this module only knows the generic shape: a subscription for a workspace with a
@@ -36,7 +37,10 @@ export async function applySubscriptionEvent(ev: SubscriptionEvent): Promise<Sub
      RETURNING workspace_id, provider, status, plan, current_period_end, provider_subscription_id, updated_at`,
     [ev.workspace_id, ev.provider, ev.provider_customer_id ?? null, ev.provider_subscription_id ?? null, ev.status, ev.plan ?? 'pro', ev.current_period_end ?? null, ev.raw === undefined ? null : JSON.stringify(ev.raw), ev.event_at ?? null]);
   if (rows.length === 0) return (await getSubscription(ev.workspace_id))!; // stale event: keep the newer state
-  await setPlan(ev.workspace_id, PAID.has(ev.status) ? 'pro' : 'free');
+  const next = PAID.has(ev.status) ? 'pro' : 'free';
+  const prev = (await pool.query<{ plan: string }>(`SELECT plan FROM workspaces WHERE id = $1`, [ev.workspace_id])).rows[0]?.plan;
+  await setPlan(ev.workspace_id, next);
+  if (prev && prev !== next) track(next === 'pro' ? 'upgrade' : 'churn', { workspaceId: ev.workspace_id }, { provider: ev.provider, status: ev.status });
   return rows[0];
 }
 export async function getSubscription(ws: string): Promise<Subscription | null> {

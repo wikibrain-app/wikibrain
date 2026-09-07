@@ -3,6 +3,7 @@ import { config } from './config.js';
 import { pool } from './db.js';
 import { sendMail } from './mail.js';
 import { ensureWorkspaceFor } from './workspaces.js';
+import { track } from './events.js';
 
 // Web account system (PRD R1): email + password, verification mail, Google sign-in (enabled only with credentials).
 // MCP-side Bearer token auth lives in auth.ts; both share user / workspace.
@@ -34,7 +35,8 @@ export const authOptions = {
         after: async (user, ctx) => {
           const al = (ctx as { headers?: Headers } | undefined)?.headers?.get?.('accept-language') ?? '';
           const lang = !al ? 'zh-TW' : /^\s*zh/i.test(al) ? 'zh-TW' : 'en';
-          await ensureWorkspaceFor(user.id, lang);
+          const ws = await ensureWorkspaceFor(user.id, lang);
+          track('signup', { userId: user.id, workspaceId: ws.id });
         },
       },
     },
