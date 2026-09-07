@@ -14,6 +14,72 @@
 - **Web UI.** Three-pane editor with live preview, backlinks, version history and rollback, force-directed graph with a timeline, front-matter table view (Dataview-style), Mermaid diagrams, Marp slide pages, KaTeX. Traditional Chinese and English interface; write your wiki in any language.
 - **No lock-in.** One-click export of the whole wiki as an Obsidian-compatible Markdown zip, plus `.bib` / CSL-JSON.
 
+## Architecture
+
+One Node service and one PostgreSQL database. Every AI client talks to the same wiki through MCP; the web UI and the server-side agents use the same six tools.
+
+```mermaid
+flowchart TB
+  subgraph C["Clients"]
+    direction LR
+    B["Browser<br/>web UI"]
+    CU["Cursor · Claude Code<br/>MCP + token"]
+    CL["Claude.ai · ChatGPT<br/>MCP + OAuth 2.1"]
+    SC["Scripts · hooks<br/>REST + token"]
+  end
+  G["Edge: security headers · rate limits<br/>identity: session / token / OAuth"]
+  subgraph A["Application (one Node service)"]
+    direction LR
+    M["MCP server<br/>/mcp · six tools"]
+    W["Web API<br/>/api"]
+    O["OAuth 2.1 server<br/>+ dynamic client registration"]
+  end
+  subgraph D["Domain"]
+    direction LR
+    N["Notes<br/>paths · links · versions · pending"]
+    R["Agent runner<br/>Ingest / Query / Lint"]
+    I["Import · bibliography · Zotero"]
+    NG["Outbound guard<br/>SSRF filter"]
+  end
+  subgraph S["Storage and external"]
+    direction LR
+    P[("PostgreSQL")]
+    LLM["Model providers<br/>with your key"]
+    X["Crossref · arXiv · PubMed<br/>Zotero · pasted URLs"]
+  end
+  B --> G
+  CU --> G
+  CL --> G
+  SC --> G
+  G --> M
+  G --> W
+  G --> O
+  M --> N
+  W --> N
+  W --> R
+  W --> I
+  R --> N
+  I --> N
+  R --> LLM
+  I --> NG --> X
+  N --> P
+```
+
+How knowledge moves between the three layers (Karpathy's Ingest / Query / Lint, all done with the same six tools, by your AI client over MCP or by the server-side agent with your key):
+
+```mermaid
+flowchart LR
+  RAW["raw/<br/>immutable sources<br/>with origin + bibliography"] -->|"pending until a wiki page links back"| ING["Ingest"]
+  SCH["schema/<br/>rules the agent reads first"] -.->|get_instructions| ING
+  SCH -.-> QRY["Query"]
+  SCH -.-> LNT["Lint"]
+  ING -->|"create / update pages, index.md, log.md"| WIKI["wiki/<br/>compiled, interlinked pages"]
+  WIKI -->|"read index, then pages"| QRY
+  QRY -->|"answer with citations; optionally saved to wiki/queries/"| WIKI
+  WIKI --> LNT
+  LNT -->|"orphans · broken links · contradictions → wiki/lint/"| WIKI
+```
+
 ## Self-host
 
 ```bash
