@@ -82,8 +82,8 @@ export const faq: { q: string; a: string; href?: string; label?: string }[] = [
 ];
 
 export const pages: HelpPage[] = [
-  { slug: 'start', title: 'Getting started', lede: 'Five minutes to your first wiki page, and who does the ingesting', sections: [{ id: 'start', title: 'Five-minute start' }, { id: 'ways', title: 'Who ingests: Cursor or your own API key' }, { id: 'connectors', title: 'Connect from Claude.ai or ChatGPT', sub: true }], Body: PageStart },
-  { slug: 'guide', title: 'User guide', lede: 'The daily loop, rules and templates, and each view', sections: [{ id: 'loop', title: 'The daily loop: three operations' }, { id: 'discuss', title: 'Discuss first, then ingest', sub: true }, { id: 'rules', title: 'Rules and templates' }, { id: 'views', title: 'Views and tools' }], Body: PageGuide },
+  { slug: 'start', title: 'Getting started', lede: 'Five minutes to your first wiki page, and who does the ingesting', sections: [{ id: 'start', title: 'Five-minute start' }, { id: 'ways', title: 'Who ingests: Cursor or your own API key' }, { id: 'connectors', title: 'Connect from Claude.ai or ChatGPT', sub: true }, { id: 'pwa', title: 'Phone: add to home screen', sub: true }], Body: PageStart },
+  { slug: 'guide', title: 'User guide', lede: 'The daily loop, rules and templates, and each view', sections: [{ id: 'loop', title: 'The daily loop: three operations' }, { id: 'discuss', title: 'Discuss first, then ingest', sub: true }, { id: 'rules', title: 'Rules and templates' }, { id: 'views', title: 'Views and tools' }, { id: 'api', title: 'REST API' }], Body: PageGuide },
   { slug: 'data', title: 'Data and system', lede: 'Where your data lives, who can see it, how the system works', sections: [{ id: 'data', title: 'Your data and security' }, { id: 'system', title: 'How the system works' }], Body: PageData },
   { slug: 'plans', title: 'Plans and support', lede: 'Pricing, FAQ, contact', sections: [{ id: 'plans', title: 'Plans and pricing' }, { id: 'faq', title: 'FAQ' }, { id: 'contact', title: 'Contact and reporting problems' }], Body: PagePlans },
   { slug: 'karpathy', title: 'The LLM Wiki pattern', lede: 'Where this comes from: Karpathy\'s original note, condensed', sections: [{ id: 'karpathy', title: 'Where this comes from: Karpathy\'s LLM Wiki' }], Body: PageKarpathy },
@@ -132,6 +132,8 @@ function PageStart() {
       <p><b>Way 2 in practice.</b> Press Auto-ingest this source or Auto-ingest all N sources; the server runs the same tools with your key and shows progress, tool trace, tokens and cost live. One job is capped at 60 steps and a workspace runs one job at a time. Version history records which agent wrote each version.</p>
       <Shot src="paths.png" alt="Two ways to ingest" caption="Settings explains the two ways first; pick one or use both." />
       <Shot src="ai.png" alt="AI provider settings" caption="Way 2: choose a provider, pick a model from the list, enter your own key." />
+      <h3 id="pwa">Phone: add to home screen</h3>
+      <p>WikiBrain is an installable web app (PWA); there is nothing to download from a store. iPhone: open wikibrain.app in Safari → Share → Add to Home Screen. Android: Chrome menu → Install app or Add to Home screen. It then opens full-screen with its own icon. When the connection drops you get an offline page; reading the whole knowledge base offline and offline quick notes belong to the next milestone (device copy).</p>
     </>
   );
 }
@@ -179,6 +181,24 @@ function PageGuide() {
       </ul>
       <Shot src="graph.png" alt="Knowledge graph" caption="The graph with the filter panel and the timeline; links are written by the agent during ingest." />
       <Shot src="add.png" alt="Add dialog" caption="The ＋ Add dialog: four tabs behind one entry point." />
+      <h3 id="api">REST API (an MCP token as API key)</h3>
+      <p>To read and write from scripts, cron jobs, Claude Code hooks or any program without going through MCP: the MCP token you create on the Settings page also works as an API key for the REST API. Send it as <code>Authorization: Bearer</code>; no cookie or Origin header is needed. Revoking the token disables both uses; versions written this way are attributed to the token's name. Account-level endpoints (tokens, AI settings, Zotero, billing, chat and auto-ingest) remain browser-session only.</p>
+      <pre>{`# tree (three layers plus the pending list)
+curl -H "Authorization: Bearer $TOKEN" https://wikibrain.app/api/notes/tree
+# read one page
+curl -H "Authorization: Bearer $TOKEN" "https://wikibrain.app/api/notes?path=wiki/index.md"
+# create (201); 409 if the path exists
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \\
+  -d '{"path":"raw/sources/note.md","content":"# Title\\n\\nBody"}' https://wikibrain.app/api/notes
+# update with the optimistic lock (a stale if_version returns 409 with the current content)
+curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \\
+  -d '{"path":"wiki/index.md","content":"...","if_version":3}' https://wikibrain.app/api/notes
+# search, backlinks, versions
+curl -H "Authorization: Bearer $TOKEN" "https://wikibrain.app/api/search?q=keyword"
+# import a URL or file into raw/
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"url":"https://example.com/paper"}' https://wikibrain.app/api/import
+# export the whole knowledge base (zip)
+curl -H "Authorization: Bearer $TOKEN" -o wiki.zip https://wikibrain.app/api/export`}</pre>
     </>
   );
 }

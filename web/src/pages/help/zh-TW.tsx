@@ -83,8 +83,8 @@ export const faq: { q: string; a: string; href?: string; label?: string }[] = [
 ];
 
 export const pages: HelpPage[] = [
-  { slug: 'start', title: '開始使用', lede: '五分鐘上手，以及決定誰來編纂', sections: [{ id: 'start', title: '5 分鐘上手' }, { id: 'ways', title: '誰來編纂：Cursor 或自帶 API key' }, { id: 'connectors', title: '用 Claude.ai 或 ChatGPT 連進來', sub: true }], Body: PageStart },
-  { slug: 'guide', title: '使用指南', lede: '日常循環、規則與模版、每個檢視怎麼用', sections: [{ id: 'loop', title: '日常循環：三個操作' }, { id: 'discuss', title: '先討論再編纂', sub: true }, { id: 'rules', title: '規則與模版' }, { id: 'views', title: '檢視與工具' }], Body: PageGuide },
+  { slug: 'start', title: '開始使用', lede: '五分鐘上手，以及決定誰來編纂', sections: [{ id: 'start', title: '5 分鐘上手' }, { id: 'ways', title: '誰來編纂：Cursor 或自帶 API key' }, { id: 'connectors', title: '用 Claude.ai 或 ChatGPT 連進來', sub: true }, { id: 'pwa', title: '手機：加到主畫面', sub: true }], Body: PageStart },
+  { slug: 'guide', title: '使用指南', lede: '日常循環、規則與模版、每個檢視怎麼用', sections: [{ id: 'loop', title: '日常循環：三個操作' }, { id: 'discuss', title: '先討論再編纂', sub: true }, { id: 'rules', title: '規則與模版' }, { id: 'views', title: '檢視與工具' }, { id: 'api', title: 'REST API' }], Body: PageGuide },
   { slug: 'data', title: '資料與系統', lede: '你的資料在哪、誰看得到、系統怎麼運作', sections: [{ id: 'data', title: '你的資料與安全' }, { id: 'system', title: '系統怎麼運作' }], Body: PageData },
   { slug: 'plans', title: '方案與支援', lede: '計價、常見問題、聯絡方式', sections: [{ id: 'plans', title: '方案與計價' }, { id: 'faq', title: '常見問題' }, { id: 'contact', title: '聯絡與回報問題' }], Body: PagePlans },
   { slug: 'karpathy', title: 'LLM Wiki 模式', lede: 'Karpathy 原文摘譯：這個做法從哪來', sections: [{ id: 'karpathy', title: '這個模式從哪來：Karpathy 的 LLM Wiki' }], Body: PageKarpathy },
@@ -133,6 +133,8 @@ function PageStart() {
       <p><b>方式二怎麼用。</b>來源頁按「自動編纂（Ingest）這則」或「自動編纂（Ingest）全部 N 則」，伺服器用你的 key 跑同一組工具，進度、工具軌跡、tokens 與費用即時顯示；一個工作最多 60 步，同一工作區一次只跑一個。版本紀錄會標示是哪個 agent 寫的。</p>
       <Shot src="paths.png" alt="兩種編纂方式" caption="設定頁先說明兩種方式，擇一或並用。" />
       <Shot src="ai.png" alt="AI 供應商設定" caption="方式二：選供應商、從清單挑模型、填自己的 key。" />
+      <h3 id="pwa">手機：加到主畫面</h3>
+      <p>WikiBrain 是可安裝的網頁 app（PWA），不用上商店。iPhone：用 Safari 開 wikibrain.app → 分享 → 「加入主畫面」；Android：Chrome 選單 → 「安裝應用程式」或「加到主畫面」。之後會以全螢幕開啟、有自己的圖示。斷線時會顯示離線頁面；離線閱讀整座知識庫與離線隨手記屬於下一階段的裝置副本功能。</p>
     </>
   );
 }
@@ -180,6 +182,24 @@ function PageGuide() {
       </ul>
       <Shot src="graph.png" alt="知識圖譜" caption="圖譜：篩選面板與時間軸；連結是編纂時 agent 寫出來的。" />
       <Shot src="add.png" alt="新增對話框" caption="「＋ 新增」對話框：四個分頁共用同一個入口。" />
+      <h3 id="api">REST API（用 MCP token 當 API key）</h3>
+      <p>想從腳本、cron、Claude Code 的 hook 或其他程式直接讀寫，不必經過 MCP：設定頁建立的 MCP token 也可以當 REST API 的 API key，加在 <code>Authorization: Bearer</code> 標頭即可，不需要 cookie 或 Origin。同一把 token 撤銷後兩邊一起失效；寫入的版本作者會標示 token 名稱。帳號層級的端點（token、AI 設定、Zotero、訂閱、對話與自動編纂）只能在網頁登入後使用。</p>
+      <pre>{`# 目錄（三層與待編纂清單）
+curl -H "Authorization: Bearer $TOKEN" https://wikibrain.app/api/notes/tree
+# 讀一頁
+curl -H "Authorization: Bearer $TOKEN" "https://wikibrain.app/api/notes?path=wiki/index.md"
+# 新增（201）；同路徑已存在回 409
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \\
+  -d '{"path":"raw/sources/note.md","content":"# 標題\\n\\n內文"}' https://wikibrain.app/api/notes
+# 更新（帶 if_version 樂觀鎖；舊版本回 409 與目前內容）
+curl -X PUT -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \\
+  -d '{"path":"wiki/index.md","content":"...","if_version":3}' https://wikibrain.app/api/notes
+# 搜尋、反向連結、版本
+curl -H "Authorization: Bearer $TOKEN" "https://wikibrain.app/api/search?q=關鍵字"
+# 匯入網址或檔案進 raw/
+curl -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"url":"https://example.com/paper"}' https://wikibrain.app/api/import
+# 匯出整座知識庫（zip）
+curl -H "Authorization: Bearer $TOKEN" -o wiki.zip https://wikibrain.app/api/export`}</pre>
     </>
   );
 }

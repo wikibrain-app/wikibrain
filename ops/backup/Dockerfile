@@ -3,5 +3,6 @@
 FROM postgres:18-alpine
 RUN apk add --no-cache aws-cli
 COPY backup.sh /backup.sh
+COPY verify.sh /verify.sh
 RUN chmod +x /backup.sh
 ENTRYPOINT ["/backup.sh"]

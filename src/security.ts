@@ -13,6 +13,7 @@ export const trustedOrigins = () => new Set([config.appUrl, ...(process.env.NODE
 // better-auth's own endpoints already do this check; this covers custom routes like /api/notes* (reviewer suggestion).
 export function originCheck(req: Request, res: Response, next: NextFunction): void {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  if (req.header('authorization')?.startsWith('Bearer ')) return next(); // token auth: no cookies, no CSRF surface
   const origin = req.header('origin');
   if (origin && trustedOrigins().has(origin)) return next();
   res.status(403).json({ error: 'INVALID_ORIGIN', message: msg(res, '請求來源不被信任', 'Request origin is not trusted') });

@@ -5,6 +5,7 @@ import { btnGhost, btnPrimary } from './ui';
 import { useToast } from '../lib/toast';
 import { useState } from 'react';
 import { SlideView } from './SlideView';
+import { ShareModal } from './ShareModal';
 import { useT } from '../i18n';
 import { citationKeys, useBib } from '../lib/cite';
 
@@ -44,6 +45,7 @@ export function NoteView({ note, notes, historical, onOpen, onEdit, onDelete, on
   const { t } = useT();
   const isMarp = /^---\n[\s\S]*?^marp:\s*true\s*$[\s\S]*?\n---/m.test(historical ? historical.content_md : note.content);
   const [slides, setSlides] = useState(false);
+  const [share, setShare] = useState(false);
   if (isMarp && slides) return <SlideView source={historical ? historical.content_md : note.content} onBack={() => setSlides(false)} />;
   const copyPrompt = (text: string) => navigator.clipboard.writeText(text).then(() => toast(t('note.promptCopied'))).catch(() => toast(t('common.clipboardFail'), { kind: 'error' }));
   const promptOne = t('note.promptOne', { path: note.path });
@@ -51,6 +53,7 @@ export function NoteView({ note, notes, historical, onOpen, onEdit, onDelete, on
   const tags = tagsOf(content);
   return (
     <article className="mx-auto max-w-[660px] px-5 sb:px-10 pb-20 pt-6 sb:pt-9">
+      {share && <ShareModal path={note.path} onClose={() => setShare(false)} />}
       {pending && !historical && (
         <div className="mb-4 rounded-[10px] border border-amber/40 bg-amber-mist px-4 py-3 text-[12.5px] leading-relaxed" role="status" data-testid="pending-banner">
           <b>{t('note.pendingTitle')}</b>{t('note.pendingBody')}{aiReady ? t('note.pendingAi') : t('note.pendingNoAi')}
@@ -82,6 +85,7 @@ export function NoteView({ note, notes, historical, onOpen, onEdit, onDelete, on
         {!historical && (
           <div className="flex flex-none gap-2 pt-6">
             {isMarp && <button className={btnGhost} onClick={() => setSlides(true)} data-testid="view-slides">{t('note.slides')}</button>}
+            {!historical && <button className={btnGhost} onClick={() => setShare(true)} data-testid="share-open">{t('share.button')}</button>}
             {layer === 'raw' ? <span className="text-[12px] text-ink-faint self-center">{t('note.readonly')}</span> : <button className={btnGhost} onClick={onEdit}>{t('common.edit')}</button>}
             {layer === 'raw'
               ? (note.path.startsWith('raw/archive/')

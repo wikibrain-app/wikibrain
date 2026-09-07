@@ -5,7 +5,7 @@ import { listBibSources } from './bib.js';
 import { assertCanWrite } from './plans.js';
 import {
   ConflictError, NoteError, archiveNote, createNote, deleteNote, getBacklinks, getGraph, ingestPrompt, listNotes, listPendingSources, listVersions,
-  listNoteProps, readNote, readNoteWithAuthor, rollbackNote, searchNotes, updateNote,
+  listNoteProps, readNote, readNoteWithAuthor, rollbackNote, searchNotes, updateNote, type Actor,
 } from './notes.js';
 
 // Notes REST for the web UI; mounted after requireSession in api.ts, all data access goes through notes.ts.
@@ -27,7 +27,7 @@ function sendError(res: Response, e: unknown) {
 const langOf = (res: Response): Lang => (res.locals.workspace?.lang as Lang | undefined) ?? 'zh-TW';
 const wsOf = (res: Response): string => res.locals.workspace.id;
 const msg = (res: Response, zh: string, en: string) => pick({ 'zh-TW': zh, en }, langOf(res));
-const actorOf = (res: Response) => ({ kind: 'web' as const, name: (res.locals.session as Session).user.email });
+const actorOf = (res: Response): Actor => res.locals.actor ?? { kind: 'web', name: (res.locals.session as Session).user.email };
 const q = (req: Request, key: string) => (typeof req.query[key] === 'string' ? (req.query[key] as string) : '');
 const wrap = (fn: (req: Request, res: Response) => Promise<void>) => (req: Request, res: Response) =>
   fn(req, res).catch(e => sendError(res, e));

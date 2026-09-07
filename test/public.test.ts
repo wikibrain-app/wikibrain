@@ -37,3 +37,15 @@ test('pre-rendered /help serves full HTML with metadata (when web/dist exists)',
   const zhHeader = await (await fetch(base + '/help', { headers: { 'accept-language': 'zh-TW,zh;q=0.9,en;q=0.5' } })).text();
   assert.match(zhHeader, /<html lang="zh-Hant-TW">/);
 });
+
+test('PWA: manifest, service worker, icons and offline page are served (when web/dist exists)', async (t) => {
+  const dist = join(process.cwd(), 'web', 'dist');
+  if (!existsSync(join(dist, 'manifest.webmanifest'))) { t.skip('web/dist not built'); return; }
+  const m = await fetch(base + '/manifest.webmanifest'); assert.equal(m.status, 200); assert.match(m.headers.get('content-type') ?? '', /manifest\+json|application\/json/);
+  const manifest = await m.json(); assert.equal(manifest.name, 'WikiBrain'); assert.equal(manifest.display, 'standalone'); assert.ok(manifest.icons.some((i: { purpose?: string }) => i.purpose === 'maskable'));
+  for (const i of manifest.icons) assert.equal((await fetch(base + i.src)).status, 200, i.src);
+  const sw = await fetch(base + '/sw.js'); assert.equal(sw.status, 200); assert.match(sw.headers.get('content-type') ?? '', /javascript/); assert.match(await sw.text(), /navigate/);
+  assert.match(await (await fetch(base + '/offline.html')).text(), /離線/);
+  const html = await (await fetch(base + '/help')).text(); assert.match(html, /rel="manifest"/); assert.match(html, /apple-touch-icon/);
+});
+

@@ -48,6 +48,8 @@ export interface BillingInfo {
   paddle: { environment: 'sandbox' | 'production'; client_token: string; prices: { month: PriceInfo; year: PriceInfo }; email: string; workspace_id: string } | null;
   error: string | null;
 }
+export interface ShareInfo { token: string; url: string; created_at: string }
+export interface SharedNote { path: string; title: string; content: string; updated_at: string; layer: 'raw' | 'wiki' | 'schema' }
 export interface BibEntry { key: string; path: string; title: string; authors: string[]; year: number | null; venue: string | null; doi: string | null; url: string | null }
 export interface ImportResult { path: string; title: string; version: number; warning?: string; ingestPrompt?: string; meta: { source_type: string; doi?: string; authors?: string[]; year?: number; venue?: string; citation_key?: string }; imported?: { path: string; title: string }[]; skipped?: string[] }
 export interface AiConfig { provider: string; model: string; key_last4: string; updated_at: string }
@@ -132,6 +134,10 @@ export const api = {
   zoteroSync: () => request<{ result: ZoteroSyncResult; link: ZoteroLink }>('POST', '/api/zotero/sync'),
   plan: () => request<PlanStatus>('GET', '/api/plan'),
   billing: () => request<BillingInfo>('GET', '/api/billing'),
+  share: (path: string) => request<{ share: ShareInfo | null }>('GET', `/api/share?path=${encodeURIComponent(path)}`),
+  createShare: (path: string) => request<{ share: ShareInfo }>('POST', '/api/share', { path }),
+  revokeShare: (path: string) => request<{ revoked: boolean }>('DELETE', `/api/share?path=${encodeURIComponent(path)}`),
+  publicShare: (token: string) => request<SharedNote>('GET', `/api/public/share/${encodeURIComponent(token)}`),
   billingPortal: () => request<{ overview: string; cancel?: string; update_payment_method?: string }>('POST', '/api/billing/portal'),
   deleteAccount: (password: string) => request<unknown>('POST', '/api/auth/delete-user', { password }),
   setLang: (lang: Lang) => request<{ lang: Lang }>('PUT', '/api/me/lang', { lang }),
