@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { api, type Me } from './lib/api';
-import { useLang, useT } from './i18n';
+import { takeChosen, useLang, useT } from './i18n';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Workspace from './pages/Workspace';
@@ -23,7 +23,13 @@ export default function App() {
   const { lang, setLang } = useLang();
   const { t } = useT();
   // The workspace language is the source of truth: after login, switch the UI if it differs
-  useEffect(() => { if (me?.workspace.lang && me.workspace.lang !== lang) setLang(me.workspace.lang); }, [me?.workspace.lang]);
+  // A language picked before signing in (public-page switch or ?lang=) is carried into the workspace once, so a visitor
+  // who arrived through the English pages keeps English after login instead of snapping back to the workspace default.
+  useEffect(() => {
+    if (!me?.workspace.lang) return;
+    if (me.workspace.lang !== lang && takeChosen()) { api.setLang(lang).then(() => setMe(m => (m ? { ...m, workspace: { ...m.workspace, lang } } : m))).catch(() => setLang(me.workspace.lang)); return; }
+    if (me.workspace.lang !== lang) setLang(me.workspace.lang);
+  }, [me?.workspace.lang]);
   // Only 401 means logged out; transient failures (429, network errors) keep the current state so rate limiting never bounces the user to the login page
   const refresh = () => api.me().then(setMe).catch(e => { if ((e as { status?: number }).status === 401 || me === undefined) setMe(null); });
   useEffect(() => { refresh(); }, [location.pathname === '/login', location.pathname === '/register']);

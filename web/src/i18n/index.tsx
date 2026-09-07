@@ -11,6 +11,7 @@ import pages from './pages';
 export type Lang = 'zh-TW' | 'en';
 export const LANGS: Lang[] = ['zh-TW', 'en'];
 const KEY = 'wb-lang';
+const CHOSEN = 'wb-lang-chosen'; // set when the visitor picked a language before signing in (switch or ?lang=); consumed once after login
 
 type Dict = Record<string, string>;
 const dicts: Record<Lang, Dict> = {
@@ -21,13 +22,16 @@ const dicts: Record<Lang, Dict> = {
 export function detectLang(): Lang {
   try {
     const q = new URLSearchParams(location.search).get('lang');
-    if (q === 'zh-TW' || q === 'en') { rememberLang(q); return q; }
+    if (q === 'zh-TW' || q === 'en') { rememberLang(q); markChosen(); return q; }
   } catch { /* ignore */ }
   try { const v = localStorage.getItem(KEY); if (v === 'zh-TW' || v === 'en') return v; } catch { /* ignore */ }
   const nav = typeof navigator !== 'undefined' ? navigator.language : 'zh-TW';
   return /^zh/i.test(nav) ? 'zh-TW' : 'en';
 }
 export function rememberLang(lang: Lang) { try { localStorage.setItem(KEY, lang); } catch { /* ignore */ } }
+export function markChosen() { try { localStorage.setItem(CHOSEN, '1'); } catch { /* ignore */ } }
+/** Returns true once if the visitor explicitly chose a language before signing in, and clears the flag. */
+export function takeChosen(): boolean { try { const v = localStorage.getItem(CHOSEN) === '1'; localStorage.removeItem(CHOSEN); return v; } catch { return false; } }
 
 export type TFn = (key: string, params?: Record<string, string | number>) => string;
 export function translate(lang: Lang, key: string, params?: Record<string, string | number>): string {
