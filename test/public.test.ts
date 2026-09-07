@@ -25,6 +25,7 @@ test('robots.txt allows the help page and blocks everything behind login; sitema
 test('pre-rendered /help serves full HTML with metadata (when web/dist exists)', async (t) => {
   const dist = join(process.cwd(), 'web', 'dist');
   if (!existsSync(join(dist, 'help.start.html'))) { t.skip('web/dist/help.html not built'); return; }
+  const de = await (await fetch(base + '/help', { headers: { 'accept-language': 'de-DE,de;q=0.9' } })).text(); assert.match(de, /<html lang="en">/, 'non-Chinese browsers get English');
   const zh = await (await fetch(base + '/help')).text();
   assert.match(zh, /<html lang="zh-Hant-TW">/); assert.match(zh, /application\/ld\+json/); assert.match(zh, /hreflang="en"/); assert.match(zh, /data-help-page="start"/); assert.match(zh, /5 分鐘上手/);
   const plans = await (await fetch(base + '/help/plans')).text(); assert.match(plans, /id="plans"/); assert.match(plans, /方案與計價/); assert.match(plans, /"@type":"FAQPage"/);
