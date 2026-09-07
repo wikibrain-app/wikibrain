@@ -1,4 +1,4 @@
-import { Shot, helpAsset, type HelpPage } from './common';
+import { Faq, Gallery, Shot, helpAsset, type HelpPage } from './common';
 import { Mermaid } from '../../components/Mermaid';
 
 // Traditional Chinese help content. Practice first (start → who ingests → daily loop → rules → views → data → how it works → plans → FAQ),
@@ -83,7 +83,7 @@ export const faq: { q: string; a: string; href?: string; label?: string }[] = [
 ];
 
 export const pages: HelpPage[] = [
-  { slug: 'start', title: '開始使用', lede: '五分鐘上手，以及決定誰來編纂', sections: [{ id: 'start', title: '5 分鐘上手' }, { id: 'ways', title: '誰來編纂：Cursor 或自帶 API key' }, { id: 'connectors', title: '用 Claude.ai 或 ChatGPT 連進來', sub: true }, { id: 'pwa', title: '手機：加到主畫面', sub: true }], Body: PageStart },
+  { slug: 'start', title: '開始使用', lede: '五分鐘上手，以及決定誰來編纂', sections: [{ id: 'start', title: '5 分鐘上手' }, { id: 'ways', title: '誰來編纂：三種方式' }, { id: 'connectors', title: '用 Claude.ai 或 ChatGPT 連進來', sub: true }, { id: 'pwa', title: '手機：加到主畫面', sub: true }], Body: PageStart },
   { slug: 'guide', title: '使用指南', lede: '日常循環、規則與模版、每個檢視怎麼用', sections: [{ id: 'loop', title: '日常循環：三個操作' }, { id: 'discuss', title: '先討論再編纂', sub: true }, { id: 'rules', title: '規則與模版' }, { id: 'views', title: '檢視與工具' }, { id: 'api', title: 'REST API' }], Body: PageGuide },
   { slug: 'data', title: '資料與系統', lede: '你的資料在哪、誰看得到、系統怎麼運作', sections: [{ id: 'data', title: '你的資料與安全' }, { id: 'system', title: '系統怎麼運作' }], Body: PageData },
   { slug: 'plans', title: '方案與支援', lede: '計價、常見問題、聯絡方式', sections: [{ id: 'plans', title: '方案與計價' }, { id: 'faq', title: '常見問題' }, { id: 'contact', title: '聯絡與回報問題' }], Body: PagePlans },
@@ -107,32 +107,34 @@ function PageStart() {
         <li>頂欄「對話（Query）」問一個問題，例如「這篇的主要論點是什麼」。答案會附頁面引用。</li>
         <li>第 10 次之後，決定誰來編纂：見下方「誰來編纂」。</li>
       </ol>
-      <Shot src="pending.png" alt="待編纂橫幅" caption="來源進 raw/ 後的橫幅：自動編纂（Ingest）這則、全部 N 則、先討論再編纂（Ingest）、複製提示詞給 Cursor。" />
-      <Shot src="home.png" alt="三欄主畫面" caption="編纂後的主畫面：左欄三層檔案樹（可收合、顯示筆記數），中欄是 wiki 頁，右欄是反向連結與版本紀錄。" />
-      <h2 id="ways">誰來編纂：Cursor 或自帶 API key</h2>
-      <p>agent 需要一個模型來跑。兩種方式寫出來的頁一模一樣，可以並用；設定頁的「兩種編纂（Ingest）方式，擇一或並用」區塊就是在說這件事。</p>
-      <div className="not-prose my-4 overflow-x-auto rounded-[10px] border border-line font-sans text-[13px]">
-        <table className="w-full border-collapse">
-          <thead><tr className="bg-porcelain text-left text-[12px] text-ink-soft"><th className="px-3 py-2 font-medium">你有…</th><th className="px-3 py-2 font-medium">選</th><th className="px-3 py-2 font-medium">要準備</th><th className="px-3 py-2 font-medium">模型費</th></tr></thead>
-          <tbody>
-            <tr className="border-t border-line"><td className="px-3 py-2">Cursor、Claude Code，或 Claude.ai／ChatGPT</td><td className="px-3 py-2 font-semibold">方式一：在你自己的 AI client 裡編纂</td><td className="px-3 py-2">Cursor 與 Claude Code：設定頁「連接 Cursor（三步驟）」產生一把 token 貼進去。Claude.ai 與 ChatGPT：在它的 connector 設定貼 MCP 網址，登入按「允許」</td><td className="px-3 py-2">已含在你那個工具的方案裡</td></tr>
-            <tr className="border-t border-line"><td className="px-3 py-2">只用瀏覽器</td><td className="px-3 py-2 font-semibold">方式二：網頁上自動編纂（自帶 API key）</td><td className="px-3 py-2">一把 Claude API、OpenAI 或 OpenRouter 的 key，填在設定頁「方式二」區塊</td><td className="px-3 py-2">走你的供應商帳單；flash 級模型一次編纂約數美分，Sonnet 級約十倍</td></tr>
-          </tbody>
-        </table>
+      <Gallery>
+        <Shot src="pending.png" alt="待編纂橫幅" caption="來源進 raw/ 後的橫幅：自動編纂這則、全部 N 則、先討論再編纂、複製提示詞。" />
+        <Shot src="home.png" alt="三欄主畫面" caption="編纂後：左欄三層檔案樹，中欄 wiki 頁，右欄反向連結與版本。" />
+      </Gallery>
+      <h2 id="ways">誰來編纂：三種方式擇一或並用</h2>
+      <p>agent 需要一個模型來跑。三種方式寫出來的頁一模一樣，設定頁「連接 agent」區塊就是在說這件事。兩邊都沒有？體驗期前 10 次由我們代跑，之後再選。</p>
+      <div className="not-prose my-4 grid gap-3 font-sans text-[13px] sb:grid-cols-3">
+        <div className="rounded-[10px] border border-line bg-paper p-4"><div className="mb-1 font-semibold text-celadon-deep">Cursor、Claude Code</div><div className="text-ink-soft">設定頁「連接 Cursor（三步驟）」產生一把 MCP token 貼進 mcp.json。不用 API key，費用含在工具方案裡。在來源頁按「複製提示詞給 Cursor」貼到對話送出即可。</div></div>
+        <div className="rounded-[10px] border border-line bg-paper p-4"><div className="mb-1 font-semibold text-celadon-deep">Claude.ai、ChatGPT</div><div className="text-ink-soft">不用 token：在它的 connector 設定貼 MCP 網址 <code>https://wikibrain.app/mcp</code>，登入按「允許」。步驟見下方。</div></div>
+        <div className="rounded-[10px] border border-line bg-paper p-4"><div className="mb-1 font-semibold text-celadon-deep">只用瀏覽器（自帶 API key）</div><div className="text-ink-soft">一把 Claude API、OpenAI 或 OpenRouter 的 key 填在設定頁「AI 供應商」，來源頁按「自動編纂」即可；手機也能用。費用走你的供應商帳單，flash 級模型一次約數美分。</div></div>
       </div>
-      <p>兩邊都沒有？體驗期前 10 次由我們代跑（用較便宜的模型），之後再選。沒有 API key 的話，到 OpenRouter 註冊、建一把 key、貼進設定頁即可。</p>
-      <p><b>方式一怎麼用。</b>在來源頁按「複製提示詞給 Cursor」，貼到 Cursor 的對話裡送出；agent 會透過 MCP 讀規則、搜尋、建頁、更新目錄與紀錄。網頁上的「自動編纂」按鈕不會叫 Cursor 動起來，MCP 是由 client 端發起的。</p>
+      <Gallery>
+        <Shot src="cursor-chat.png" alt="Cursor 透過 MCP 讀寫" caption="Cursor：agent 透過 MCP 呼叫 list_folder、read_note 讀三層，寫回 wiki。" />
+        <Shot src="ai.png" alt="AI 供應商設定" caption="自帶 key：選供應商、從清單挑模型、填自己的 key。" />
+      </Gallery>
       <h3 id="connectors">用 Claude.ai 或 ChatGPT 連進來（connector）</h3>
-      <p>不用 token、不用 API key：把 MCP 網址貼進 AI 工具的 connector 設定，用你的 WikiBrain 帳號登入並按「允許」就接上了。MCP 網址是你的 WikiBrain 網址加 <code>/mcp</code>，託管版是 <code>https://wikibrain.app/mcp</code>。</p>
       <ol>
-        <li><b>Claude.ai</b>：設定 → 連接器（Connectors）→「新增自訂連接器」→ 名稱填 WikiBrain、網址貼 MCP 網址 → 新增。在對話的「+」或工具選單裡打開 WikiBrain，第一次會跳到 WikiBrain 的登入與同意頁，登入後按「允許」。回到對話就能看到六個工具（get_instructions、search_notes、read_note、create_note、update_note、list_folder）。</li>
-        <li><b>ChatGPT</b>：設定 → 連接器（Connectors）→ 進階／開發者模式 → 建立 → MCP 伺服器網址貼 MCP 網址、驗證方式選 OAuth → 建立，之後流程同上。ChatGPT 的自訂 MCP 目前在部分方案才開放。</li>
-        <li>接上之後直接用中文說「先讀 get_instructions，然後把 raw/sources/xxx.md 編纂進 wiki」或「在 wiki 裡搜尋 X 並整理成一頁」；agent 會用同一組工具讀寫這座 wiki。</li>
+        <li><b>Claude.ai</b>：左欄「自訂（Customize）」→「連接器（Connectors）」→ 右上「新增（Add）」→「自訂連接器」→ 名稱填 WikiBrain、網址貼 <code>https://wikibrain.app/mcp</code> → 新增。第一次會跳到 WikiBrain 的登入與同意頁，按「允許」。之後在連接器的設定裡可以看到六個工具（讀取編纂規則、搜尋筆記、讀取筆記、建立筆記、更新筆記、列出資料夾），在對話裡直接用中文交代即可。</li>
+        <li><b>ChatGPT</b>：設定 → 連接器 → 進階／開發者模式 → 建立 → MCP 伺服器網址貼同一個網址、驗證方式選 OAuth → 建立。自訂 MCP 目前在部分方案才開放。</li>
+        <li>接上之後說「先讀 get_instructions，然後把 raw/sources/xxx.md 編纂進 wiki」或「在 wiki 裡搜尋 X 並整理成一頁」。</li>
       </ol>
-      <p>授權後的連線會列在設定頁「MCP token」的表格裡（標示 OAuth，記錄 client 名稱與到期時間），隨時可撤銷；存取 token 24 小時到期、client 會自動用 refresh token 續期 90 天，不用重新登入。一個 connector 對應你登入的那個帳號與工作區。</p>
-      <p><b>方式二怎麼用。</b>來源頁按「自動編纂（Ingest）這則」或「自動編纂（Ingest）全部 N 則」，伺服器用你的 key 跑同一組工具，進度、工具軌跡、tokens 與費用即時顯示；一個工作最多 60 步，同一工作區一次只跑一個。版本紀錄會標示是哪個 agent 寫的。</p>
-      <Shot src="paths.png" alt="兩種編纂方式" caption="設定頁先說明兩種方式，擇一或並用。" />
-      <Shot src="ai.png" alt="AI 供應商設定" caption="方式二：選供應商、從清單挑模型、填自己的 key。" />
+      <Gallery>
+        <Shot src="claude-add.png" alt="Claude.ai 新增自訂連接器" caption="Claude.ai：自訂 → 連接器 → 新增 → 自訂連接器，貼上 MCP 網址。" shared />
+        <Shot src="claude-consent.png" alt="WikiBrain 同意頁" caption="第一次連線：登入 WikiBrain 後按「允許」。" shared />
+        <Shot src="claude-tools.png" alt="Claude.ai 裡的六個工具" caption="連接器設定裡的六個工具，可個別設定是否每次詢問。" shared />
+        <Shot src="claude-chat.png" alt="Claude.ai 對話中使用 WikiBrain" caption="對話裡直接交代，agent 會呼叫工具讀寫這座 wiki。" shared />
+      </Gallery>
+      <p>授權後的連線會列在設定頁「連接 agent」的表格裡（標示 OAuth），隨時可撤銷；存取 token 24 小時到期、client 自動續期 90 天。同一把 MCP token 也能當 REST API 的 API key，見<a className="text-celadon-deep underline" href="/help/guide#api">使用指南</a>。</p>
       <h3 id="pwa">手機：加到主畫面</h3>
       <p>WikiBrain 是可安裝的網頁 app（PWA），不用上商店。iPhone：用 Safari 開 wikibrain.app → 分享 → 「加入主畫面」；Android：Chrome 選單 → 「安裝應用程式」或「加到主畫面」。之後會以全螢幕開啟、有自己的圖示。斷線時會顯示離線頁面；離線閱讀整座知識庫與離線隨手記屬於下一階段的裝置副本功能。</p>
     </>
@@ -246,7 +248,7 @@ function PagePlans() {
       </div>
       <p>上限只擋新增：到了筆記數或容量上限時不能再新增或加長頁面，但閱讀、縮短、封存、匯出都照常，既有內容不會被刪除或改動。版本快照 Free 保留 7 天、Pro 與體驗期 90 天，每頁最新版永久保留。設定頁的方案卡會顯示目前用量。</p>
       <h2 id="faq">常見問題</h2>
-      {faq.map(f => <p key={f.q}><b>{f.q}</b>{f.href ? <>{f.a.split(f.label!)[0]}<a className="text-celadon-deep underline" href={f.href}>{f.label}</a>{f.a.split(f.label!).slice(1).join(f.label!)}</> : f.a}</p>)}
+      <Faq items={faq} />
       <h2 id="contact">聯絡與回報問題</h2>
       <p>支援信箱：<a className="text-celadon-deep underline" href="mailto:hello@wikibrain.app">hello@wikibrain.app</a>（一般一到兩個工作天回覆）。程式問題與功能建議也可以到 <a className="text-celadon-deep underline" href="https://github.com/wikibrain-app/wikibrain">GitHub</a> 開 issue。法律文件：<a className="text-celadon-deep underline" href="/privacy">隱私權政策</a>、<a className="text-celadon-deep underline" href="/terms">服務條款</a>。資料存放於新加坡（Railway），細節見隱私權政策第 4 條。</p>
     

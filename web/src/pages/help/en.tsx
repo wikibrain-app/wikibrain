@@ -1,4 +1,4 @@
-import { Shot, helpAsset, type HelpPage } from './common';
+import { Faq, Gallery, Shot, helpAsset, type HelpPage } from './common';
 import { Mermaid } from '../../components/Mermaid';
 
 // English help content: same structure, section ids, screenshots and video as the zh-TW version; wording follows Karpathy's original where possible.
@@ -82,7 +82,7 @@ export const faq: { q: string; a: string; href?: string; label?: string }[] = [
 ];
 
 export const pages: HelpPage[] = [
-  { slug: 'start', title: 'Getting started', lede: 'Five minutes to your first wiki page, and who does the ingesting', sections: [{ id: 'start', title: 'Five-minute start' }, { id: 'ways', title: 'Who ingests: Cursor or your own API key' }, { id: 'connectors', title: 'Connect from Claude.ai or ChatGPT', sub: true }, { id: 'pwa', title: 'Phone: add to home screen', sub: true }], Body: PageStart },
+  { slug: 'start', title: 'Getting started', lede: 'Five minutes to your first wiki page, and who does the ingesting', sections: [{ id: 'start', title: 'Five-minute start' }, { id: 'ways', title: 'Who ingests: three ways' }, { id: 'connectors', title: 'Connect from Claude.ai or ChatGPT', sub: true }, { id: 'pwa', title: 'Phone: add to home screen', sub: true }], Body: PageStart },
   { slug: 'guide', title: 'User guide', lede: 'The daily loop, rules and templates, and each view', sections: [{ id: 'loop', title: 'The daily loop: three operations' }, { id: 'discuss', title: 'Discuss first, then ingest', sub: true }, { id: 'rules', title: 'Rules and templates' }, { id: 'views', title: 'Views and tools' }, { id: 'api', title: 'REST API' }], Body: PageGuide },
   { slug: 'data', title: 'Data and system', lede: 'Where your data lives, who can see it, how the system works', sections: [{ id: 'data', title: 'Your data and security' }, { id: 'system', title: 'How the system works' }], Body: PageData },
   { slug: 'plans', title: 'Plans and support', lede: 'Pricing, FAQ, contact', sections: [{ id: 'plans', title: 'Plans and pricing' }, { id: 'faq', title: 'FAQ' }, { id: 'contact', title: 'Contact and reporting problems' }], Body: PagePlans },
@@ -104,34 +104,36 @@ function PageStart() {
         <li>Press Auto-ingest this source in the banner. The first 10 runs of the trial need no key at all.</li>
         <li>Wait for the progress panel (usually 30 to 90 seconds). The left pane gains a summary page under wiki/, and index.md and log.md are updated. Read it and check the key points.</li>
         <li>Press Chat in the top bar and ask something, e.g. "what is the main argument of this paper?". The answer cites page paths.</li>
-        <li>After the fifth run, decide who ingests: see "Who ingests" below.</li>
+        <li>After the tenth run, decide who ingests: see "Who ingests" below.</li>
       </ol>
-      <Shot src="pending.png" alt="Pending-ingest banner" caption="The banner on a raw/ source: Auto-ingest this source, all N, Discuss first, then ingest, Copy prompt for Cursor." />
-      <Shot src="home.png" alt="Three-pane main screen" caption="After ingesting: the three-layer file tree on the left (collapsible, with counts), the wiki page in the middle, backlinks and version history on the right." />
-      <h2 id="ways">Who ingests: Cursor or your own API key</h2>
-      <p>The agent needs a model to run on. Both ways produce identical pages and can be combined; the Settings section "Two ways to ingest — pick one or use both" is about exactly this.</p>
-      <div className="not-prose my-4 overflow-x-auto rounded-[10px] border border-line font-sans text-[13px]">
-        <table className="w-full border-collapse">
-          <thead><tr className="bg-porcelain text-left text-[12px] text-ink-soft"><th className="px-3 py-2 font-medium">You have…</th><th className="px-3 py-2 font-medium">Choose</th><th className="px-3 py-2 font-medium">Set up</th><th className="px-3 py-2 font-medium">Model cost</th></tr></thead>
-          <tbody>
-            <tr className="border-t border-line"><td className="px-3 py-2">Cursor, Claude Code, or Claude.ai / ChatGPT</td><td className="px-3 py-2 font-semibold">Way 1: ingest inside your own AI client</td><td className="px-3 py-2">Cursor and Claude Code: Settings → Connect Cursor (3 steps) generates a token to paste. Claude.ai and ChatGPT: paste the MCP URL into their connector settings, sign in, press Allow</td><td className="px-3 py-2">Included in that tool's plan</td></tr>
-            <tr className="border-t border-line"><td className="px-3 py-2">Only a browser</td><td className="px-3 py-2 font-semibold">Way 2: auto-ingest on the web (bring your own API key)</td><td className="px-3 py-2">A Claude API, OpenAI or OpenRouter key, entered in the "Option 2" section of Settings</td><td className="px-3 py-2">On your provider's bill; a flash-class model costs a few cents per ingest, a Sonnet-class model about ten times that</td></tr>
-          </tbody>
-        </table>
+      <Gallery>
+        <Shot src="pending.png" alt="Pending-ingest banner" caption="The banner on a raw/ source: Auto-ingest this source, all N, Discuss first, Copy prompt." />
+        <Shot src="home.png" alt="Three-pane main screen" caption="After ingesting: the three-layer tree, the wiki page, backlinks and versions." />
+      </Gallery>
+      <h2 id="ways">Who ingests: three ways, pick one or combine</h2>
+      <p>The agent needs a model to run on. All three ways produce identical pages; the Settings section "Connect an agent" is about exactly this. Neither yet? The first 10 trial runs are on us; decide afterwards.</p>
+      <div className="not-prose my-4 grid gap-3 font-sans text-[13px] sb:grid-cols-3">
+        <div className="rounded-[10px] border border-line bg-paper p-4"><div className="mb-1 font-semibold text-celadon-deep">Cursor, Claude Code</div><div className="text-ink-soft">Settings → Connect Cursor (3 steps) creates an MCP token for mcp.json. No API key; the cost is part of your tool’s plan. On a source page press Copy prompt for Cursor and paste it into the chat.</div></div>
+        <div className="rounded-[10px] border border-line bg-paper p-4"><div className="mb-1 font-semibold text-celadon-deep">Claude.ai, ChatGPT</div><div className="text-ink-soft">No token: paste the MCP URL <code>https://wikibrain.app/mcp</code> into its connector settings, sign in and press Allow. Steps below.</div></div>
+        <div className="rounded-[10px] border border-line bg-paper p-4"><div className="mb-1 font-semibold text-celadon-deep">Browser only (your own API key)</div><div className="text-ink-soft">Enter a Claude API, OpenAI or OpenRouter key under Settings → AI provider, then press Auto-ingest on a source page; works from a phone. Billed by your provider, a few cents per run on a flash-class model.</div></div>
       </div>
-      <p>Neither? The first 10 trial runs are on us (a cheaper model); decide afterwards. No API key yet? Sign up at OpenRouter, create a key, paste it into Settings.</p>
-      <p><b>Way 1 in practice.</b> On a source page press Copy prompt for Cursor and paste it into a Cursor chat; the agent reads the rules, searches, creates pages and updates the index and log through MCP. The web Auto-ingest button does not start Cursor: MCP is always initiated by the client.</p>
+      <Gallery>
+        <Shot src="cursor-chat.png" alt="Cursor reading and writing through MCP" caption="Cursor: the agent calls list_folder and read_note over MCP and writes back to wiki/." />
+        <Shot src="ai.png" alt="AI provider settings" caption="Your own key: choose a provider, pick a model, enter the key." />
+      </Gallery>
       <h3 id="connectors">Connect from Claude.ai or ChatGPT (connectors)</h3>
-      <p>No token and no API key: paste the MCP URL into the AI tool's connector settings, sign in with your WikiBrain account and press Allow. The MCP URL is your WikiBrain address plus <code>/mcp</code>; on the hosted version it is <code>https://wikibrain.app/mcp</code>.</p>
       <ol>
-        <li><b>Claude.ai</b>: Settings → Connectors → Add custom connector → name it WikiBrain, paste the MCP URL → Add. Enable WikiBrain from the “+” or tools menu in a chat; the first time you are sent to WikiBrain's sign-in and consent page — sign in and press Allow. Back in the chat you will see the six tools (get_instructions, search_notes, read_note, create_note, update_note, list_folder).</li>
-        <li><b>ChatGPT</b>: Settings → Connectors → Advanced / Developer mode → Create → paste the MCP URL as the server URL, choose OAuth for authentication → Create, then the same flow as above. Custom MCP connectors are only available on some ChatGPT plans.</li>
-        <li>Once connected, just ask in plain language: “read get_instructions, then ingest raw/sources/xxx.md into the wiki” or “search the wiki for X and write it up as one page”. The agent uses the same tools to read and write this wiki.</li>
+        <li><b>Claude.ai</b>: sidebar Customize → Connectors → Add (top right) → Custom connector → name it WikiBrain, paste <code>https://wikibrain.app/mcp</code> → Add. The first time you are sent to WikiBrain’s sign-in and consent page; press Allow. The connector settings then list the six tools (get_instructions, search_notes, read_note, create_note, update_note, list_folder); just ask in plain language in a chat.</li>
+        <li><b>ChatGPT</b>: Settings → Connectors → Advanced / Developer mode → Create → paste the same URL as the server URL, choose OAuth → Create. Custom MCP is available on some plans only.</li>
+        <li>Once connected: “read get_instructions, then ingest raw/sources/xxx.md into the wiki” or “search the wiki for X and write it up as one page”.</li>
       </ol>
-      <p>Authorised connections appear in the MCP token table on the Settings page (marked OAuth, with the client name and expiry) and can be revoked at any time. Access tokens expire after 24 hours; the client renews them silently with a refresh token for 90 days, so you do not sign in again. A connector is tied to the account and workspace you signed in with.</p>
-      <p><b>Way 2 in practice.</b> Press Auto-ingest this source or Auto-ingest all N sources; the server runs the same tools with your key and shows progress, tool trace, tokens and cost live. One job is capped at 60 steps and a workspace runs one job at a time. Version history records which agent wrote each version.</p>
-      <Shot src="paths.png" alt="Two ways to ingest" caption="Settings explains the two ways first; pick one or use both." />
-      <Shot src="ai.png" alt="AI provider settings" caption="Way 2: choose a provider, pick a model from the list, enter your own key." />
+      <Gallery>
+        <Shot src="claude-add.png" alt="Claude.ai add custom connector" caption="Claude.ai: Customize → Connectors → Add → Custom connector, paste the MCP URL." shared />
+        <Shot src="claude-consent.png" alt="WikiBrain consent page" caption="First connection: sign in to WikiBrain and press Allow." shared />
+        <Shot src="claude-tools.png" alt="The six tools in Claude.ai" caption="The six tools in the connector settings, each with its own permission." shared />
+        <Shot src="claude-chat.png" alt="Using WikiBrain in a Claude.ai chat" caption="Ask in the chat; the agent calls the tools to read and write this wiki." shared />
+      </Gallery>
+      <p>Authorised connections appear in the Settings → Connect an agent table (marked OAuth) and can be revoked at any time; access tokens expire after 24 hours and clients renew for 90 days. The same MCP token also works as an API key for the REST API, see the <a className="text-celadon-deep underline" href="/help/guide#api">guide</a>.</p>
       <h3 id="pwa">Phone: add to home screen</h3>
       <p>WikiBrain is an installable web app (PWA); there is nothing to download from a store. iPhone: open wikibrain.app in Safari → Share → Add to Home Screen. Android: Chrome menu → Install app or Add to Home screen. It then opens full-screen with its own icon. When the connection drops you get an offline page; reading the whole knowledge base offline and offline quick notes belong to the next milestone (device copy).</p>
     </>
@@ -245,7 +247,7 @@ function PagePlans() {
       </div>
       <p>Limits only block additions: at the note or storage limit you cannot add or grow pages, but reading, shrinking, archiving and export keep working and nothing is deleted or altered. Version snapshots are kept 7 days on Free and 90 days on Pro and during the trial; the latest version of every page is kept forever. The plan card in Settings shows current usage.</p>
       <h2 id="faq">FAQ</h2>
-      {faq.map(f => <p key={f.q}><b>{f.q}</b>{f.href ? <>{f.a.split(f.label!)[0]}<a className="text-celadon-deep underline" href={f.href}>{f.label}</a>{f.a.split(f.label!).slice(1).join(f.label!)}</> : f.a}</p>)}
+      <Faq items={faq} />
       <h2 id="contact">Contact and reporting problems</h2>
       <p>Support: <a className="text-celadon-deep underline" href="mailto:hello@wikibrain.app">hello@wikibrain.app</a> (usually answered within one or two working days). Bugs and feature requests are also welcome as issues on <a className="text-celadon-deep underline" href="https://github.com/wikibrain-app/wikibrain">GitHub</a>. Legal: <a className="text-celadon-deep underline" href="/privacy">Privacy Policy</a>, <a className="text-celadon-deep underline" href="/terms">Terms of Service</a>. Data is hosted in Singapore (Railway); see section 4 of the privacy policy.</p>
     

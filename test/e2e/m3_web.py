@@ -194,7 +194,7 @@ with sync_playwright() as p:
       ac('AC-16 token create/copy/revoke', fresh.startswith('wb_live_') and clip == fresh and before == 200 and after == 401, f'before={before} after={after}')
 
       # AC-17: connect Cursor
-      page.goto(BASE + '/settings'); page.wait_for_selector('text=方式一')
+      page.goto(BASE + '/settings'); page.wait_for_selector('text=連接 agent')
       page.click('button:has-text("連接 Cursor")')
       page.click('button:has-text("產生 token")')
       page.wait_for_selector('button:has-text("重發 token")')  # only appears after the token is created

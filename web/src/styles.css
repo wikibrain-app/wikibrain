@@ -104,3 +104,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   --breakpoint-sb: 681px;
   --breakpoint-rail: 901px;
 }
+
+/* Help: collapsible FAQ and compact screenshot galleries */
+.help-faq details { border-top: 1px solid var(--color-line); }
+.help-faq details:last-child { border-bottom: 1px solid var(--color-line); }
+.help-faq summary { cursor: pointer; padding: 10px 0; font-family: var(--font-sans); font-size: 14px; font-weight: 600; list-style: none; display: flex; gap: 10px; align-items: baseline; }
+.help-faq summary::-webkit-details-marker { display: none; }
+.help-faq summary::before { content: "+"; color: var(--color-celadon); font-weight: 700; width: 1em; flex: none; }
+.help-faq details[open] summary::before { content: "–"; }
+.help-faq details > div { padding: 0 0 12px 1.6em; font-size: 14px; line-height: 1.8; color: var(--color-ink-soft); }

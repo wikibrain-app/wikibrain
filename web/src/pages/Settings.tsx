@@ -11,6 +11,8 @@ import { THEMES, getTheme, setTheme, type Theme } from '../theme';
 import { AppliedResult, TemplatePicker } from '../components/TemplatePicker';
 import { ConnectCursorModal } from '../components/ConnectCursorModal';
 
+const NAV = ['account', 'plan', 'connect', 'ai', 'data', 'templates', 'danger'] as const;
+
 export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
   const [tokens, setTokens] = useState<TokenInfo[]>([]);
   const [theme, setThemeState] = useState<Theme>(() => getTheme());
@@ -85,36 +87,47 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
   }
 
   return (
-    <PageShell title={t('settings.title')} right={<><Link to="/help" className="text-[12px] text-celadon-deep hover:underline">{t('auth.help')}</Link><span className="hidden sb:inline text-[12px] text-ink-soft">{me.user.email}</span><button className={btnGhost} onClick={signOut}>{t('settings.signOut')}</button></>}>
-      <main>
-        <Link to="/" className="text-[12px] text-celadon-deep">{t('settings.backToKb')}</Link>
-        <h1 className="font-serif text-[26px] font-bold mt-2 mb-1">{t('settings.title')}</h1>
-        <p className="text-[13px] text-ink-soft mb-8">{t('settings.account', { name: me.user.name || me.user.email, email: me.user.email, workspace: me.workspace.name })}</p>
+    <PageShell title={t('settings.title')} wide right={<><Link to="/help" className="text-[12px] text-celadon-deep hover:underline">{t('auth.help')}</Link><span className="hidden sb:inline text-[12px] text-ink-soft">{me.user.name || me.user.email}</span><button className={btnGhost} onClick={signOut}>{t('settings.signOut')}</button></>}>
+      <div className="grid gap-8 sb:grid-cols-[200px_minmax(0,1fr)]">
+        <nav className="sb:sticky sb:top-6 self-start font-sans text-[13px]" aria-label={t('settings.title')}>
+          <Link to="/" className="mb-3 block text-[12px] text-celadon-deep">{t('settings.backToKb')}</Link>
+          <ol className="flex gap-1 overflow-x-auto sb:block sb:space-y-0.5">
+            {NAV.map(id => <li key={id}><a href={`#${id}`} className={`block whitespace-nowrap rounded-md px-2.5 py-1.5 ${id === 'danger' ? 'text-ink-faint hover:text-danger' : 'text-ink-soft hover:bg-porcelain hover:text-ink'}`}>{t(`settings.nav.${id}`)}</a></li>)}
+          </ol>
+        </nav>
+        <main className="min-w-0 space-y-6">
+          <header>
+            <h1 className="font-serif text-[26px] font-bold mb-1">{t('settings.title')}</h1>
+            <p className="text-[13px] text-ink-soft">{t('settings.account', { name: me.user.name || me.user.email, email: me.user.email, workspace: me.workspace.name })}</p>
+          </header>
 
-        <section className="mb-10" data-testid="lang-settings">
-          <h2 className="text-[15px] font-semibold mb-1">{t('lang.label')}</h2>
-          <p className="text-[12.5px] text-ink-soft mb-3 leading-relaxed">{t('lang.hint')}</p>
-          <select id="lang" aria-label={t('lang.label')} className={`${input} max-w-[240px]`} value={lang} onChange={e => changeLang(e.target.value as Lang)} data-testid="lang-select">
+          <section id="account" className="rounded-[12px] border border-line bg-paper p-5 sb:p-6 scroll-mt-6" data-testid="account-settings">
+            <h2 className="text-[15px] font-semibold mb-1">{t('settings.nav.account')}</h2>
+            <div className="mt-3 grid gap-5 sm:grid-cols-2">
+              <div data-testid="lang-settings">
+                <div className="text-[13px] font-semibold">{t('lang.label')}</div>
+                <p className="text-[12px] text-ink-soft mb-2 leading-relaxed">{t('lang.hint')}</p>
+                <select id="lang" aria-label={t('lang.label')} className={`${input} max-w-[240px]`} value={lang} onChange={e => changeLang(e.target.value as Lang)} data-testid="lang-select">
             {LANGS.map(l => <option key={l} value={l}>{t(`lang.${l}`)}</option>)}
           </select>
-        </section>
-
-        <section className="mb-10" data-testid="theme-settings">
-          <h2 className="text-[15px] font-semibold mb-1">{t('theme.label')}</h2>
-          <p className="text-[12.5px] text-ink-soft mb-3 leading-relaxed">{t('theme.hint')}</p>
-          <div className="inline-flex overflow-hidden rounded-lg border border-line" role="radiogroup" aria-label={t('theme.label')}>
+              </div>
+              <div data-testid="theme-settings">
+                <div className="text-[13px] font-semibold">{t('theme.label')}</div>
+                <p className="text-[12px] text-ink-soft mb-2 leading-relaxed">{t('theme.hint')}</p>
+                <div className="inline-flex overflow-hidden rounded-lg border border-line" role="radiogroup" aria-label={t('theme.label')}>
             {THEMES.map(th => (
               <button key={th} type="button" role="radio" aria-checked={theme === th} data-testid={`theme-${th}`} onClick={() => changeTheme(th)}
                 className={`px-3.5 py-[7px] text-[12.5px] sb:text-[13px] ${theme === th ? 'bg-celadon-mist font-semibold text-celadon-deep' : 'text-ink-soft hover:bg-porcelain'}`}>{t(`theme.${th}`)}</button>
             ))}
           </div>
-        </section>
+              </div>
+            </div>
+          </section>
 
-        <PlanCard />
-        <section className="mb-10" data-testid="usage">
-          <h2 className="text-[15px] font-semibold mb-1">{t('settings.usage.title')}</h2>
-          <p className="text-[12.5px] text-ink-soft mb-3 leading-relaxed">{t('settings.usage.intro')}</p>
-          <div className="flex flex-wrap gap-3 mb-4">
+          <section id="plan" className="rounded-[12px] border border-line bg-paper p-5 sb:p-6 scroll-mt-6 [&>section]:mb-0" data-testid="usage">
+            <PlanCard />
+            <div className="mt-4 text-[13px] font-semibold mb-2">{t('settings.usage.title')}</div>
+            <div className="flex flex-wrap gap-3 mb-4">
             {usage ? [
               [t('settings.usage.mcpCalls', { month: usage.month }), usage.mcp_calls.toLocaleString(locale)],
               [t('settings.usage.notes'), usage.note_count.toLocaleString(locale)],
@@ -123,36 +136,27 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
               <div key={k} className="min-w-[140px] rounded-[10px] border border-line bg-porcelain px-4 py-3"><div className="text-[11px] text-ink-soft">{k}</div><div className="font-serif text-[20px] font-bold">{v}</div></div>
             )) : <span className="text-[12px] text-ink-faint">{t('app.loading')}</span>}
           </div>
-          <a className={btnGhost} href={api.exportUrl} download data-testid="export-link">{t('settings.usage.export')}</a>
-          <span className="ml-2 text-[12px] text-ink-faint">{t('settings.usage.exportHint')}</span>
-          <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <a className={btnGhost} href={api.exportBibtexUrl} download data-testid="export-bibtex">{t('settings.usage.exportBib')}</a>
-            <a className={btnGhost} href={api.exportCslUrl} download data-testid="export-csl">{t('settings.usage.exportCsl')}</a>
-            <span className="text-[12px] text-ink-faint">{t('settings.usage.exportBibHint')}</span>
-          </div>
-        </section>
+          </section>
 
-        <section className="mb-8" data-testid="ingest-paths">
-          <h2 className="text-[15px] font-semibold mb-1">{t('settings.ways.title')}</h2>
-          <p className="text-[12.5px] text-ink-soft mb-3 leading-relaxed">{t('settings.ways.intro')}</p>
-          <div className="grid gap-3 sb:grid-cols-2">
-            <div className="rounded-[10px] border border-line bg-porcelain px-4 py-3 text-[12.5px] leading-relaxed">
-              <div className="font-semibold text-celadon-deep mb-1">{t('settings.ways.one.title')}</div>
-              {t('settings.ways.one.body1')}<b>{t('settings.ways.one.bold')}</b>{t('settings.ways.one.body2')}
+          <section id="connect" className="rounded-[12px] border border-line bg-paper p-5 sb:p-6 scroll-mt-6" data-testid="ingest-paths">
+            <h2 className="text-[15px] font-semibold mb-1">{t('settings.connect.title')}</h2>
+            <p className="text-[12.5px] text-ink-soft mb-4 leading-relaxed">{t('settings.connect.intro')}</p>
+            <div className="grid gap-3 sb:grid-cols-3">
+              {(['cursor', 'cloud', 'web'] as const).map(k => (
+                <div key={k} className="rounded-[10px] border border-line bg-porcelain px-4 py-3 text-[12.5px] leading-relaxed">
+                  <div className="font-semibold text-celadon-deep mb-1">{t(`settings.connect.${k}.title`)}</div>
+                  {t(`settings.connect.${k}.body`)}
+                  <div className="mt-2">
+                    {k === 'cursor' && <button className={btnPrimary} onClick={() => setConnect(true)}>{t('settings.tokens.connect')}</button>}
+                    {k === 'cloud' && <button className={btnGhost} onClick={() => copy(me.mcpUrl)} data-testid="copy-mcp-url">{t('settings.connect.mcpUrl')} · {t('common.copy')}</button>}
+                    {k === 'web' && <a className={`${btnGhost} inline-block`} href="#ai">{t('settings.nav.ai')} →</a>}
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="rounded-[10px] border border-line bg-porcelain px-4 py-3 text-[12.5px] leading-relaxed">
-              <div className="font-semibold text-celadon-deep mb-1">{t('settings.ways.two.title')}</div>
-              {t('settings.ways.two.body1')}<b>{t('settings.ways.two.bold')}</b>{t('settings.ways.two.body2')}
-            </div>
-          </div>
-        </section>
-
-        <section className="mb-10">
-          <h2 className="text-[15px] font-semibold mb-1">{t('settings.tokens.title')}</h2>
-          <p className="text-[12.5px] text-ink-soft mb-3 leading-relaxed">{t('settings.tokens.intro1')}<b>.cursor/mcp.json</b>{t('settings.tokens.intro2')}</p>
-          <button className={`${btnPrimary} mb-3`} onClick={() => setConnect(true)}>{t('settings.tokens.connect')}</button>
-          <p className="text-[12.5px] text-ink-soft mb-5 leading-relaxed" data-testid="oauth-intro">{t('settings.tokens.oauthIntro')}<code className="ml-1 rounded bg-porcelain px-1.5 py-0.5 font-mono text-[12px]">{me.mcpUrl}</code></p>
-          <form onSubmit={create} className="flex items-end gap-2 mb-5 max-w-[420px]">
+            <div className="mt-2 font-mono text-[12px] text-ink-soft" data-testid="oauth-intro">{t('settings.connect.mcpUrl')}: <code className="rounded bg-porcelain px-1">{me.mcpUrl}</code></div>
+            <h3 className="mt-6 mb-2 text-[13px] font-semibold">{t('settings.connect.tokensTitle')}</h3>
+            <form onSubmit={create} className="flex items-end gap-2 mb-5 max-w-[420px]">
             <div className="flex-1"><Field label={t('settings.tokens.label')} htmlFor="label"><input id="label" className={input} value={label} onChange={e => setLabel(e.target.value)} /></Field></div>
             <button className={`${btnPrimary} mb-3.5`}>{t('settings.tokens.create')}</button>
           </form>
@@ -183,13 +187,13 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
               {tokens.length === 0 && <tr><td colSpan={5} className="py-4 text-ink-faint text-[12.5px]">{t('settings.tokens.empty')}</td></tr>}
             </tbody>
           </table>
-        </section>
+            <p className="mt-3 text-[12px] text-ink-faint">{t('settings.connect.rest')} <Link to="/help/guide#api" className="text-celadon-deep hover:underline">{t('auth.help')}</Link></p>
+          </section>
 
-        <ZoteroSettings />
-        <section className="mb-10" data-testid="ai-settings">
-          <h2 className="text-[15px] font-semibold mb-1">{t('settings.ai.title')}</h2>
-          <p className="text-[12.5px] text-ink-soft mb-4 leading-relaxed">{t('settings.ai.intro')}</p>
-          {ai?.config && (
+          <section id="ai" className="rounded-[12px] border border-line bg-paper p-5 sb:p-6 scroll-mt-6" data-testid="ai-settings">
+            <h2 className="text-[15px] font-semibold mb-1">{t('settings.ai.title')}</h2>
+            <p className="text-[12.5px] text-ink-soft mb-4 leading-relaxed">{t('settings.ai.intro')}</p>
+            {ai?.config && (
             <div className="mb-3 rounded-[10px] border border-line bg-porcelain px-4 py-2.5 text-[12.5px]">
               {t('settings.ai.current')}<b>{ai.providers.find(p => p.id === ai.config!.provider)?.label ?? ai.config.provider}</b>{t('settings.ai.currentModel')}<span className="font-mono">{ai.config.model}</span> · key ····{ai.config.key_last4}
               <button className="ml-3 text-[12px] text-ink-soft hover:text-danger" onClick={removeAi}>{t('settings.ai.deleteKey')}</button>
@@ -266,21 +270,37 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
               <div className="mt-1.5 text-[11px] text-ink-faint">{t('settings.stats.disclaimer')}</div>
             </div>
           )}
-        </section>
+          </section>
 
-        <section className="mb-10">
-          <h2 className="text-[15px] font-semibold mb-1">{t('settings.templates.title')}</h2>
-          <p className="text-[12.5px] text-ink-soft mb-4 leading-relaxed">{t('settings.templates.intro1')}<b>{t('settings.templates.bold')}</b>{t('settings.templates.intro2')}</p>
-          {applied ? <AppliedResult r={applied} onClose={() => { setApplied(null); api.usage().then(setUsage).catch(() => {}); }} /> : <TemplatePicker compact onApplied={r => { setApplied(r); api.usage().then(setUsage).catch(() => {}); }} />}
-        </section>
+          <section id="data" className="rounded-[12px] border border-line bg-paper p-5 sb:p-6 scroll-mt-6 [&>section]:mb-0" data-testid="data-settings">
+            <h2 className="text-[15px] font-semibold mb-1">{t('settings.data.title')}</h2>
+            <p className="text-[12.5px] text-ink-soft mb-4 leading-relaxed">{t('settings.data.intro')}</p>
+            <div className="mb-6">
+              <a className={btnGhost} href={api.exportUrl} download data-testid="export-link">{t('settings.usage.export')}</a>
+          <span className="ml-2 text-[12px] text-ink-faint">{t('settings.usage.exportHint')}</span>
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            <a className={btnGhost} href={api.exportBibtexUrl} download data-testid="export-bibtex">{t('settings.usage.exportBib')}</a>
+            <a className={btnGhost} href={api.exportCslUrl} download data-testid="export-csl">{t('settings.usage.exportCsl')}</a>
+            <span className="text-[12px] text-ink-faint">{t('settings.usage.exportBibHint')}</span>
+          </div>
+            </div>
+            <ZoteroSettings />
+          </section>
 
-      </main>
-      {connect && <ConnectCursorModal mcpUrl={me.mcpUrl} onClose={() => { setConnect(false); reload(); }} />}
-        <section className="mb-4 mt-12 rounded-[10px] border border-danger-line bg-danger-mist p-5" data-testid="danger-zone">
-          <h2 className="text-[15px] font-semibold mb-1 text-danger">{t('settings.danger.title')}</h2>
-          <p className="text-[12.5px] text-ink-soft mb-3 leading-relaxed">{t('settings.danger.body')}</p>
+          <section id="templates" className="rounded-[12px] border border-line bg-paper p-5 sb:p-6 scroll-mt-6" data-testid="template-settings">
+            <h2 className="text-[15px] font-semibold mb-1">{t('settings.templates.title')}</h2>
+            <p className="text-[12.5px] text-ink-soft mb-4 leading-relaxed">{t('settings.templates.intro1')}<b>{t('settings.templates.bold')}</b>{t('settings.templates.intro2')}</p>
+            {applied ? <AppliedResult r={applied} onClose={() => { setApplied(null); api.usage().then(setUsage).catch(() => {}); }} /> : <TemplatePicker compact onApplied={r => { setApplied(r); api.usage().then(setUsage).catch(() => {}); }} />}
+          </section>
+
+          <section id="danger" className="rounded-[12px] border border-danger-line bg-danger-mist p-5 sb:p-6 scroll-mt-6" data-testid="danger-zone">
+            <h2 className="text-[15px] font-semibold mb-1 text-danger">{t('settings.danger.title')}</h2>
+            <p className="text-[12.5px] text-ink-soft mb-3 leading-relaxed">{t('settings.danger.body')}</p>
           <button className={`${btnGhost} hover:border-danger hover:text-danger`} onClick={deleteAccount} data-testid="delete-account">{t('settings.danger.button')}</button>
-        </section>
+          </section>
+        </main>
+      </div>
+      {connect && <ConnectCursorModal mcpUrl={me.mcpUrl} onClose={() => { setConnect(false); reload(); }} />}
     </PageShell>
   );
 }

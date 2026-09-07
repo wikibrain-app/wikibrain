@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import { useState, type JSX, type ReactNode } from 'react';
 import { useT, type Lang } from '../../i18n';
 
 // Small pieces shared by both language versions of the help page: section type, screenshot component, shell strings.
@@ -13,12 +13,31 @@ export const frame: Record<Lang, { title: string; login: string; nav: string; on
 
 // Screenshots are captured per interface language (web/public/help/<lang>/), so the English page shows the English UI.
 export const helpAsset = (lang: Lang, file: string) => `/help/${lang}/${file}`;
-export function Shot({ src, alt, caption }: { src: string; alt: string; caption: string }) {
+export function Shot({ src, alt, caption, shared }: { src: string; alt: string; caption: string; shared?: boolean }) {
   const { lang } = useT();
+  const [missing, setMissing] = useState(false);
+  if (missing) return null;
   return (
-    <figure className="my-4 font-sans">
-      <img src={helpAsset(lang, src)} alt={alt} loading="lazy" className="w-full rounded-[10px] border border-line shadow-sm" />
+    <figure className="my-4 min-w-0 font-sans">
+      <img src={shared ? `/help/shared/${src}` : helpAsset(lang, src)} alt={alt} loading="lazy" onError={() => setMissing(true)} className="w-full rounded-[10px] border border-line shadow-sm" />
       <figcaption className="mt-1.5 text-[12px] text-ink-soft">{caption}</figcaption>
     </figure>
+  );
+}
+// Two screenshots side by side on wide screens (stacked on phones)
+export function Gallery({ children }: { children: ReactNode }) {
+  return <div className="not-prose grid gap-4 sm:grid-cols-2">{children}</div>;
+}
+// Collapsible FAQ (details/summary), styled in styles.css .help-faq
+export function Faq({ items }: { items: { q: string; a: string; href?: string; label?: string }[] }) {
+  return (
+    <div className="help-faq not-prose my-4" data-testid="help-faq">
+      {items.map(f => (
+        <details key={f.q}>
+          <summary>{f.q}</summary>
+          <div>{f.href && f.label ? <>{f.a.split(f.label)[0]}<a className="text-celadon-deep underline" href={f.href}>{f.label}</a>{f.a.split(f.label).slice(1).join(f.label)}</> : f.a}</div>
+        </details>
+      ))}
+    </div>
   );
 }
