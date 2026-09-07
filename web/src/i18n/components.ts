@@ -348,6 +348,7 @@ const components: { 'zh-TW': Record<string, string>; en: Record<string, string> 
     'tpl.created2': ' 頁',
     'tpl.skipped': '，跳過已存在的 {n} 頁',
     'tpl.period': '。',
+    'tpl.appliedHint': '規則與起始頁已就位。接下來把來源丟進 raw/，按「自動編纂（Ingest）」或在 Cursor 裡叫 agent 處理，它會自己讀規則。',
     'tpl.howTo': '用 Cursor（方式一）的話，把這段貼給它的 agent 就會照模版規則開始編纂；用 API key 自動編纂（方式二）的話不用貼，agent 會自己讀規則：',
 
     // Topbar
@@ -720,6 +721,7 @@ const components: { 'zh-TW': Record<string, string>; en: Record<string, string> 
     'tpl.created2': ' pages',
     'tpl.skipped': ', skipped {n} that already existed',
     'tpl.period': '.',
+    'tpl.appliedHint': 'Rules and starter pages are in place. Next, drop a source into raw/ and press Auto-ingest, or ask the agent in Cursor; it reads the rules by itself.',
     'tpl.howTo': 'With Cursor (option 1), paste this to its agent and it will start editing by the template’s rules. With API-key auto-ingest (option 2) there is nothing to paste — the agent reads the rules itself:',
 
     // Topbar

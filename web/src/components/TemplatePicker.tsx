@@ -96,18 +96,21 @@ export function TemplatePicker({ onApplied, compact, minimal }: { onApplied: (r:
   );
 }
 
-export function AppliedResult({ r, onClose }: { r: { created: string[]; skipped: string[]; prompt: string }; onClose: () => void }) {
+// showPrompt=false (onboarding): hide the Cursor kickoff prompt so new users are not confused; the settings page keeps it.
+export function AppliedResult({ r, onClose, showPrompt = true }: { r: { created: string[]; skipped: string[]; prompt: string }; onClose: () => void; showPrompt?: boolean }) {
   const { toast } = useToast();
   const { t } = useT();
   const copy = () => navigator.clipboard.writeText(r.prompt).then(() => toast(t('tpl.promptCopied'))).catch(() => toast(t('common.clipboardFail'), { kind: 'error' }));
   return (
     <div data-testid="template-applied">
       <p className="text-[13px] leading-relaxed">{t('tpl.created1')}<b>{r.created.length}</b>{t('tpl.created2')}{r.skipped.length > 0 && t('tpl.skipped', { n: r.skipped.length })}{t('tpl.period')}</p>
+      {showPrompt ? (<>
       <p className="mt-3 text-[12px] text-ink-soft">{t('tpl.howTo')}</p>
       <div className="relative mt-1.5 rounded-[10px] bg-[#26332E] p-3.5 pr-16 font-serif text-[13px] leading-relaxed text-[#DDEAE4]">
         <button className="absolute right-2.5 top-2.5 rounded-md bg-white/10 px-2.5 py-1 text-[11px] font-sans hover:bg-white/20" onClick={copy}>{t('common.copy')}</button>
         {r.prompt}
       </div>
+      </>) : <p className="mt-3 text-[12px] leading-relaxed text-ink-soft">{t('tpl.appliedHint')}</p>}
       <div className="mt-4 flex justify-end"><button className={btnGhost} onClick={onClose}>{t('ui.done')}</button></div>
     </div>
   );

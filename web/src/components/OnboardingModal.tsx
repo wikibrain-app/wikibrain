@@ -9,7 +9,7 @@ export function OnboardingModal({ onDone, onSkip }: { onDone: () => void; onSkip
   const { t } = useT();
   return (
     <Modal title={t('onboarding.title')} sub={t('onboarding.sub')} onClose={result ? onDone : onSkip} wide>
-      {result ? <AppliedResult r={result} onClose={onDone} /> : (
+      {result ? <AppliedResult r={result} onClose={onDone} showPrompt={false} /> : (
         <>
           <TemplatePicker minimal onApplied={r => setResult(r)} />
           <div className="mt-4 text-right"><button className={`${btnGhost} border-transparent`} onClick={onSkip}>{t('onboarding.skip')}</button></div>
