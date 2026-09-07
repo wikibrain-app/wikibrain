@@ -33,7 +33,7 @@ export default function Lint({ me }: { me: Me }) {
   );
   const r = data?.report;
   return (
-    <PageShell title={t('lint.title')} right={<span className="hidden sb:inline text-[12px] text-ink-soft">{me.user.email}</span>}>
+    <PageShell title={t('lint.title')} right={<span className="hidden sb:inline text-[12px] text-ink-soft">{me.user.name || me.user.email}</span>}>
       <main data-testid="lint-page">
         <h1 className="font-serif text-[26px] font-bold mb-1">{t('lint.heading')}</h1>
         <p className="text-[13px] text-ink-soft mb-5 leading-relaxed">{t('lint.intro')}</p>

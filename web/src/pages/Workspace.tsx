@@ -187,7 +187,7 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
   return (
     <BibProvider value={bib}>
     <div className="mx-auto flex h-full max-w-[1280px] flex-col bg-paper shadow-[0_0_0_1px_var(--color-line)]">
-      <Topbar email={me.user.email} view={view} onView={setView} onSearch={doSearch} onNew={() => setAdd({ tab: 'write', layer: layerOf(path ?? 'wiki/x') || 'wiki' })}
+      <Topbar email={me.user.email} name={me.user.name} view={view} onView={setView} onSearch={doSearch} onNew={() => setAdd({ tab: 'write', layer: layerOf(path ?? 'wiki/x') || 'wiki' })}
         onSignOut={signOut} onToggleSidebar={() => setSidebarOpen(o => !o)} onToggleRail={() => setRailOpen(o => !o)} onChat={() => setChatOpen(o => !o)} chatOpen={chatOpen} />
       <div className="relative flex min-h-0 flex-1">
         {sidebarOpen && <button className="fixed inset-0 z-20 bg-ink/30 sb:hidden" aria-label={t('workspace.closeSidebar')} onClick={() => setSidebarOpen(false)} />}

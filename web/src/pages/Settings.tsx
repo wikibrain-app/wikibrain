@@ -86,7 +86,7 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
       <main>
         <Link to="/" className="text-[12px] text-celadon-deep">{t('settings.backToKb')}</Link>
         <h1 className="font-serif text-[26px] font-bold mt-2 mb-1">{t('settings.title')}</h1>
-        <p className="text-[13px] text-ink-soft mb-8">{t('settings.account', { email: me.user.email, workspace: me.workspace.name })}</p>
+        <p className="text-[13px] text-ink-soft mb-8">{t('settings.account', { name: me.user.name || me.user.email, email: me.user.email, workspace: me.workspace.name })}</p>
 
         <section className="mb-10" data-testid="lang-settings">
           <h2 className="text-[15px] font-semibold mb-1">{t('lang.label')}</h2>

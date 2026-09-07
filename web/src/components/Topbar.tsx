@@ -5,6 +5,7 @@ import { useT } from '../i18n';
 
 interface Props {
   email: string;
+  name?: string;
   view: 'note' | 'graph' | 'table';
   onView: (v: 'note' | 'graph' | 'table') => void;
   onSearch: (q: string) => void;
@@ -43,7 +44,7 @@ export function Topbar(p: Props) {
           <button className={`${btnGhost} px-2.5`} aria-label={t('topbar.account')} aria-expanded={menu} onClick={() => setMenu(m => !m)}>⚙</button>
           {menu && (
             <div className="absolute right-0 mt-1 w-48 rounded-lg border border-line bg-paper py-1 shadow-lg z-30" onMouseLeave={() => setMenu(false)}>
-              <div className="px-3 py-1.5 text-[11px] text-ink-faint truncate">{p.email}</div>
+              <div className="px-3 py-1.5 text-[11px] text-ink-faint">{p.name && <div className="truncate text-[12.5px] font-semibold text-ink">{p.name}</div>}<div className="truncate">{p.email}</div></div>
               <Link to="/settings" className="block px-3 py-2 text-[13px] hover:bg-celadon-mist">{t('topbar.settings')}</Link>
               <Link to="/stats" className="block px-3 py-2 text-[13px] hover:bg-celadon-mist">{t('topbar.stats')}</Link>
               <Link to="/help" className="block px-3 py-2 text-[13px] hover:bg-celadon-mist">{t('topbar.help')}</Link>

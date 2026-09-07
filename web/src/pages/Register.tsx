@@ -18,7 +18,7 @@ export default function Register() {
     e.preventDefault();
     setBusy(true);
     try {
-      await api.signUp(email, password, name || email.split('@')[0]);
+      await api.signUp(email, password, name.trim());
       setSent(true);
     } catch (err) {
       const e = err as ApiError;
@@ -40,7 +40,7 @@ export default function Register() {
       <h1 className="font-serif text-[22px] font-bold mb-1">{t('register.title')}</h1>
       <p className="text-[13px] text-ink-soft mb-5">{t('register.tagline')}</p>
       <form onSubmit={submit}>
-        <Field label={t('register.name')} htmlFor="name"><input id="name" className={input} autoComplete="name" value={name} onChange={e => setName(e.target.value)} /></Field>
+        <Field label={t('register.name')} htmlFor="name"><input id="name" className={input} autoComplete="username" required minLength={2} maxLength={40} value={name} onChange={e => setName(e.target.value)} /></Field>
         <Field label="Email" htmlFor="email"><input id="email" className={input} type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} /></Field>
         <Field label={t('register.password')} htmlFor="password"><input id="password" className={input} type="password" required minLength={8} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} /></Field>
         <button className={`${btnPrimary} w-full mt-1`} disabled={busy}>{busy ? t('register.submitting') : t('register.submit')}</button>

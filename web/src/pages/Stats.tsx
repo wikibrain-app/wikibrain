@@ -15,7 +15,7 @@ export default function Stats({ me }: { me: Me }) {
   const md = (day: string) => `${Number(day.slice(5, 7))}/${Number(day.slice(8, 10))}`;
   const typeName: Record<string, string> = { web: t('stats.type.web'), paper: t('stats.type.paper'), pdf: 'PDF', docx: 'Word', text: t('stats.type.text'), markdown: 'Markdown', note: t('stats.type.note'), meeting: t('stats.type.meeting'), query: t('stats.type.query'), untyped: t('stats.type.untyped') };
   return (
-    <PageShell title={t('stats.title')} wide right={<span className="hidden sb:inline text-[12px] text-ink-soft">{me.user.email}</span>}>
+    <PageShell title={t('stats.title')} wide right={<span className="hidden sb:inline text-[12px] text-ink-soft">{me.user.name || me.user.email}</span>}>
       <main data-testid="stats-page">
         <h1 className="font-serif text-[26px] font-bold mb-1">{t('stats.title')}</h1>
         <p className="text-[13px] text-ink-soft mb-5">{t('stats.intro')}</p>
