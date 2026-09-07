@@ -4,6 +4,21 @@
 
 > Open-source core (AGPL-3.0). A hosted version with billing, backups and mobile apps is run by the maintainer; self-hosting is fully supported with `docker compose`.
 
+## The idea: Karpathy's LLM Wiki
+
+This project is a direct implementation of the pattern Andrej Karpathy described in his note [**LLM Wiki**](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) (2026). In his words, the LLM "incrementally builds and maintains a persistent wiki" that sits between you and your raw sources, rather than re-reading the sources on every question as RAG does — so knowledge is compiled once and compounds.
+
+WikiBrain keeps his design as-is and only adds hosting and plumbing:
+
+| Karpathy's note | In WikiBrain |
+|---|---|
+| Three layers: `raw/` sources, `wiki/` compiled pages, a schema the LLM reads first | The same three folders; `schema/` is served to agents through the `get_instructions` tool |
+| `index.md` as the catalog, `log.md` as the append-only journal | Created by every template; the agent updates both on each ingest |
+| Three operations: Ingest, Query, Lint | The same three, runnable from Cursor / Claude via MCP or from the web with your own API key |
+| Obsidian + Claude Code on one machine | Hosted, multi-client (MCP with tokens or OAuth 2.1), versioned, with import, bibliography and Zotero on top |
+
+The [help page](https://wikibrain.app/help/karpathy) carries a longer summary of the note; the gist itself is the canonical reference.
+
 ## What it does
 
 - **Three layers.** `raw/` holds immutable sources, `wiki/` holds AI-compiled pages, `schema/` holds the compilation rules the agent reads before writing. `index.md` and `log.md` follow Karpathy's conventions.
