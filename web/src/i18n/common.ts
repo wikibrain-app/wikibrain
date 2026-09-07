@@ -20,6 +20,11 @@ const common = {
     'lang.label': '介面語言',
     'lang.hint': '只影響介面、模版預設與 agent 的輸出語言；知識庫內容想用什麼語言寫都可以。',
     'lang.saved': '已切換語言',
+    'theme.label': '外觀',
+    'theme.hint': '只影響這個裝置上的顯示。',
+    'theme.system': '跟隨系統',
+    'theme.light': '淺色',
+    'theme.dark': '深色',
   },
   en: {
     'app.loading': 'Loading…',
@@ -41,6 +46,11 @@ const common = {
     'lang.label': 'Interface language',
     'lang.hint': 'Affects only the interface, template defaults and the agent’s output language; write your knowledge base in any language.',
     'lang.saved': 'Language switched',
+    'theme.label': 'Appearance',
+    'theme.hint': 'Applies to this device only.',
+    'theme.system': 'System',
+    'theme.light': 'Light',
+    'theme.dark': 'Dark',
   },
 } as const;
 export default common;

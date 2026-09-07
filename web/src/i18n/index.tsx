@@ -19,6 +19,10 @@ const dicts: Record<Lang, Dict> = {
 };
 
 export function detectLang(): Lang {
+  try {
+    const q = new URLSearchParams(location.search).get('lang');
+    if (q === 'zh-TW' || q === 'en') { rememberLang(q); return q; }
+  } catch { /* ignore */ }
   try { const v = localStorage.getItem(KEY); if (v === 'zh-TW' || v === 'en') return v; } catch { /* ignore */ }
   const nav = typeof navigator !== 'undefined' ? navigator.language : 'zh-TW';
   return /^zh/i.test(nav) ? 'zh-TW' : 'en';

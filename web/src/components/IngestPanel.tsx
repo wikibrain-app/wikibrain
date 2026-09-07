@@ -30,7 +30,7 @@ export function IngestPanel({ jobId, onDone, onClose }: { jobId: number; onDone:
         {job && <span className="text-ink-soft">{t('ingest.meta', { provider: job.provider, model: job.model, steps: job.steps, in: fmtTok(job.tokens_in), out: fmtTok(job.tokens_out), usd: fmtUsd(job.cost_usd) })}{job.cost_usd === null && job.tokens_in + job.tokens_out > 0 ? t('ingest.priceUnknown') : ''}</span>}
         <button className={`${btnGhost} ml-auto`} onClick={onClose}>{job?.status === 'running' || !job ? t('ingest.background') : t('common.close')}</button>
       </div>
-      {job?.error && <div className="mt-2 text-[#8A3B2E]">{job.error}</div>}
+      {job?.error && <div className="mt-2 text-danger">{job.error}</div>}
       <ol className="mt-2 max-h-56 space-y-1 overflow-y-auto font-mono text-[11.5px] text-ink-soft">
         {job?.log.filter(e => e.type !== 'usage' && e.type !== 'result').map((e, i) => (
           <li key={i} className={e.type === 'text' ? 'font-sans text-ink whitespace-pre-wrap' : ''}>

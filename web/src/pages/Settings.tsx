@@ -7,11 +7,14 @@ import { useToast } from '../lib/toast';
 import { LANGS, translate, useLang, useT, type Lang } from '../i18n';
 import { Field, btnGhost, btnPrimary, input } from '../components/ui';
 import { PageShell } from '../components/PageShell';
+import { THEMES, getTheme, setTheme, type Theme } from '../theme';
 import { AppliedResult, TemplatePicker } from '../components/TemplatePicker';
 import { ConnectCursorModal } from '../components/ConnectCursorModal';
 
 export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
   const [tokens, setTokens] = useState<TokenInfo[]>([]);
+  const [theme, setThemeState] = useState<Theme>(() => getTheme());
+  const changeTheme = (th: Theme) => { setTheme(th); setThemeState(th); };
   const [label, setLabel] = useState('cursor');
   const [fresh, setFresh] = useState<{ id: number; token: string } | null>(null);
   const [ai, setAi] = useState<{ config: AiConfig | null; providers: AiProvider[] } | null>(null);
@@ -96,6 +99,17 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
           </select>
         </section>
 
+        <section className="mb-10" data-testid="theme-settings">
+          <h2 className="text-[15px] font-semibold mb-1">{t('theme.label')}</h2>
+          <p className="text-[12.5px] text-ink-soft mb-3 leading-relaxed">{t('theme.hint')}</p>
+          <div className="inline-flex overflow-hidden rounded-lg border border-line" role="radiogroup" aria-label={t('theme.label')}>
+            {THEMES.map(th => (
+              <button key={th} type="button" role="radio" aria-checked={theme === th} data-testid={`theme-${th}`} onClick={() => changeTheme(th)}
+                className={`px-3.5 py-[7px] text-[12.5px] sb:text-[13px] ${theme === th ? 'bg-celadon-mist font-semibold text-celadon-deep' : 'text-ink-soft hover:bg-porcelain'}`}>{t(`theme.${th}`)}</button>
+            ))}
+          </div>
+        </section>
+
         <PlanCard />
         <section className="mb-10" data-testid="usage">
           <h2 className="text-[15px] font-semibold mb-1">{t('settings.usage.title')}</h2>
@@ -150,7 +164,7 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
                 <button className={btnGhost} onClick={() => copy(fresh.token)}>{t('common.copy')}</button>
               </div>
               <div className="mt-3 text-[12px] text-ink-soft">{t('settings.tokens.mcpJson')}</div>
-              <pre className="mt-1 overflow-x-auto rounded-[10px] bg-[#26332E] p-3.5 font-mono text-[12px] leading-relaxed text-[#DDEAE4]">{mcpJson(me.mcpUrl, fresh.token)}</pre>
+              <pre className="mt-1 overflow-x-auto rounded-[10px] bg-code text-code-fg p-3.5 font-mono text-[12px] leading-relaxed">{mcpJson(me.mcpUrl, fresh.token)}</pre>
               <button className={`${btnGhost} mt-2`} onClick={() => copy(mcpJson(me.mcpUrl, fresh.token))}>{t('settings.tokens.copyJson')}</button>
             </div>
           )}
@@ -163,7 +177,7 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
                   <td className="text-ink-soft">{formatTime(t.created_at)}</td>
                   <td className="text-ink-soft">{t.last_used_at ? formatTime(t.last_used_at) : tt('settings.tokens.unused')}</td>
                   <td>{t.revoked_at ? <span className="text-ink-faint">{tt('settings.tokens.revoked')}</span> : t.expires_at && new Date(t.expires_at) < new Date() ? <span className="text-ink-faint">{tt('settings.tokens.expired')}</span> : <span className="text-celadon-deep">{tt('settings.tokens.active')}</span>}</td>
-                  <td className="text-right">{!t.revoked_at && <button className="text-[12px] text-ink-soft hover:text-[#8A3B2E]" onClick={() => revoke(t.id)}>{tt('settings.tokens.revoke')}</button>}</td>
+                  <td className="text-right">{!t.revoked_at && <button className="text-[12px] text-ink-soft hover:text-danger" onClick={() => revoke(t.id)}>{tt('settings.tokens.revoke')}</button>}</td>
                 </tr>
               ))}
               {tokens.length === 0 && <tr><td colSpan={5} className="py-4 text-ink-faint text-[12.5px]">{t('settings.tokens.empty')}</td></tr>}
@@ -178,7 +192,7 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
           {ai?.config && (
             <div className="mb-3 rounded-[10px] border border-line bg-porcelain px-4 py-2.5 text-[12.5px]">
               {t('settings.ai.current')}<b>{ai.providers.find(p => p.id === ai.config!.provider)?.label ?? ai.config.provider}</b>{t('settings.ai.currentModel')}<span className="font-mono">{ai.config.model}</span> · key ····{ai.config.key_last4}
-              <button className="ml-3 text-[12px] text-ink-soft hover:text-[#8A3B2E]" onClick={removeAi}>{t('settings.ai.deleteKey')}</button>
+              <button className="ml-3 text-[12px] text-ink-soft hover:text-danger" onClick={removeAi}>{t('settings.ai.deleteKey')}</button>
             </div>
           )}
           <form onSubmit={saveAi} className="max-w-[720px]">
@@ -204,7 +218,7 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
               </div>
             </div>
           </form>
-          {modelsMsg && <div className={`mt-1 text-[12px] ${modelsState === 'error' ? 'text-[#8A3B2E]' : 'text-ink-soft'}`} data-testid="ai-models-msg">{modelsMsg}</div>}
+          {modelsMsg && <div className={`mt-1 text-[12px] ${modelsState === 'error' ? 'text-danger' : 'text-ink-soft'}`} data-testid="ai-models-msg">{modelsMsg}</div>}
           {stats && (stats.allTime.jobs > 0) && (
             <div className="mt-5" data-testid="ingest-stats">
               <div className="text-[13px] font-semibold mb-2">{t('settings.stats.title')}</div>
@@ -242,7 +256,7 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
                       <td className="py-1.5 text-ink-soft">{formatTime(j.created_at)}</td>
                       <td className="font-mono text-[11.5px]">{j.model}</td>
                       <td className="font-mono text-[11.5px]">{t('settings.stats.sources', { n: j.paths.length })}</td>
-                      <td>{j.status === 'done' ? <span className="text-celadon-deep">{t('settings.stats.done')}</span> : j.status === 'failed' ? <span className="text-[#8A3B2E]" title={j.error ?? ''}>{t('settings.stats.failed')}</span> : t('settings.stats.running')}</td>
+                      <td>{j.status === 'done' ? <span className="text-celadon-deep">{t('settings.stats.done')}</span> : j.status === 'failed' ? <span className="text-danger" title={j.error ?? ''}>{t('settings.stats.failed')}</span> : t('settings.stats.running')}</td>
                       <td className="text-ink-soft">{t('settings.stats.steps', { n: j.steps })} · {fmtTok(j.tokens_in)} / {fmtTok(j.tokens_out)}</td>
                       <td className="text-right">{fmtUsd(j.cost_usd)}</td>
                     </tr>
@@ -262,10 +276,10 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
 
       </main>
       {connect && <ConnectCursorModal mcpUrl={me.mcpUrl} onClose={() => { setConnect(false); reload(); }} />}
-        <section className="mb-4 mt-12 rounded-[10px] border border-[#E4C9C3] bg-[#FBF3F1] p-5" data-testid="danger-zone">
-          <h2 className="text-[15px] font-semibold mb-1 text-[#8A3B2E]">{t('settings.danger.title')}</h2>
+        <section className="mb-4 mt-12 rounded-[10px] border border-danger-line bg-danger-mist p-5" data-testid="danger-zone">
+          <h2 className="text-[15px] font-semibold mb-1 text-danger">{t('settings.danger.title')}</h2>
           <p className="text-[12.5px] text-ink-soft mb-3 leading-relaxed">{t('settings.danger.body')}</p>
-          <button className={`${btnGhost} hover:border-[#8A3B2E] hover:text-[#8A3B2E]`} onClick={deleteAccount} data-testid="delete-account">{t('settings.danger.button')}</button>
+          <button className={`${btnGhost} hover:border-danger hover:text-danger`} onClick={deleteAccount} data-testid="delete-account">{t('settings.danger.button')}</button>
         </section>
     </PageShell>
   );

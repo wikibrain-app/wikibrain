@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { useT, type Lang } from '../i18n';
 import { Brand, btnGhost, btnPrimary } from '../components/ui';
+import { LangSwitch } from '../components/LangSwitch';
 import { Version } from '../components/Version';
 import { CONTACT_EMAIL, SOURCE_URL } from '../components/Footer';
 
@@ -35,7 +36,7 @@ const copy: Record<Lang, {
       { title: 'Cursor 與 Claude 的重度用戶', body: '跨專案、跨對話的持久記憶，而且是一座你打得開、隨時能匯出的 Markdown 庫。' },
     ],
     plansTitle: '方案', plans: [
-      { name: 'Pro 體驗', price: '14 天免費', body: '不用信用卡。全部功能，agent 工作不限；前 5 次連 API key 都不用。' },
+      { name: 'Pro 體驗', price: '14 天免費', body: '不用信用卡。全部功能，agent 工作不限；前 10 次連 API key 都不用。' },
       { name: 'Free', price: '永久免費', body: '200 則筆記、每月 20 次 agent 工作、自帶 API key。' },
       { name: 'Pro', price: 'US$6／月 或 60／年', body: '10,000 則、1 GB、agent 工作不限、多把 token、90 天版本歷史。' },
     ],
@@ -64,7 +65,7 @@ const copy: Record<Lang, {
       { title: 'Heavy Cursor and Claude users', body: 'Persistent memory across projects and conversations, in a Markdown base you can open and export any time.' },
     ],
     plansTitle: 'Plans', plans: [
-      { name: 'Pro trial', price: '14 days free', body: 'No card. Everything, unlimited agent runs; the first 5 runs need no API key at all.' },
+      { name: 'Pro trial', price: '14 days free', body: 'No card. Everything, unlimited agent runs; the first 10 runs need no API key at all.' },
       { name: 'Free', price: 'Free forever', body: '200 notes, 20 agent runs a month, bring your own API key.' },
       { name: 'Pro', price: 'US$6 / month or 60 / year', body: '10,000 notes, 1 GB, unlimited agent runs, multiple tokens, 90-day version history.' },
     ],
@@ -82,6 +83,7 @@ export default function Landing() {
       <header className="mx-auto flex max-w-[1080px] items-center gap-3 px-5 py-4 sb:px-8">
         <Brand tag />
         <span className="ml-auto flex items-center gap-2">
+          <LangSwitch />
           <Link to="/help" className={btnGhost}>{c.help}</Link>
           <Link to="/login" className={btnGhost} data-testid="landing-login">{c.login}</Link>
         </span>

@@ -1,5 +1,6 @@
 import { Link, Navigate, useParams } from 'react-router';
 import { PageShell } from '../components/PageShell';
+import { LangSwitch } from '../components/LangSwitch';
 import { useT } from '../i18n';
 import { frame } from './help/common';
 import * as zhTW from './help/zh-TW';
@@ -17,7 +18,7 @@ export default function Help({ signedIn }: { signedIn: boolean }) {
   const page = pages[idx], prev = pages[idx - 1], next = pages[idx + 1];
   const href = (i: number) => (i === 0 ? '/help' : `/help/${pages[i].slug}`);
   return (
-    <PageShell title={f.title} right={!signedIn ? <Link to="/login" className="text-[12px] text-celadon-deep hover:underline">{f.login}</Link> : undefined}>
+    <PageShell title={f.title} right={!signedIn ? <><LangSwitch /><Link to="/login" className="text-[12px] text-celadon-deep hover:underline">{f.login}</Link></> : undefined}>
       <div className="grid gap-8 sb:grid-cols-[220px_minmax(0,1fr)]">
         <nav className="sb:sticky sb:top-6 self-start font-sans text-[13px]" aria-label={f.nav}>
           <div className="mb-2 text-[11px] uppercase tracking-[.08em] text-ink-faint">{f.allPages}</div>

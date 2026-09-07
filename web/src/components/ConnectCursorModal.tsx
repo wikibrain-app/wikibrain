@@ -27,7 +27,7 @@ export function ConnectCursorModal({ mcpUrl, onClose }: { mcpUrl: string; onClos
   return (
     <Modal title={t('connect.title')} sub={t('connect.sub')} onClose={onClose}>
       <Step n={1}>{token ? <>{t('connect.step1a')}<b>.cursor/mcp.json</b>{t('connect.step1b')}</> : t('connect.step1Gen')}</Step>
-      <div className="relative mb-1 mt-1.5 overflow-x-auto rounded-[10px] bg-[#26332E] p-4 font-mono text-[12px] leading-relaxed text-[#DDEAE4]">
+      <div className="relative mb-1 mt-1.5 overflow-x-auto rounded-[10px] bg-code text-code-fg p-4 font-mono text-[12px] leading-relaxed">
         {token
           ? <button className="absolute right-2.5 top-2.5 rounded-md bg-white/10 px-2.5 py-1 text-[11px] hover:bg-white/20" onClick={copy}>{t('common.copy')}</button>
           : <button className="absolute right-2.5 top-2.5 rounded-md bg-celadon px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-celadon-deep" onClick={generate} disabled={busy}>{busy ? t('connect.generating') : t('connect.generate')}</button>}

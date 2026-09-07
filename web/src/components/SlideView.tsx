@@ -37,7 +37,7 @@ export function SlideView({ source, onBack }: { source: string; onBack: () => vo
         </span>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto bg-porcelain">
-        {state === 'error' && <div className="p-6 text-[13px] text-[#8A3B2E]">{t('slides.error', { err: msg })}</div>}
+        {state === 'error' && <div className="p-6 text-[13px] text-danger">{t('slides.error', { err: msg })}</div>}
         <div ref={host} className="mx-auto max-w-[1000px] px-4" />
       </div>
     </div>

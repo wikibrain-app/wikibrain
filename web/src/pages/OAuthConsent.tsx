@@ -27,7 +27,7 @@ export default function OAuthConsent({ me }: { me: Me }) {
     <PageShell title={t('oauth.title')}>
       <div className="mx-auto max-w-[520px] rounded-[14px] border border-line bg-paper p-8" data-testid="oauth-consent">
         <h1 className="font-serif text-[22px] font-bold mb-2">{t('oauth.title')}</h1>
-        {error && <p className="text-[13.5px] text-[#8A3B2E]" data-testid="oauth-error">{error}</p>}
+        {error && <p className="text-[13.5px] text-danger" data-testid="oauth-error">{error}</p>}
         {!error && !info && <p className="text-[13px] text-ink-soft">{t('app.loading')}</p>}
         {info && (
           <>
@@ -36,7 +36,7 @@ export default function OAuthConsent({ me }: { me: Me }) {
               {info.scopes.map(s => <li key={s}>{t(`oauth.scope.${s}`)}</li>)}
             </ul>
             <p className="mb-2 text-[14px]" data-testid="oauth-redirect-host">{t('oauth.redirectTo', { host: '' })}<b className="font-mono">{host}</b></p>
-            {warn && <p className="mb-3 rounded-lg border border-[#B07D2B] bg-[#FBF4E6] px-3 py-2 text-[12.5px] text-[#7A5416]" data-testid="oauth-warning">{t('oauth.warnMismatch')}</p>}
+            {warn && <p className="mb-3 rounded-lg border border-amber bg-amber-mist px-3 py-2 text-[12.5px] text-amber" data-testid="oauth-warning">{t('oauth.warnMismatch')}</p>}
             <p className="mb-6 text-[12px] text-ink-faint">{t('oauth.onlyIfStarted')}{info.client_uri ? ` · ${info.client_uri}` : ''} · {t('oauth.account', { email: me.user.email })}</p>
             <div className="flex gap-2">
               <button className={btnPrimary} onClick={() => go(true)} disabled={busy} data-testid="oauth-approve">{t('oauth.approve')}</button>

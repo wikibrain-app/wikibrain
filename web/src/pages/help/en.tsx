@@ -78,7 +78,7 @@ export const faq: { q: string; a: string; href?: string; label?: string }[] = [
   { q: "Which language does the agent write in?", a: "It follows the workspace language (changeable in Settings); schema rules can override it, e.g. \"summaries in English, my comments in Chinese\". Content can be in any language." },
   { q: "Will Cursor and the web fight?", a: "No. When the same page is edited from both sides, the later writer receives the current version and is asked to edit again; the agent knows this rule too." },
   { q: "The agent got it wrong?", a: "See Rules and templates: fix or roll back the page, correct it in chat, or write the rule into schema/.", href: "/help/guide#rules", label: "Rules and templates" },
-  { q: "No Cursor and no API key?", a: "The first 5 trial runs are on us; afterwards create an OpenRouter key (a few minutes) or connect through Claude.ai's or ChatGPT's connectors." },
+  { q: "No Cursor and no API key?", a: "The first 10 trial runs are on us; afterwards create an OpenRouter key (a few minutes) or connect through Claude.ai's or ChatGPT's connectors." },
 ];
 
 export const pages: HelpPage[] = [
@@ -101,7 +101,7 @@ function PageStart() {
       <ol>
         <li>After signing up, pick a template (choose General if unsure). It creates the schema/ rules, wiki/index.md and wiki/log.md.</li>
         <li>Press ＋ Add in the top bar → Paste URL and paste a link, or Upload file and drop a PDF. It lands in raw/ and the page shows the banner "This source has not been filed into the wiki yet (pending Ingest)".</li>
-        <li>Press Auto-ingest this source in the banner. The first 5 runs of the trial need no key at all.</li>
+        <li>Press Auto-ingest this source in the banner. The first 10 runs of the trial need no key at all.</li>
         <li>Wait for the progress panel (usually 30 to 90 seconds). The left pane gains a summary page under wiki/, and index.md and log.md are updated. Read it and check the key points.</li>
         <li>Press Chat in the top bar and ask something, e.g. "what is the main argument of this paper?". The answer cites page paths.</li>
         <li>After the fifth run, decide who ingests: see "Who ingests" below.</li>
@@ -119,7 +119,7 @@ function PageStart() {
           </tbody>
         </table>
       </div>
-      <p>Neither? The first 5 trial runs are on us (a cheaper model); decide afterwards. No API key yet? Sign up at OpenRouter, create a key, paste it into Settings.</p>
+      <p>Neither? The first 10 trial runs are on us (a cheaper model); decide afterwards. No API key yet? Sign up at OpenRouter, create a key, paste it into Settings.</p>
       <p><b>Way 1 in practice.</b> On a source page press Copy prompt for Cursor and paste it into a Cursor chat; the agent reads the rules, searches, creates pages and updates the index and log through MCP. The web Auto-ingest button does not start Cursor: MCP is always initiated by the client.</p>
       <h3 id="connectors">Connect from Claude.ai or ChatGPT (connectors)</h3>
       <p>No token and no API key: paste the MCP URL into the AI tool's connector settings, sign in with your WikiBrain account and press Allow. The MCP URL is your WikiBrain address plus <code>/mcp</code>; on the hosted version it is <code>https://wikibrain.app/mcp</code>.</p>
@@ -216,7 +216,7 @@ function PagePlans() {
         <table className="w-full border-collapse">
           <thead><tr className="bg-porcelain text-left text-[12px] text-ink-soft"><th className="px-3 py-2 font-medium">Plan</th><th className="px-3 py-2 font-medium">Term and price</th><th className="px-3 py-2 font-medium">What you get</th></tr></thead>
           <tbody>
-            <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Pro trial</td><td className="px-3 py-2">14 days from sign-up, free, no card</td><td className="px-3 py-2">Everything in Pro; unlimited agent runs; the first 5 runs on us (a cheaper model; content goes through the platform's OpenRouter account), no API key needed</td></tr>
+            <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Pro trial</td><td className="px-3 py-2">14 days from sign-up, free, no card</td><td className="px-3 py-2">Everything in Pro; unlimited agent runs; the first 10 runs on us (a cheaper model; content goes through the platform's OpenRouter account), no API key needed</td></tr>
             <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Free</td><td className="px-3 py-2">Free forever</td><td className="px-3 py-2">20 agent runs per month; 200 notes, 20 MB, 1 token, 7-day version history; bring your own key</td></tr>
             <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Pro</td><td className="px-3 py-2">USD 6 per month or 60 per year</td><td className="px-3 py-2">Unlimited agent runs; 10,000 notes, 1 GB, 90-day version history; multiple tokens</td></tr>
             <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Self-hosted</td><td className="px-3 py-2">Free (AGPL-3.0)</td><td className="px-3 py-2">docker compose brings up Postgres and the service, same code (built-in browser included); you supply the encryption key; Google sign-in, mail and the no-key trial are optional; plan limits are adjustable with environment variables</td></tr>

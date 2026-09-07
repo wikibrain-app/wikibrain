@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PageShell } from '../components/PageShell';
+import { LangSwitch } from '../components/LangSwitch';
 import { useT } from '../i18n';
 import { legalDocs, type LegalDoc } from './legal/content';
 
@@ -17,7 +18,7 @@ export default function Legal({ slug, signedIn }: { slug: 'privacy' | 'terms'; s
   const other = legalDocs.find(d => d.slug !== slug)!;
   const u = ui[lang];
   return (
-    <PageShell title={doc.title[lang]} right={!signedIn ? <Link to="/login" className="text-[12px] text-celadon-deep hover:underline">{u.login}</Link> : undefined}>
+    <PageShell title={doc.title[lang]} right={!signedIn ? <><LangSwitch /><Link to="/login" className="text-[12px] text-celadon-deep hover:underline">{u.login}</Link></> : undefined}>
       <main className="note-body mx-auto max-w-[760px] text-[15px]" data-testid="legal" data-legal-page={slug}>
         <header className="mb-7 border-b border-line pb-5 font-sans">
           <div className="text-[11px] uppercase tracking-[.08em] text-ink-faint">WikiBrain · {u.updated} {doc.updated}</div>

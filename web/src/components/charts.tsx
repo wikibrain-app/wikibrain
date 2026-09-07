@@ -3,9 +3,9 @@ import { useT } from '../i18n';
 
 /* ── Chart components (per the dataviz guidelines: single-hue quantities, thin bars with 4px rounded ends, direct labels on extremes only, hover tooltips, table view) ── */
 const INK = 'var(--color-ink)', SOFT = 'var(--color-ink-soft)', FAINT = 'var(--color-ink-faint)', LINE = 'var(--color-line)';
-export const SERIES = '#3E7D6B';
+export const SERIES = 'var(--celadon)';
 // Heatmap ramp: one hue from light to dark (monotonic lightness); zero uses the surface colour plus a thin border
-const RAMP = ['#E3EEE9', '#B9D5C9', '#8ABBA8', '#5B9C86', '#3E7D6B', '#2C5F51'];
+const RAMP = [1, 2, 3, 4, 5, 6].map(i => `var(--ramp-${i})`);
 const trim = (x: number) => (Number.isInteger(x) ? String(x) : x.toFixed(1));
 const fmt = (n: number, locale: string) => n >= 1_000_000 ? `${trim(n / 1e6)}M` : n >= 10_000 ? `${trim(n / 1e3)}K` : n.toLocaleString(locale);
 

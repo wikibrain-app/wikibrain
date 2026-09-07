@@ -3,7 +3,9 @@ import type { Graph } from '../lib/api';
 import { fmtDate, useT } from '../i18n';
 
 // Force-directed graph (ported from the prototype canvas). Nodes coloured by layer; drag to rearrange; click to open the page.
-const COLOR = { raw: '#9BB0A8', wiki: '#3E7D6B', schema: '#B07D2B' } as const;
+const COLOR = { raw: '--raw', wiki: '--celadon', schema: '--amber' } as const;
+// Canvas cannot resolve CSS variables, so read the current theme's values on every frame (cheap; keeps the graph in sync with light/dark)
+const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 interface N { path: string; label: string; layer: keyof typeof COLOR; x: number; y: number; vx: number; vy: number; hub: boolean }
 type Layer = keyof typeof COLOR;
 
@@ -132,16 +134,17 @@ export function GraphView({ graph: full, onOpen, focusPath = null }: { graph: Gr
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);
       const dpr = window.devicePixelRatio || 1;
       ctx.setTransform(dpr * view.scale, 0, 0, dpr * view.scale, dpr * view.ox, dpr * view.oy);
-      ctx.strokeStyle = '#C9D8D1'; ctx.lineWidth = 1.2 / view.scale;
+      const ink = cssVar('--ink'); const layerColor = { raw: cssVar(COLOR.raw), wiki: cssVar(COLOR.wiki), schema: cssVar(COLOR.schema) };
+      ctx.strokeStyle = cssVar('--line-soft'); ctx.lineWidth = 1.2 / view.scale;
       edges.forEach(([a, b]) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); });
       // With many nodes, label only hubs, the current page and the hovered node; label everything when zoomed to 1.6x or more
       const labelAll = nodes.length <= 60 || view.scale >= 1.6;
       ctx.font = `${Math.max(9, 12 / Math.sqrt(view.scale))}px "PingFang TC","Noto Sans TC",sans-serif`; ctx.textAlign = 'center';
       nodes.forEach(n => {
         const r = radius(n); const isFocus = n.path === s.focus;
-        ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.fillStyle = COLOR[n.layer]; ctx.fill();
-        if (isFocus || n === hover) { ctx.lineWidth = 2.5 / view.scale; ctx.strokeStyle = '#22313A'; ctx.stroke(); }
-        if (labelAll || n.hub || isFocus || n === hover) { ctx.fillStyle = '#22313A'; ctx.fillText(n.label, n.x, n.y + r + 15); }
+        ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.fillStyle = layerColor[n.layer]; ctx.fill();
+        if (isFocus || n === hover) { ctx.lineWidth = 2.5 / view.scale; ctx.strokeStyle = ink; ctx.stroke(); }
+        if (labelAll || n.hub || isFocus || n === hover) { ctx.fillStyle = ink; ctx.fillText(n.label, n.x, n.y + r + 15); }
       });
     };
     const tick = () => { physics(); draw(); raf = requestAnimationFrame(tick); };
@@ -175,7 +178,7 @@ export function GraphView({ graph: full, onOpen, focusPath = null }: { graph: Gr
         <div className="absolute left-4 top-12 z-10 flex w-[min(340px,calc(100%-2rem))] flex-col gap-2.5 rounded-[10px] border border-line bg-paper/95 p-3 text-[12.5px] shadow-md" data-testid="graph-filters">
           <div className="flex flex-wrap gap-3">
             {(['raw', 'wiki', 'schema'] as Layer[]).map(l => (
-              <label key={l} className="flex items-center gap-1.5"><input type="checkbox" checked={filters.layers[l]} onChange={e => setLayer(l, e.target.checked)} /><i className="inline-block h-[9px] w-[9px] rounded-full" style={{ background: COLOR[l] }} />{tr(`graph.legend${l === 'raw' ? 'Raw' : l === 'wiki' ? 'Wiki' : 'Schema'}`)}</label>
+              <label key={l} className="flex items-center gap-1.5"><input type="checkbox" checked={filters.layers[l]} onChange={e => setLayer(l, e.target.checked)} /><i className="inline-block h-[9px] w-[9px] rounded-full" style={{ background: `var(${COLOR[l]})` }} />{tr(`graph.legend${l === 'raw' ? 'Raw' : l === 'wiki' ? 'Wiki' : 'Schema'}`)}</label>
             ))}
           </div>
           <input className="w-full rounded-md border border-line bg-porcelain px-2.5 py-1.5" placeholder={tr('graph.search')} value={filters.q} onChange={e => setFilters(f => ({ ...f, q: e.target.value }))} data-testid="graph-search" />
@@ -200,7 +203,7 @@ export function GraphView({ graph: full, onOpen, focusPath = null }: { graph: Gr
         <div className="absolute bottom-[58px] left-4 right-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[10px] border border-line bg-paper/95 px-3.5 py-2 text-[12px]" data-testid="graph-timeline">
           <button className="rounded-md border border-line px-2 py-0.5 text-[12px] hover:bg-celadon-mist" onClick={() => setPlaying(p => !p)} aria-label={playing ? tr('graph.pause') : tr('graph.play')} data-testid="timeline-play">{playing ? '❚❚' : '▶'}</button>
           <span className="whitespace-nowrap text-ink-soft">{tr('graph.timeline')}</span>
-          <input type="range" min={min} max={max} step={3600_000} value={t} onChange={e => { setPlaying(false); setT(Number(e.target.value)); }} className="min-w-[120px] flex-1 accent-[#3E7D6B]" aria-label={tr('graph.until')} />
+          <input type="range" min={min} max={max} step={3600_000} value={t} onChange={e => { setPlaying(false); setT(Number(e.target.value)); }} className="min-w-[120px] flex-1 accent-celadon" aria-label={tr('graph.until')} />
           <span className="whitespace-nowrap tabular-nums text-ink" data-testid="graph-timeline-label">{t >= max ? tr('graph.now') : fmtDate(lang, new Date(t))} · {tr('graph.pages', { shown: graph.nodes.length, total })}</span>
           {t < max && <button className="whitespace-nowrap text-celadon-deep hover:underline" onClick={() => setT(max)}>{tr('graph.backToNow')}</button>}
         </div>

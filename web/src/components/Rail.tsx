@@ -29,7 +29,7 @@ export function Rail({ backlinks, versions, current, viewing, onOpen, onView, on
       <section>
         <h3 className="mb-2.5 text-[13px] font-semibold">{t('rail.versions')}</h3>
         {versions.map(v => (
-          <div key={v.version} className={`flex flex-wrap items-baseline gap-x-2.5 gap-y-1 border-b border-dashed border-line py-[7px] text-[12px] text-ink-soft last:border-none ${viewing === v.version ? 'bg-[#FBF5EA] -mx-2 px-2 rounded' : ''}`} data-testid={`version-${v.version}`}>
+          <div key={v.version} className={`flex flex-wrap items-baseline gap-x-2.5 gap-y-1 border-b border-dashed border-line py-[7px] text-[12px] text-ink-soft last:border-none ${viewing === v.version ? 'bg-amber-mist -mx-2 px-2 rounded' : ''}`} data-testid={`version-${v.version}`}>
             <span className="font-mono text-ink">v{v.version}</span>
             <span className="whitespace-nowrap text-celadon-deep">{formatAuthor(v.author)}</span>
             <span className="ml-auto whitespace-nowrap text-[11px] text-ink-faint">{formatTime(v.created_at)}</span>

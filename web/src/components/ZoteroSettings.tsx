@@ -51,7 +51,7 @@ export function ZoteroSettings({ onSynced }: { onSynced?: () => void }) {
         <div className="mb-3 rounded-[10px] border border-line bg-porcelain px-4 py-2.5 text-[12.5px]" data-testid="zotero-status">
           {t('zotero.current', { user: link.username ?? link.zotero_user_id, last4: link.key_last4 })}<b>{link.collection_name ?? t('zotero.wholeLibrary')}</b>
           {link.last_sync_at ? <span className="ml-2 text-ink-soft">{t('zotero.lastSync', { time: formatTime(link.last_sync_at) })}{link.last_result ? t('zotero.lastResult', { added: link.last_result.added.length, skipped: link.last_result.skipped, pdfs: link.last_result.pdfs }) : ''}</span> : <span className="ml-2 text-ink-soft">{t('zotero.neverSynced')}</span>}
-          {link.last_error && <div className="mt-1 text-[#8A3B2E]">{t('zotero.lastError')}{link.last_error}</div>}
+          {link.last_error && <div className="mt-1 text-danger">{t('zotero.lastError')}{link.last_error}</div>}
           <div className="mt-2 flex gap-2">
             <button type="button" className={btnPrimary} onClick={sync} disabled={busy !== null} data-testid="zotero-sync">{busy === 'sync' ? t('zotero.syncing') : t('zotero.syncNow')}</button>
             <button type="button" className={btnGhost} onClick={disconnect}>{t('zotero.disconnect')}</button>

@@ -52,7 +52,7 @@ export function NoteView({ note, notes, historical, onOpen, onEdit, onDelete, on
   return (
     <article className="mx-auto max-w-[660px] px-5 sb:px-10 pb-20 pt-6 sb:pt-9">
       {pending && !historical && (
-        <div className="mb-4 rounded-[10px] border border-amber/40 bg-[#FBF5EA] px-4 py-3 text-[12.5px] leading-relaxed" role="status" data-testid="pending-banner">
+        <div className="mb-4 rounded-[10px] border border-amber/40 bg-amber-mist px-4 py-3 text-[12.5px] leading-relaxed" role="status" data-testid="pending-banner">
           <b>{t('note.pendingTitle')}</b>{t('note.pendingBody')}{aiReady ? t('note.pendingAi') : t('note.pendingNoAi')}
           <div className="mt-2 flex flex-wrap gap-2">
             {aiReady && onAutoIngest && <button className={btnPrimary} data-testid="auto-ingest" disabled={ingesting} onClick={() => onAutoIngest([note.path])}>{ingesting ? t('note.ingesting') : t('note.autoOne')}</button>}
@@ -66,7 +66,7 @@ export function NoteView({ note, notes, historical, onOpen, onEdit, onDelete, on
         </div>
       )}
       {historical && (
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[10px] border border-amber/40 bg-[#FBF5EA] px-4 py-2.5 text-[12.5px] text-ink" role="status">
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-[10px] border border-amber/40 bg-amber-mist px-4 py-2.5 text-[12.5px] text-ink" role="status">
           <span>{t('note.hist1')}<b>v{historical.version}</b>{t('note.hist2', { author: formatAuthor(historical.author), time: formatTime(historical.created_at), cur: note.version })}</span>
           <span className="ml-auto flex gap-2">
             <button className={btnGhost} onClick={onBackToCurrent}>{t('note.backToCurrent')}</button>
@@ -87,7 +87,7 @@ export function NoteView({ note, notes, historical, onOpen, onEdit, onDelete, on
               ? (note.path.startsWith('raw/archive/')
                 ? <button className={btnGhost} onClick={() => onArchive?.(true)} title={t('note.unarchiveTitle')} data-testid="unarchive">{t('note.unarchive')}</button>
                 : <button className={btnGhost} onClick={() => onArchive?.(false)} title={t('note.archiveTitle')} data-testid="archive">{t('note.archive')}</button>)
-              : <button className={`${btnGhost} hover:border-[#8A3B2E] hover:text-[#8A3B2E]`} onClick={onDelete}>{t('common.delete')}</button>}
+              : <button className={`${btnGhost} hover:border-danger hover:text-danger`} onClick={onDelete}>{t('common.delete')}</button>}
           </div>
         )}
       </div>

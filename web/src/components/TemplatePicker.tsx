@@ -47,12 +47,12 @@ export function TemplatePicker({ onApplied, compact, minimal }: { onApplied: (r:
         {custom.map(c => (
           <div key={`c${c.id}`} className={`relative rounded-[10px] border p-3.5 text-left transition ${picked === `custom:${c.id}` ? 'border-celadon bg-celadon-mist' : 'border-line bg-paper hover:border-celadon'}`} data-testid={`custom-template-${c.id}`}>
             <button type="button" aria-pressed={picked === `custom:${c.id}`} onClick={() => setPicked(`custom:${c.id}`)} className="block w-full text-left">
-              <div className="font-serif text-[16px] font-bold">{c.name} <span className="ml-1 rounded bg-[#FBF5EA] px-1 text-[10px] font-normal text-amber align-middle">{t('tpl.custom')}</span></div>
+              <div className="font-serif text-[16px] font-bold">{c.name} <span className="ml-1 rounded bg-amber-mist px-1 text-[10px] font-normal text-amber align-middle">{t('tpl.custom')}</span></div>
               <div className="mt-1 text-[12px] leading-relaxed text-ink-soft">{c.description || t('tpl.noDesc')}</div>
             </button>
             <div className="mt-2 flex gap-2 text-[11.5px]">
               <button type="button" className="text-celadon-deep hover:underline" onClick={() => setEditing(c.id)}>{t('common.edit')}</button>
-              <button type="button" className="text-ink-faint hover:text-[#8A3B2E]" onClick={() => remove(c.id)}>{t('common.delete')}</button>
+              <button type="button" className="text-ink-faint hover:text-danger" onClick={() => remove(c.id)}>{t('common.delete')}</button>
             </div>
           </div>
         ))}
@@ -106,7 +106,7 @@ export function AppliedResult({ r, onClose, showPrompt = true }: { r: { created:
       <p className="text-[13px] leading-relaxed">{t('tpl.created1')}<b>{r.created.length}</b>{t('tpl.created2')}{r.skipped.length > 0 && t('tpl.skipped', { n: r.skipped.length })}{t('tpl.period')}</p>
       {showPrompt ? (<>
       <p className="mt-3 text-[12px] text-ink-soft">{t('tpl.howTo')}</p>
-      <div className="relative mt-1.5 rounded-[10px] bg-[#26332E] p-3.5 pr-16 font-serif text-[13px] leading-relaxed text-[#DDEAE4]">
+      <div className="relative mt-1.5 rounded-[10px] bg-code text-code-fg p-3.5 pr-16 font-serif text-[13px] leading-relaxed">
         <button className="absolute right-2.5 top-2.5 rounded-md bg-white/10 px-2.5 py-1 text-[11px] font-sans hover:bg-white/20" onClick={copy}>{t('common.copy')}</button>
         {r.prompt}
       </div>

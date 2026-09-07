@@ -96,7 +96,7 @@ export function ChatPanel({ aiReady, notes, draft, onDraftUsed, onOpen, onClose,
       )}
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 text-[13px]">
         {!aiReady && (
-          <div className="rounded-[10px] border border-amber/40 bg-[#FBF5EA] px-3 py-2.5 text-[12.5px] leading-relaxed">
+          <div className="rounded-[10px] border border-amber/40 bg-amber-mist px-3 py-2.5 text-[12.5px] leading-relaxed">
             {t('chat.needKey1')}<Link className="text-celadon-deep underline" to="/settings">{t('chat.needKeyLink')}</Link>{t('chat.needKey2')}
           </div>
         )}

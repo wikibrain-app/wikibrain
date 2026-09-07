@@ -37,7 +37,7 @@ export function TemplateEditor({ id, onSaved, onClose }: { id: number; onSaved: 
             {files.map((f, i) => (
               <li key={i} className="flex items-center">
                 <button className={`min-w-0 flex-1 truncate px-3 py-1.5 text-left font-mono hover:bg-celadon-mist ${open === i ? 'bg-paper font-semibold text-celadon-deep' : ''}`} onClick={() => setOpen(i)}>{f.path}</button>
-                <button className="px-2 text-ink-faint hover:text-[#8A3B2E]" aria-label={tr('tplEdit.removeFile')} onClick={() => removeFile(i)}>×</button>
+                <button className="px-2 text-ink-faint hover:text-danger" aria-label={tr('tplEdit.removeFile')} onClick={() => removeFile(i)}>×</button>
               </li>
             ))}
           </ul>

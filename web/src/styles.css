@@ -1,18 +1,61 @@
 @import "tailwindcss";
 
-/* Celadon design language (docs/wikibrain-prototype.html) */
+/* Celadon design language (docs/internal/wikibrain-prototype.html).
+   Colours are CSS variables so the dark theme only swaps values: bare :root = light; the "system" setting stamps
+   nothing and follows prefers-color-scheme; an explicit choice stamps data-theme on <html> (web/src/theme.ts). */
+:root {
+  color-scheme: light;
+  --porcelain: #F4F7F5; --paper: #FDFEFD;
+  --ink: #22313A; --ink-soft: #5A6B70; --ink-faint: #93A49E;
+  --celadon: #3E7D6B; --celadon-deep: #2C5F51; --celadon-mist: #E3EEE9;
+  --line: #D9E3DE; --line-soft: #C9D8D1; --amber: #B07D2B; --amber-mist: #FBF5EA; --raw: #9BB0A8;
+  --danger: #8A3B2E; --danger-mist: #FBF3F1; --danger-line: #E4C9C3;
+  --code-bg: #26332E; --code-fg: #DDEAE4; --underline: #A9C9BE;
+  --ramp-1: #E3EEE9; --ramp-2: #B9D5C9; --ramp-3: #8ABBA8; --ramp-4: #5B9C86; --ramp-5: #3E7D6B; --ramp-6: #2C5F51;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --porcelain: #151B19; --paper: #1D2422;
+  --ink: #E4ECE8; --ink-soft: #A7B5B0; --ink-faint: #6F7F79;
+  --celadon: #5FA38D; --celadon-deep: #8CC7B2; --celadon-mist: #24332E;
+  --line: #2E3A36; --line-soft: #3A4844; --amber: #D4A455; --amber-mist: #2E2A1E; --raw: #6E807A;
+  --danger: #E0907E; --danger-mist: #33221F; --danger-line: #5A3730;
+  --code-bg: #0F1513; --code-fg: #DDEAE4; --underline: #4E7A6C;
+  --ramp-1: #24332E; --ramp-2: #2F4D43; --ramp-3: #3B6B5B; --ramp-4: #4C8A75; --ramp-5: #5FA38D; --ramp-6: #8CC7B2;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --porcelain: #151B19; --paper: #1D2422;
+    --ink: #E4ECE8; --ink-soft: #A7B5B0; --ink-faint: #6F7F79;
+    --celadon: #5FA38D; --celadon-deep: #8CC7B2; --celadon-mist: #24332E;
+    --line: #2E3A36; --line-soft: #3A4844; --amber: #D4A455; --amber-mist: #2E2A1E; --raw: #6E807A;
+    --danger: #E0907E; --danger-mist: #33221F; --danger-line: #5A3730;
+    --code-bg: #0F1513; --code-fg: #DDEAE4; --underline: #4E7A6C;
+    --ramp-1: #24332E; --ramp-2: #2F4D43; --ramp-3: #3B6B5B; --ramp-4: #4C8A75; --ramp-5: #5FA38D; --ramp-6: #8CC7B2;
+  }
+}
+@theme inline {
+  --color-porcelain: var(--porcelain);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-celadon: var(--celadon);
+  --color-celadon-deep: var(--celadon-deep);
+  --color-celadon-mist: var(--celadon-mist);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-amber: var(--amber);
+  --color-amber-mist: var(--amber-mist);
+  --color-raw: var(--raw);
+  --color-danger: var(--danger);
+  --color-danger-mist: var(--danger-mist);
+  --color-danger-line: var(--danger-line);
+  --color-code: var(--code-bg);
+  --color-code-fg: var(--code-fg);
+}
 @theme {
-  --color-porcelain: #F4F7F5;
-  --color-paper: #FDFEFD;
-  --color-ink: #22313A;
-  --color-ink-soft: #5A6B70;
-  --color-ink-faint: #93A49E;
-  --color-celadon: #3E7D6B;
-  --color-celadon-deep: #2C5F51;
-  --color-celadon-mist: #E3EEE9;
-  --color-line: #D9E3DE;
-  --color-amber: #B07D2B;
-  --color-raw: #9BB0A8;
   --font-sans: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
   --font-serif: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
   --font-mono: "SF Mono", "Cascadia Code", Consolas, monospace;
@@ -42,14 +85,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .note-body-compact h1, .note-body-compact h2, .note-body-compact h3 { font-size: 15px; margin: 1em 0 .4em; }
 .note-body-compact ul, .note-body-compact ol { margin: 0 0 .7em 1.3em; }
 .note-body-compact code { font-size: .85em; }
-.note-body pre { background: #26332E; color: #DDEAE4; border-radius: 10px; padding: 14px; overflow-x: auto; margin-bottom: 1.1em; font-family: var(--font-sans); }
+.note-body pre { background: var(--code-bg); color: var(--code-fg); border-radius: 10px; padding: 14px; overflow-x: auto; margin-bottom: 1.1em; font-family: var(--font-sans); }
 .note-body pre code { background: none; color: inherit; padding: 0; }
 .note-body blockquote { border-left: 3px solid var(--color-line); padding-left: 12px; color: var(--color-ink-soft); margin-bottom: 1.1em; }
 .note-body table { border-collapse: collapse; margin-bottom: 1.1em; font-family: var(--font-sans); font-size: 13.5px; }
 .note-body th, .note-body td { border: 1px solid var(--color-line); padding: 6px 10px; }
-.note-body a { color: var(--color-celadon-deep); text-decoration: underline; text-decoration-color: #A9C9BE; }
+.note-body a { color: var(--color-celadon-deep); text-decoration: underline; text-decoration-color: var(--underline); }
 .note-body hr { border: 0; border-top: 1px solid var(--color-line); margin: 1.5em 0; }
-.wl { color: var(--color-celadon-deep); border-bottom: 1px solid #A9C9BE; padding-bottom: 1px; text-decoration: none; }
+.wl { color: var(--color-celadon-deep); border-bottom: 1px solid var(--underline); padding-bottom: 1px; text-decoration: none; }
 .wl:hover { background: var(--color-celadon-mist); }
 .wl-missing { color: var(--color-ink-faint); border-bottom: 1px dashed var(--color-line); cursor: help; }
 
