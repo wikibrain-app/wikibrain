@@ -1,0 +1,37 @@
+# Contributing
+
+Thanks for looking. This project follows a few conventions that keep it small and reviewable.
+
+## Ground rules
+
+- **Surgical changes.** Touch only what the change needs; no drive-by refactors or reformatting. Every changed line should trace to the issue or feature.
+- **Data access goes through one place.** Backend: `src/notes.ts` (workspace isolation and version snapshots live there; routes never write SQL for notes). Frontend: `web/src/lib/api.ts` (components never call `fetch`).
+- **Security baseline.** Every query carries the workspace condition. Tokens are stored hashed. Outbound HTTP uses `safeFetch` from `src/net-guard.ts`. New user-facing errors are bilingual (`{ 'zh-TW': …, en: … }`) via `NoteError`.
+- **Two languages.** Interface strings live in `web/src/i18n/*.ts` (keys must exist in both `zh-TW` and `en`). Agent prompts and MCP messages take a `lang` parameter. Wiki content is never translated.
+- **Karpathy's pattern is the spec.** Three layers, `index.md`/`log.md`, Ingest/Query/Lint. Features that fight the pattern are out of scope.
+
+## Workflow
+
+1. Open an issue describing the problem and the smallest change that fixes it.
+2. Branch, implement, add or update tests:
+   - backend: `test/*.test.ts` (`npm test`, needs a local PostgreSQL 16; each file creates its own user and cleans up),
+   - frontend: `test/e2e/m3_web.py` (Playwright; needs `npm run dev` running).
+3. `npm run typecheck && npm test` must pass. Run the E2E suite when the UI changed.
+4. Keep the PR description short: what, why, how verified. Screenshots for UI changes.
+
+## Where things are
+
+| Area | Path |
+|---|---|
+| MCP tools and transport | `src/mcp.ts`, `src/app.ts` |
+| Notes, links, tags, versions | `src/notes.ts`, `migrations/` |
+| Source import (URL/PDF/Word/…) and SSRF guard | `src/import.ts`, `src/headless.ts`, `src/net-guard.ts` |
+| Bibliography, citations, Zotero | `src/bib.ts`, `src/zotero.ts`, `web/src/lib/cite.tsx` |
+| Server-side agent (ingest, chat, lint) | `src/ingest.ts`, `src/chat.ts`, `src/lint.ts`, `src/ai/providers.ts` |
+| Auth: sessions, bearer tokens, OAuth 2.1 | `src/auth-web.ts`, `src/auth.ts`, `src/oauth.ts` |
+| Templates (rules + starter pages) | `templates/<id>/<lang>/…`, `src/templates.ts` |
+| Web UI | `web/src/pages`, `web/src/components`, `web/src/i18n` |
+
+## Reporting security issues
+
+Please do not open a public issue. Email the maintainer (address in the repository profile) with steps to reproduce; you will get a reply within a few days.

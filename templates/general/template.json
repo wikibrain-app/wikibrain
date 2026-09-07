@@ -1,0 +1,15 @@
+{
+  "id": "general",
+  "name": {
+    "zh-TW": "通用",
+    "en": "General"
+  },
+  "description": {
+    "zh-TW": "三層架構的最小起點：基礎編纂規則、總覽、待釐清、變動紀錄。適合先試用再決定方向的人。",
+    "en": "Minimal three-layer start: base rules, overview, open questions, log."
+  },
+  "prompt": {
+    "zh-TW": "先呼叫 get_instructions 讀編纂規則，再用 list_folder 看目前結構。然後把我接下來貼給你的內容存進 raw/sources/，編出第一頁 wiki，並更新 wiki/index.md 與 wiki/log.md。",
+    "en": "Call get_instructions first, then list_folder to see the structure. Store what I paste next into raw/sources/, compile the first wiki page, and update wiki/index.md and wiki/log.md."
+  }
+}

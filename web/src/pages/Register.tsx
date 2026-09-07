@@ -1,0 +1,51 @@
+import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router';
+import { api, ApiError } from '../lib/api';
+import { useToast } from '../lib/toast';
+import { useT } from '../i18n';
+import { AuthCard, Field, btnPrimary, input } from '../components/ui';
+
+export default function Register() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+  const { toast } = useToast();
+  const { t } = useT();
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await api.signUp(email, password, name || email.split('@')[0]);
+      setSent(true);
+    } catch (err) {
+      const e = err as ApiError;
+      toast(e.status === 422 || /exist/i.test(e.message) ? t('register.errExists') : e.message, { kind: 'error' });
+    } finally { setBusy(false); }
+  }
+
+  if (sent) {
+    return (
+      <AuthCard>
+        <h1 className="font-serif text-[22px] font-bold mb-2">{t('register.sentTitle')}</h1>
+        <p className="text-[13px] text-ink-soft leading-relaxed">{t('register.sentBefore')}<b className="text-ink">{email}</b>{t('register.sentAfter')}</p>
+        <p className="text-[13px] text-ink-soft mt-5"><Link className="text-celadon-deep underline" to="/login">{t('auth.backToLogin')}</Link></p>
+      </AuthCard>
+    );
+  }
+  return (
+    <AuthCard>
+      <h1 className="font-serif text-[22px] font-bold mb-1">{t('register.title')}</h1>
+      <p className="text-[13px] text-ink-soft mb-5">{t('register.tagline')}</p>
+      <form onSubmit={submit}>
+        <Field label={t('register.name')} htmlFor="name"><input id="name" className={input} autoComplete="name" value={name} onChange={e => setName(e.target.value)} /></Field>
+        <Field label="Email" htmlFor="email"><input id="email" className={input} type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} /></Field>
+        <Field label={t('register.password')} htmlFor="password"><input id="password" className={input} type="password" required minLength={8} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} /></Field>
+        <button className={`${btnPrimary} w-full mt-1`} disabled={busy}>{busy ? t('register.submitting') : t('register.submit')}</button>
+      </form>
+      <p className="text-[13px] text-ink-soft mt-5">{t('register.haveAccount')}<Link className="text-celadon-deep underline" to="/login">{t('auth.login')}</Link></p>
+    </AuthCard>
+  );
+}

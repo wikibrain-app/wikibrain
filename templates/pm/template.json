@@ -1,0 +1,15 @@
+{
+  "id": "pm",
+  "name": {
+    "zh-TW": "專案管理者",
+    "en": "Project manager"
+  },
+  "description": {
+    "zh-TW": "跨對話追蹤專案：決策一頁一決策（背景／選項／決定／後果／狀態）、會議紀錄進 raw 後由 agent 抽出決策、待辦與待釐清。",
+    "en": "Track a project across conversations: one page per decision, meeting notes in raw/ with decisions, todos and open questions extracted by the agent."
+  },
+  "prompt": {
+    "zh-TW": "先呼叫 get_instructions 讀編纂規則（含專案管理規則）。我會貼一份會議紀錄給你：存進 raw/sources/（source_type: meeting），抽出決策各開一頁 wiki/decisions/，待辦寫進 wiki/todo.md，沒定的事寫進 wiki/open-questions.md，最後更新索引與 log.md。",
+    "en": "Call get_instructions first (it includes the project-management rules). I will paste meeting notes: store them in raw/sources/ (source_type: meeting), open one wiki/decisions/ page per decision, add todos to wiki/todo.md and unresolved items to wiki/open-questions.md, then update the indexes and log.md."
+  }
+}

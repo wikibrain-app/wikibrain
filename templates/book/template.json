@@ -1,0 +1,9 @@
+{
+  "id": "book",
+  "name": { "zh-TW": "讀書", "en": "Reading" },
+  "description": { "zh-TW": "一邊讀一本書一邊建伴讀 wiki：一章一則來源、角色頁、主題頁、情節時間線；不劇透，只用讀到的章節寫。", "en": "Build a companion wiki while reading: one source per chapter, character and theme pages, a timeline; spoiler-free." },
+  "prompt": {
+    "zh-TW": "先呼叫 get_instructions 讀編纂規則（含讀書規則）。我會貼一章的摘錄與感想給你：請建立 raw/sources/chNN-章名.md（front-matter 含 book、chapter、pages），再更新或建立相關的角色頁與主題頁、在 wiki/plot.md 追加這一章的事件，最後更新索引與 log.md。只用讀到的內容，不要劇透。",
+    "en": "Call get_instructions first (it includes the reading rules). I will paste one chapter's excerpts and reactions: create raw/sources/chNN-title.md (front-matter book / chapter / pages), update or create the related character and theme pages, append the chapter's events to wiki/plot.md, then update the indexes and log.md. Use only what has been read; no spoilers."
+  }
+}

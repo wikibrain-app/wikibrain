@@ -1,0 +1,15 @@
+{
+  "id": "researcher",
+  "name": {
+    "zh-TW": "研究者",
+    "en": "Researcher"
+  },
+  "description": {
+    "zh-TW": "寫論文與文獻回顧：論文來源帶 DOI 與書目欄位、概念頁一術語一頁、論點頁固定「主張／證據／反證／判斷」結構，引用只能來自 raw/。",
+    "en": "For papers and literature reviews: sources with DOI and bibliography, concept pages, argument pages with claim / evidence / counter-evidence / judgement."
+  },
+  "prompt": {
+    "zh-TW": "先呼叫 get_instructions 讀編纂規則（含研究者規則）。我會貼一篇論文的摘要與書目給你：請建立 raw/sources/<citation_key>.md（front-matter 含 doi、authors、year、venue），再為其中的核心概念各開一頁 wiki/concepts/，若有可反駁的主張就開 wiki/arguments/ 頁，最後更新索引與 log.md。",
+    "en": "Call get_instructions first (it includes the researcher rules). I will paste a paper's abstract and bibliography: create raw/sources/<citation_key>.md with doi / authors / year / venue, open one wiki/concepts/ page per core concept and a wiki/arguments/ page for any falsifiable claim, then update the indexes and log.md."
+  }
+}

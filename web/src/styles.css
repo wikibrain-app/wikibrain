@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/* Celadon design language (docs/wikibrain-prototype.html) */
+@theme {
+  --color-porcelain: #F4F7F5;
+  --color-paper: #FDFEFD;
+  --color-ink: #22313A;
+  --color-ink-soft: #5A6B70;
+  --color-ink-faint: #93A49E;
+  --color-celadon: #3E7D6B;
+  --color-celadon-deep: #2C5F51;
+  --color-celadon-mist: #E3EEE9;
+  --color-line: #D9E3DE;
+  --color-amber: #B07D2B;
+  --color-raw: #9BB0A8;
+  --font-sans: "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-serif: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  --font-mono: "SF Mono", "Cascadia Code", Consolas, monospace;
+}
+
+html, body, #root { height: 100%; }
+body { background: var(--color-porcelain); color: var(--color-ink); font-family: var(--font-sans); font-size: 14px; }
+button { cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 2px solid var(--color-celadon); outline-offset: 2px;
+}
+
+/* Note body typography */
+.note-body { font-family: var(--font-serif); font-size: 15.5px; line-height: 2; }
+.note-body p { margin-bottom: 1.1em; }
+.note-body h1 { font-size: 24px; margin: 1.2em 0 .5em; }
+.note-body h2 { font-size: 18px; margin: 1.4em 0 .6em; padding-left: 10px; border-left: 3px solid var(--color-celadon); }
+.note-body h3 { font-size: 16px; margin: 1.2em 0 .5em; font-weight: 700; }
+.note-body ul, .note-body ol { margin: 0 0 1.1em 1.6em; }
+.note-body ul { list-style: disc; } .note-body ol { list-style: decimal; }
+.note-body li { margin-bottom: .3em; }
+.note-body code { font-family: var(--font-mono); font-size: .88em; background: var(--color-porcelain); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; word-break: break-all; }
+.note-body .katex-display { overflow-x: auto; overflow-y: hidden; margin: .8em 0; }
+.note-body .katex { font-size: 1.02em; }
+.note-body-compact { font-size: 13.5px; line-height: 1.75; }
+.note-body-compact p { margin-bottom: .7em; }
+.note-body-compact h1, .note-body-compact h2, .note-body-compact h3 { font-size: 15px; margin: 1em 0 .4em; }
+.note-body-compact ul, .note-body-compact ol { margin: 0 0 .7em 1.3em; }
+.note-body-compact code { font-size: .85em; }
+.note-body pre { background: #26332E; color: #DDEAE4; border-radius: 10px; padding: 14px; overflow-x: auto; margin-bottom: 1.1em; font-family: var(--font-sans); }
+.note-body pre code { background: none; color: inherit; padding: 0; }
+.note-body blockquote { border-left: 3px solid var(--color-line); padding-left: 12px; color: var(--color-ink-soft); margin-bottom: 1.1em; }
+.note-body table { border-collapse: collapse; margin-bottom: 1.1em; font-family: var(--font-sans); font-size: 13.5px; }
+.note-body th, .note-body td { border: 1px solid var(--color-line); padding: 6px 10px; }
+.note-body a { color: var(--color-celadon-deep); text-decoration: underline; text-decoration-color: #A9C9BE; }
+.note-body hr { border: 0; border-top: 1px solid var(--color-line); margin: 1.5em 0; }
+.wl { color: var(--color-celadon-deep); border-bottom: 1px solid #A9C9BE; padding-bottom: 1px; text-decoration: none; }
+.wl:hover { background: var(--color-celadon-mist); }
+.wl-missing { color: var(--color-ink-faint); border-bottom: 1px dashed var(--color-line); cursor: help; }
+
+.toast { transition: opacity .25s, transform .25s; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+
+/* Breakpoints: prototype collapses the sidebar at ≤680 and the rail at ≤900 */
+@theme {
+  --breakpoint-sb: 681px;
+  --breakpoint-rail: 901px;
+}

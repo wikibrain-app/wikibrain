@@ -1,0 +1,14 @@
+node_modules
+dist
+web/dist
+web/node_modules
+.env
+.env.*
+!.env.example
+.git
+.cursor
+.claude
+docs
+test
+*.md
+!README.md
