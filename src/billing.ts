@@ -16,26 +16,31 @@ export interface SubscriptionEvent {
   provider_customer_id?: string;
   provider_subscription_id?: string;
   current_period_end?: string | null;
+  /** When the provider says the change happened; an event older than the stored one is ignored (unordered retries). */
+  event_at?: string | null;
   raw?: unknown;
 }
-export interface Subscription { workspace_id: string; provider: string; status: SubscriptionStatus; plan: string; current_period_end: Date | null; provider_subscription_id: string | null; updated_at: Date }
+export interface Subscription { workspace_id: string; provider: string; status: SubscriptionStatus; plan: string; current_period_end: Date | null; provider_subscription_id: string | null; provider_customer_id?: string | null; raw?: { scheduled_change?: { action?: string; effective_at?: string } | null } | null; updated_at: Date }
 
 // Statuses that keep the paid plan on; past_due keeps it briefly (grace), canceled/expired/paused drop to free.
 const PAID = new Set<SubscriptionStatus>(['active', 'trialing', 'past_due']);
 
 export async function applySubscriptionEvent(ev: SubscriptionEvent): Promise<Subscription> {
   const { rows } = await pool.query<Subscription>(
-    `INSERT INTO subscriptions (workspace_id, provider, provider_customer_id, provider_subscription_id, status, plan, current_period_end, raw)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO subscriptions (workspace_id, provider, provider_customer_id, provider_subscription_id, status, plan, current_period_end, raw, event_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT (workspace_id) DO UPDATE SET provider = $2, provider_customer_id = coalesce($3, subscriptions.provider_customer_id),
-       provider_subscription_id = coalesce($4, subscriptions.provider_subscription_id), status = $5, plan = $6, current_period_end = $7, raw = $8, updated_at = now()
+       provider_subscription_id = coalesce($4, subscriptions.provider_subscription_id), status = $5, plan = $6, current_period_end = $7, raw = $8,
+       event_at = coalesce($9, subscriptions.event_at), updated_at = now()
+     WHERE $9::timestamptz IS NULL OR subscriptions.event_at IS NULL OR $9::timestamptz >= subscriptions.event_at
      RETURNING workspace_id, provider, status, plan, current_period_end, provider_subscription_id, updated_at`,
-    [ev.workspace_id, ev.provider, ev.provider_customer_id ?? null, ev.provider_subscription_id ?? null, ev.status, ev.plan ?? 'pro', ev.current_period_end ?? null, ev.raw === undefined ? null : JSON.stringify(ev.raw)]);
+    [ev.workspace_id, ev.provider, ev.provider_customer_id ?? null, ev.provider_subscription_id ?? null, ev.status, ev.plan ?? 'pro', ev.current_period_end ?? null, ev.raw === undefined ? null : JSON.stringify(ev.raw), ev.event_at ?? null]);
+  if (rows.length === 0) return (await getSubscription(ev.workspace_id))!; // stale event: keep the newer state
   await setPlan(ev.workspace_id, PAID.has(ev.status) ? 'pro' : 'free');
   return rows[0];
 }
 export async function getSubscription(ws: string): Promise<Subscription | null> {
-  const { rows } = await pool.query<Subscription>(`SELECT workspace_id, provider, status, plan, current_period_end, provider_subscription_id, updated_at FROM subscriptions WHERE workspace_id = $1`, [ws]);
+  const { rows } = await pool.query<Subscription>(`SELECT workspace_id, provider, status, plan, current_period_end, provider_subscription_id, provider_customer_id, raw, updated_at FROM subscriptions WHERE workspace_id = $1`, [ws]);
   return rows[0] ?? null;
 }
 export function webhookSecretOk(header: string | undefined): boolean {

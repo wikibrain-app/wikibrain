@@ -20,7 +20,7 @@ export const privacy: LegalDoc = {
 
 ## 1. 我們是誰
 
-本服務由 ${OPERATOR} 提供，網址 wikibrain.app，聯絡信箱 ${CONTACT}。我們是個人資料保護法下的非公務機關，對您提供的個人資料負蒐集、處理、利用之責。
+本服務由 ${OPERATOR} 提供，網址 wikibrain.app，聯絡信箱 ${CONTACT}。
 
 ## 2. 我們蒐集哪些資料
 

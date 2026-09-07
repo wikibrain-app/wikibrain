@@ -42,6 +42,12 @@ export interface Me { user: { id: string; email: string; name: string }; workspa
 export interface ZoteroSyncResult { added: string[]; skipped: number; pdfs: number; version: number; errors: string[] }
 export interface ZoteroLink { zotero_user_id: string; username: string | null; key_last4: string; collection_key: string | null; collection_name: string | null; library_version: number; with_pdf: boolean; last_sync_at: string | null; last_result: ZoteroSyncResult | null; last_error: string | null; updated_at: string }
 export interface PlanStatus { plan: 'free' | 'pro'; trial_ends_at: string | null; trial_active: boolean; trial_days_left: number; trial_runs_used: number; trial_runs_free: number; month: string; runs_this_month: number; runs_limit: number | null; can_run: boolean; effective: 'free' | 'pro'; notes_used: number; notes_limit: number; bytes_used: number; bytes_limit: number; tokens_limit: number | null; retention_days: number }
+export interface PriceInfo { id: string; amount: number; currency: string; interval: 'month' | 'year' }
+export interface BillingInfo {
+  subscription: { status: string; plan: string; current_period_end: string | null; provider: string; provider_subscription_id: string | null; provider_customer_id?: string | null; raw?: { scheduled_change?: { action?: string; effective_at?: string } | null } | null } | null;
+  paddle: { environment: 'sandbox' | 'production'; client_token: string; prices: { month: PriceInfo; year: PriceInfo }; email: string; workspace_id: string } | null;
+  error: string | null;
+}
 export interface BibEntry { key: string; path: string; title: string; authors: string[]; year: number | null; venue: string | null; doi: string | null; url: string | null }
 export interface ImportResult { path: string; title: string; version: number; warning?: string; ingestPrompt?: string; meta: { source_type: string; doi?: string; authors?: string[]; year?: number; venue?: string; citation_key?: string }; imported?: { path: string; title: string }[]; skipped?: string[] }
 export interface AiConfig { provider: string; model: string; key_last4: string; updated_at: string }
@@ -125,6 +131,8 @@ export const api = {
   zoteroDelete: () => request<{ deleted: boolean }>('DELETE', '/api/zotero'),
   zoteroSync: () => request<{ result: ZoteroSyncResult; link: ZoteroLink }>('POST', '/api/zotero/sync'),
   plan: () => request<PlanStatus>('GET', '/api/plan'),
+  billing: () => request<BillingInfo>('GET', '/api/billing'),
+  billingPortal: () => request<{ overview: string; cancel?: string; update_payment_method?: string }>('POST', '/api/billing/portal'),
   deleteAccount: (password: string) => request<unknown>('POST', '/api/auth/delete-user', { password }),
   setLang: (lang: Lang) => request<{ lang: Lang }>('PUT', '/api/me/lang', { lang }),
   templates: () => request<{ templates: Template[]; langs: Lang[]; custom: CustomTemplate[] }>('GET', '/api/templates'),
