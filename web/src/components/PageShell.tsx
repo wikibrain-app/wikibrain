@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import type { ReactNode } from 'react';
 import { Brand, btnGhost } from './ui';
-import { Version } from './Version';
+import { Footer } from './Footer';
 import { useT } from '../i18n';
 
 // Shared shell for settings / help / stats / lint pages: same width as the workspace (1280), responsive content area.
@@ -15,7 +15,7 @@ export function PageShell({ title, right, children, wide }: { title?: string; ri
         <span className="ml-auto flex items-center gap-2">{right}<Link to="/" className={btnGhost}>{t('shell.back')}</Link></span>
       </header>
       <div className={`w-full flex-1 px-4 sb:px-8 py-6 sb:py-8 ${wide ? '' : 'mx-auto max-w-[960px]'}`}>{children}</div>
-      <Version />
+      <Footer />
     </div>
   );
 }

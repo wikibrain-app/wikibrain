@@ -9,6 +9,8 @@ import { Route, Routes, StaticRouter } from 'react-router';
 import { LangProvider, type Lang } from '../web/src/i18n/index';
 import Help from '../web/src/pages/Help';
 import Landing from '../web/src/pages/Landing';
+import Legal from '../web/src/pages/Legal';
+import { legalDocs } from '../web/src/pages/legal/content';
 import * as zhTW from '../web/src/pages/help/zh-TW';
 import * as en from '../web/src/pages/help/en';
 
@@ -55,6 +57,29 @@ for (const lang of ['zh-TW', 'en'] as Lang[]) for (const page of (lang === 'en' 
   let html = index.replace(/<title>[^<]*<\/title>/, head).replace('<html lang="zh-Hant">', `<html lang="${meta[lang].htmlLang}">`);
   html = html.replace('<div id="root"></div>', `<div id="root">${markup}</div>`);
   const out = join(dist, `help.${page.slug}${lang === 'en' ? '.en' : ''}.html`);
+  writeFileSync(out, html);
+  console.log(`prerendered ${out} (${(html.length / 1024).toFixed(0)} KB)`);
+}
+
+// Legal pages (/privacy, /terms), both languages.
+for (const lang of ['zh-TW', 'en'] as Lang[]) for (const doc of legalDocs) {
+  const path = `/${doc.slug}`;
+  const markup = renderToStaticMarkup(createElement(StaticRouter, { location: path }, createElement(LangProvider, { initial: lang }, createElement(Routes, null, createElement(Route, { path, element: createElement(Legal, { slug: doc.slug, signedIn: false }) })))));
+  const other = lang === 'en' ? 'zh-TW' : 'en';
+  const title = `${doc.title[lang]} — ${name}`;
+  const description = lang === 'en' ? `${doc.title.en} of the WikiBrain hosted service (wikibrain.app).` : `WikiBrain 託管服務（wikibrain.app）的${doc.title['zh-TW']}。`;
+  const head = [
+    `<title>${title}</title>`,
+    `<meta name="description" content="${description}">`,
+    `<link rel="canonical" href="${appUrl}${path}${lang === 'en' ? '?lang=en' : ''}">`,
+    `<link rel="alternate" hreflang="${meta[lang].htmlLang}" href="${appUrl}${path}${lang === 'en' ? '?lang=en' : ''}">`,
+    `<link rel="alternate" hreflang="${meta[other].htmlLang}" href="${appUrl}${path}${other === 'en' ? '?lang=en' : ''}">`,
+    `<link rel="alternate" hreflang="x-default" href="${appUrl}${path}">`,
+    `<meta property="og:type" content="website"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}"><meta property="og:url" content="${appUrl}${path}">`,
+  ].join('\n    ');
+  let html = index.replace(/<title>[^<]*<\/title>/, head).replace('<html lang="zh-Hant">', `<html lang="${meta[lang].htmlLang}">`);
+  html = html.replace('<div id="root"></div>', `<div id="root">${markup}</div>`);
+  const out = join(dist, `legal.${doc.slug}${lang === 'en' ? '.en' : ''}.html`);
   writeFileSync(out, html);
   console.log(`prerendered ${out} (${(html.length / 1024).toFixed(0)} KB)`);
 }

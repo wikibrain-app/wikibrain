@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { useT, type Lang } from '../i18n';
 import { Brand, btnGhost, btnPrimary } from '../components/ui';
 import { Version } from '../components/Version';
+import { CONTACT_EMAIL, SOURCE_URL } from '../components/Footer';
 
 // Public landing page for signed-out visitors (prerendered by scripts/prerender-help.tsx for crawlers).
 // Copy lives here (not in the i18n dictionaries) so marketing text can change without touching the app strings.
@@ -17,7 +18,7 @@ const copy: Record<Lang, {
     eyebrow: 'Karpathy「LLM Wiki」模式的託管實作',
     h1: '把來源丟進去，AI 替你編成一座會複利的 wiki',
     lede: '你策展文章、論文與 PDF；AI agent 讀完、寫成互相連結的 Markdown 頁、更新目錄與紀錄。Cursor、Claude、ChatGPT 透過 MCP 讀寫同一座 wiki，知識不再散在對話裡。',
-    cta: '免費開始（14 天 Pro 體驗，不用信用卡）', login: '已有帳號，登入', help: '看說明',
+    cta: '免費開始（14 天 Pro 體驗，不用信用卡）', login: '登入', help: '看說明',
     props: [
       { title: '編纂，不是檢索', body: '不是把筆記放上雲端給 AI 撈片段；來源一進來就被讀完、摘要、交叉引用、標記矛盾。每問一次都站在已經整理好的知識上。' },
       { title: '任何 agent 都能讀寫', body: '內建 MCP server：Cursor 與 Claude Code 貼一把 token，Claude.ai 與 ChatGPT 走 OAuth 登入授權。網頁上也能用自己的 API key 一鍵編纂。' },
@@ -122,6 +123,7 @@ export default function Landing() {
         </section>
         <footer className="mt-12 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-5 text-[12px] text-ink-faint">
           <span>{c.footer}</span>
+          <span className="flex flex-wrap gap-x-4"><Link to="/privacy" className="hover:text-celadon-deep hover:underline">{lang === 'en' ? 'Privacy' : '隱私權政策'}</Link><Link to="/terms" className="hover:text-celadon-deep hover:underline">{lang === 'en' ? 'Terms' : '服務條款'}</Link><a href={SOURCE_URL} target="_blank" rel="noreferrer" className="hover:text-celadon-deep hover:underline">GitHub</a><a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-celadon-deep hover:underline">{CONTACT_EMAIL}</a></span>
           <Version />
         </footer>
       </main>

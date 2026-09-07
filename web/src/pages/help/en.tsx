@@ -227,7 +227,7 @@ function PagePlans() {
       <h2 id="faq">FAQ</h2>
       {faq.map(f => <p key={f.q}><b>{f.q}</b>{f.href ? <>{f.a.split(f.label!)[0]}<a className="text-celadon-deep underline" href={f.href}>{f.label}</a>{f.a.split(f.label!).slice(1).join(f.label!)}</> : f.a}</p>)}
       <h2 id="contact">Contact and reporting problems</h2>
-      <p>A support address and an issue tracker will be announced at launch; once the code is public you can also open a GitHub issue. Until then, contact the maintainer directly.</p>
+      <p>Support: <a className="text-celadon-deep underline" href="mailto:hello@wikibrain.app">hello@wikibrain.app</a> (usually answered within one or two working days). Bugs and feature requests are also welcome as issues on <a className="text-celadon-deep underline" href="https://github.com/wikibrain-app/wikibrain">GitHub</a>. Legal: <a className="text-celadon-deep underline" href="/privacy">Privacy Policy</a>, <a className="text-celadon-deep underline" href="/terms">Terms of Service</a>. Data is hosted in Singapore (Railway); see section 4 of the privacy policy.</p>
     
     </>
   );

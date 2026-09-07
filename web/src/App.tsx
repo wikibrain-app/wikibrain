@@ -9,6 +9,7 @@ import Settings from './pages/Settings';
 import Forgot from './pages/Forgot';
 import ResetPassword from './pages/ResetPassword';
 import Help from './pages/Help';
+import Legal from './pages/Legal';
 import Lint from './pages/Lint';
 import Stats from './pages/Stats';
 import OAuthConsent from './pages/OAuthConsent';
@@ -34,6 +35,8 @@ export default function App() {
       <Route path="/register" element={me ? <Navigate to="/" replace /> : <Register />} />
       <Route path="/help" element={<Help signedIn={!!me} />} />
       <Route path="/help/:page" element={<Help signedIn={!!me} />} />
+      <Route path="/privacy" element={<Legal slug="privacy" signedIn={!!me} />} />
+      <Route path="/terms" element={<Legal slug="terms" signedIn={!!me} />} />
       <Route path="/forgot" element={<Forgot />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/settings" element={guard(<Settings me={me!} onSignedOut={() => setMe(null)} />)} />

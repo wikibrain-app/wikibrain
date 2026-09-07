@@ -46,7 +46,6 @@ export function Topbar(p: Props) {
               <div className="px-3 py-1.5 text-[11px] text-ink-faint truncate">{p.email}</div>
               <Link to="/settings" className="block px-3 py-2 text-[13px] hover:bg-celadon-mist">{t('topbar.settings')}</Link>
               <Link to="/stats" className="block px-3 py-2 text-[13px] hover:bg-celadon-mist">{t('topbar.stats')}</Link>
-              <Link to="/lint" className="block px-3 py-2 text-[13px] hover:bg-celadon-mist">{t('topbar.lint')}</Link>
               <Link to="/help" className="block px-3 py-2 text-[13px] hover:bg-celadon-mist">{t('topbar.help')}</Link>
               <button className="block w-full text-left px-3 py-2 text-[13px] hover:bg-celadon-mist" onClick={p.onSignOut}>{t('topbar.signOut')}</button>
             </div>

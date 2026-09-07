@@ -228,7 +228,7 @@ function PagePlans() {
       <h2 id="faq">常見問題</h2>
       {faq.map(f => <p key={f.q}><b>{f.q}</b>{f.href ? <>{f.a.split(f.label!)[0]}<a className="text-celadon-deep underline" href={f.href}>{f.label}</a>{f.a.split(f.label!).slice(1).join(f.label!)}</> : f.a}</p>)}
       <h2 id="contact">聯絡與回報問題</h2>
-      <p>支援信箱與問題回報管道會隨正式上線公布；程式碼開源後也可以在 GitHub 開 issue。在那之前，請直接聯絡維護者。</p>
+      <p>支援信箱：<a className="text-celadon-deep underline" href="mailto:hello@wikibrain.app">hello@wikibrain.app</a>（一般一到兩個工作天回覆）。程式問題與功能建議也可以到 <a className="text-celadon-deep underline" href="https://github.com/wikibrain-app/wikibrain">GitHub</a> 開 issue。法律文件：<a className="text-celadon-deep underline" href="/privacy">隱私權政策</a>、<a className="text-celadon-deep underline" href="/terms">服務條款</a>。資料存放於新加坡（Railway），細節見隱私權政策第 4 條。</p>
     
     </>
   );

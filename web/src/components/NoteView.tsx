@@ -1,3 +1,4 @@
+import { QuotaLine } from './QuotaLine';
 import { formatAuthor, formatTime, layerOf, type Note, type NoteSummary, type Version } from '../lib/api';
 import { Markdown } from './Markdown';
 import { btnGhost, btnPrimary } from './ui';
@@ -61,6 +62,7 @@ export function NoteView({ note, notes, historical, onOpen, onEdit, onDelete, on
             {!aiReady && pendingCount > 1 && ingestPromptAll && <button className={btnGhost} onClick={() => copyPrompt(ingestPromptAll)}>{t('note.copyAll', { n: pendingCount })}</button>}
             {!aiReady && <a className={`${btnGhost} inline-block`} href="/settings">{t('note.setupKey')}</a>}
           </div>
+          <QuotaLine className="mt-2" refreshKey={ingesting ? 1 : 0} />
         </div>
       )}
       {historical && (

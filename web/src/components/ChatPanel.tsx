@@ -1,3 +1,4 @@
+import { QuotaLine } from './QuotaLine';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { api, fmtTok, fmtUsd, type ChatMessage, type ChatSession } from '../lib/api';
@@ -114,7 +115,8 @@ export function ChatPanel({ aiReady, notes, draft, onDraftUsed, onOpen, onClose,
           {hasReply && <button type="button" className={btnPrimary} onClick={ingestFromChat} disabled={ingesting || pendingJob !== null} data-testid="chat-ingest">{t('chat.ingestNow')}</button>}
         </div>
       )}
-      <form onSubmit={send} className="flex gap-2 border-t border-line p-2.5">
+      <QuotaLine className="px-3 pt-2" refreshKey={pendingJob ? 1 : 0} />
+        <form onSubmit={send} className="flex gap-2 border-t border-line p-2.5">
         <textarea ref={taRef} className={`${input} resize-none leading-relaxed`} rows={2} style={{ maxHeight: '45vh', overflowY: 'auto' }} placeholder={aiReady ? t('chat.ph') : t('chat.phNoKey')} value={text} disabled={!aiReady || pendingJob !== null}
           onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); (e.currentTarget.form as HTMLFormElement).requestSubmit(); } }} data-testid="chat-input" />
         <button className={btnPrimary} disabled={!aiReady || pendingJob !== null || !text.trim()}>{t('chat.send')}</button>

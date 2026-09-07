@@ -16,6 +16,7 @@ import { OnboardingModal } from '../components/OnboardingModal';
 import { AddModal, type AddTab } from '../components/AddModal';
 import { IngestPanel } from '../components/IngestPanel';
 import { ChatPanel } from '../components/ChatPanel';
+import { Footer } from '../components/Footer';
 
 type Mode = 'read' | 'edit' | 'search';
 
@@ -207,6 +208,7 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
           </div>
         )}
       </div>
+      <Footer className="hidden sb:flex" />
       {add && (
         <AddModal tab={add.tab} layer={add.layer} busy={busy} onClose={() => setAdd(null)}
           onCreate={async (p, content) => { await create(p, content); }}

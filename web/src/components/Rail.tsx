@@ -22,7 +22,7 @@ export function Rail({ backlinks, versions, current, viewing, onOpen, onView, on
           ? <p className="text-[12px] leading-relaxed text-ink-faint">{t('rail.noBacklinks')}</p>
           : backlinks.map(b => (
             <button key={b.path} className="mb-2 block w-full rounded-lg border border-line px-2.5 py-2 text-left text-[12.5px] leading-[1.55] hover:border-celadon" onClick={() => onOpen(b.path)}>
-              <b>{b.title}</b><span className="mt-0.5 block font-mono text-[11px] text-ink-soft">{b.path}</span>
+              <b className="break-words">{b.title}</b><span className="mt-0.5 block break-all font-mono text-[11px] text-ink-soft">{b.path}</span>
             </button>
           ))}
       </section>
