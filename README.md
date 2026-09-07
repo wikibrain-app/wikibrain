@@ -1,6 +1,6 @@
 # WikiBrain
 
-**Personal knowledge base.** Hosted at [wikibrain.app](https://wikibrain.app) (launching). A hosted implementation of Andrej Karpathy's **LLM Wiki** pattern: you curate sources, an AI agent compiles them into a persistent, interlinked Markdown wiki, and every AI client you already use (Cursor, Claude, ChatGPT, Claude Code…) reads and writes the same wiki through MCP.
+**Personal knowledge base.** Hosted at [wikibrain.app](https://wikibrain.app). A hosted implementation of Andrej Karpathy's **LLM Wiki** pattern: you curate sources, an AI agent compiles them into a persistent, interlinked Markdown wiki, and every AI client you already use (Cursor, Claude, ChatGPT, Claude Code…) reads and writes the same wiki through MCP.
 
 > Open-source core (AGPL-3.0). A hosted version with billing, backups and mobile apps is run by the maintainer; self-hosting is fully supported with `docker compose`.
 

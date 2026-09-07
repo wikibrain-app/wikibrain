@@ -210,7 +210,7 @@ function PagePlans() {
   return (
     <>
       <h2 id="plans">Plans and pricing</h2>
-      <p>Billing has not started yet; when the trial ends you drop to Free, and Pro is enabled manually by us. The subscription pays for an always-on knowledge base that any agent can read and write: hosting, import, bibliography, versions, OAuth connections, Zotero, usable from a phone browser; offline copies and backup mirrors are planned. <b>Model costs are not included</b>: you use your own API key and pay your provider directly; Settings and Stats show real tokens and an estimated cost per job (estimated with OpenRouter's price list; your provider's bill is authoritative). Cursor users need no key at all.</p>
+      <p>When the trial ends you drop to Free automatically; to upgrade, open Settings → Plan → Upgrade to Pro. Checkout is handled by Paddle (our merchant of record), prices are shown with tax for your location, and invoices, payment method and cancellation live under Manage subscription. The subscription pays for an always-on knowledge base that any agent can read and write: hosting, import, bibliography, versions, OAuth connections, Zotero, usable from a phone browser; offline copies and backup mirrors are planned. <b>Model costs are not included</b>: you use your own API key and pay your provider directly; Settings and Stats show real tokens and an estimated cost per job (estimated with OpenRouter's price list; your provider's bill is authoritative). Cursor users need no key at all.</p>
       <p>One "agent run" = one ingest, one chat reply, or one deep lint.</p>
       <div className="not-prose my-4 overflow-x-auto rounded-[10px] border border-line font-sans text-[13px]">
         <table className="w-full border-collapse">

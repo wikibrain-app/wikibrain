@@ -211,7 +211,7 @@ function PagePlans() {
   return (
     <>
       <h2 id="plans">方案與計價</h2>
-      <p>目前尚未開始收費；體驗期結束會轉 Free，Pro 由我們手動開通。訂閱買的是這座隨時在線、任何 agent 都能讀寫的知識庫：託管、匯入、書目、版本、OAuth 連接、Zotero，手機瀏覽器可用；離線副本與備份鏡像規劃中。<b>模型費用不包含在內</b>：你用自己的 API key，費用直接走你的供應商帳單；設定頁與統計頁會顯示每個工作的實際 tokens 與估算費用（以 OpenRouter 價目表估，實際以供應商帳單為準）。用 Cursor 的人連 key 都不用填。</p>
+      <p>體驗期結束會自動轉 Free；要升級 Pro，到設定頁「方案」按「升級 Pro」，結帳由 Paddle（我們的 Merchant of Record）處理，含稅價依你所在地顯示，發票、付款方式與取消都在「管理訂閱」。訂閱買的是這座隨時在線、任何 agent 都能讀寫的知識庫：託管、匯入、書目、版本、OAuth 連接、Zotero，手機瀏覽器可用；離線副本與備份鏡像規劃中。<b>模型費用不包含在內</b>：你用自己的 API key，費用直接走你的供應商帳單；設定頁與統計頁會顯示每個工作的實際 tokens 與估算費用（以 OpenRouter 價目表估，實際以供應商帳單為準）。用 Cursor 的人連 key 都不用填。</p>
       <p>一次「agent 工作」＝一次編纂、一則對話回覆或一次深度健檢。</p>
       <div className="not-prose my-4 overflow-x-auto rounded-[10px] border border-line font-sans text-[13px]">
         <table className="w-full border-collapse">

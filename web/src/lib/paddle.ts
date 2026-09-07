@@ -19,17 +19,23 @@ export function loadPaddle(): Promise<PaddleJs> {
     document.head.appendChild(s);
   }));
 }
-export async function openCheckout(cfg: { environment: 'sandbox' | 'production'; client_token: string; email: string; workspace_id: string }, priceId: string, onEvent: (name: string) => void) {
+export async function openCheckout(cfg: { environment: 'sandbox' | 'production'; client_token: string; email: string; workspace_id: string }, priceId: string, onEvent: (name: string, detail?: string) => void) {
   const P = await loadPaddle();
   if (!initialised) {
     if (cfg.environment === 'sandbox') P.Environment.set('sandbox');
-    P.Initialize({ token: cfg.client_token, eventCallback: e => onEvent(e.name) });
+    P.Initialize({ token: cfg.client_token, eventCallback: e => {
+      // Surface Paddle's own error detail (domain not approved, no default payment link, bad price...) instead of its generic dialog text
+      const d = e.data as { error?: { detail?: string; code?: string }; detail?: string } | undefined;
+      const detail = d?.error?.detail ?? d?.detail ?? (d?.error?.code ? String(d.error.code) : undefined);
+      if (e.name === 'checkout.error' || e.name === 'checkout.payment-error') console.warn('Paddle', e.name, e.data);
+      onEvent(e.name, detail);
+    } });
     initialised = true;
   }
   P.Checkout.open({
     items: [{ priceId, quantity: 1 }],
     customer: { email: cfg.email },
     customData: { workspace_id: cfg.workspace_id },
-    settings: { variant: 'one-page', displayMode: 'overlay', allowLogout: false, locale: document.documentElement.lang.startsWith('zh') ? 'zh-Hant' : 'en', showAddDiscounts: true },
+    settings: { variant: 'one-page', displayMode: 'overlay', allowLogout: false, showAddDiscounts: true },
   });
 }

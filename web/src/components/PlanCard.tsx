@@ -30,7 +30,8 @@ export function PlanCard() {
     if (!paddle) return;
     setBusy(true);
     try {
-      await openCheckout(paddle, priceId, name => {
+      await openCheckout(paddle, priceId, (name, detail) => {
+        if (name === 'checkout.error') { toast(t('plan.checkoutError', { err: detail ?? name }), { kind: 'error' }); setBusy(false); }
         if (name === 'checkout.completed') {
           toast(t('plan.checkoutDone'));
           let tries = 0;
