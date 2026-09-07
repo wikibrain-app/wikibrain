@@ -68,16 +68,22 @@ flowchart TB
 How knowledge moves between the three layers (Karpathy's Ingest / Query / Lint, all done with the same six tools, by your AI client over MCP or by the server-side agent with your key):
 
 ```mermaid
-flowchart LR
-  RAW["raw/<br/>immutable sources<br/>with origin + bibliography"] -->|"pending until a wiki page links back"| ING["Ingest"]
-  SCH["schema/<br/>rules the agent reads first"] -.->|get_instructions| ING
-  SCH -.-> QRY["Query"]
-  SCH -.-> LNT["Lint"]
-  ING -->|"create / update pages, index.md, log.md"| WIKI["wiki/<br/>compiled, interlinked pages"]
-  WIKI -->|"read index, then pages"| QRY
-  QRY -->|"answer with citations; optionally saved to wiki/queries/"| WIKI
+flowchart TB
+  SCH["schema/ — rules the agent reads first"]
+  RAW["raw/ — immutable sources<br/>(origin + bibliography)"]
+  WIKI["wiki/ — compiled, interlinked pages<br/>index.md · log.md"]
+  ING["Ingest"]
+  QRY["Query"]
+  LNT["Lint"]
+  SCH -. get_instructions .-> ING
+  SCH -.-> QRY
+  SCH -.-> LNT
+  RAW -- "pending until a wiki page links back" --> ING
+  ING -- "create / update pages, index, log" --> WIKI
+  WIKI -- "read index, then pages" --> QRY
+  QRY -- "cited answer, optionally saved to wiki/queries/" --> WIKI
   WIKI --> LNT
-  LNT -->|"orphans · broken links · contradictions → wiki/lint/"| WIKI
+  LNT -- "orphans · broken links · contradictions → wiki/lint/" --> WIKI
 ```
 
 ## Self-host
