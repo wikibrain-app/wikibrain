@@ -160,15 +160,15 @@ def flow(name: str) -> str:
     for yy in oy[1:]:
         c.arrow(tx, yy + 28, ops_x - 2, yy + 28, dash="3 3")
     # raw → ingest
-    c.arrow(raw_x + raw_w, top + 28, ops_x - 2, oy[0] + 28)
+    c.arrow(raw_x + raw_w, oy[0] + 28, ops_x - 2, oy[0] + 28)
     # ingest → wiki
-    c.arrow(ops_x + ops_w, oy[0] + 20, wiki_x - 2, top + 20, label="create / update", label_dy=-8)
+    c.arrow(ops_x + ops_w, oy[0] + 28, wiki_x - 2, oy[0] + 28, label="create / update", label_dy=-8)
     # wiki → query, query → wiki
-    c.arrow(wiki_x, top + 88, ops_x + ops_w + 2, oy[1] + 18, label="read", label_dy=-8)
-    c.arrow(ops_x + ops_w, oy[1] + 40, wiki_x - 2, top + 110, label="save to queries/", label_dy=14)
+    c.arrow(wiki_x, oy[1] + 18, ops_x + ops_w + 2, oy[1] + 18, label="read", label_dy=-8)
+    c.arrow(ops_x + ops_w, oy[1] + 40, wiki_x - 2, oy[1] + 40, label="save to queries/", label_dy=14)
     # wiki → lint, lint → wiki
-    c.arrow(wiki_x, top + 150, ops_x + ops_w + 2, oy[2] + 18, label="scan", label_dy=-8)
-    c.arrow(ops_x + ops_w, oy[2] + 40, wiki_x - 2, top + 176, label="report to lint/", label_dy=14)
+    c.arrow(wiki_x, oy[2] + 18, ops_x + ops_w + 2, oy[2] + 18, label="scan", label_dy=-8)
+    c.arrow(ops_x + ops_w, oy[2] + 40, wiki_x - 2, oy[2] + 40, label="report to lint/", label_dy=14)
     c.text(W - 28, H - 14, "Every write is versioned and attributed (you, Cursor, agent:<model>)", size=10.5, fill=p["faint"], anchor="end")
     return c.render()
 
