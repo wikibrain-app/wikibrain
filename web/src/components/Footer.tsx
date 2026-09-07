@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { useT } from '../i18n';
+import { LangSwitch } from './LangSwitch';
 
 // Site-wide footer: help, legal pages, source, contact, version. Used by the workspace frame, PageShell and the landing page.
 const s = {
@@ -25,7 +26,10 @@ export function Footer({ className = '' }: { className?: string }) {
       <Link to="/terms" className={link}>{l.terms}</Link>
       <a href={SOURCE_URL} target="_blank" rel="noreferrer" className={link}>{l.source}</a>
       <a href={`mailto:${CONTACT_EMAIL}`} className={link}>{l.contact} · {CONTACT_EMAIL}</a>
-      {v && <span className="ml-auto" data-testid="app-version">WikiBrain v{v.version}{v.commit && v.commit !== 'unknown' ? ` · ${v.commit}` : ''}</span>}
+      <span className="ml-auto flex items-center gap-3">
+        <LangSwitch className="text-[11px]" />
+      {v && <span data-testid="app-version">WikiBrain v{v.version}{v.commit && v.commit !== 'unknown' ? ` · ${v.commit}` : ''}</span>}
+      </span>
     </footer>
   );
 }
