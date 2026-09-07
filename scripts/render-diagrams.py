@@ -123,7 +123,7 @@ def flow(name: str) -> str:
     c.text(44, 126, "rules the agent reads before writing (get_instructions) · instructions.md, template rules", size=11, fill=p["soft"], anchor="start")
     # columns
     raw_x, raw_w = 28, 222
-    ops_x, ops_w = 340, 262
+    ops_x, ops_w = 336, 228
     wiki_x, wiki_w = 690, 242
     top, bottom = 170, 380
     c.rect(raw_x, top, raw_w, bottom - top, p["paper"], p["line"])
@@ -162,13 +162,13 @@ def flow(name: str) -> str:
     # raw → ingest
     c.arrow(raw_x + raw_w, top + 28, ops_x - 2, oy[0] + 28)
     # ingest → wiki
-    c.arrow(ops_x + ops_w, oy[0] + 20, wiki_x - 2, top + 20, label="create / update pages", label_dy=-8)
+    c.arrow(ops_x + ops_w, oy[0] + 20, wiki_x - 2, top + 20, label="create / update", label_dy=-8)
     # wiki → query, query → wiki
     c.arrow(wiki_x, top + 88, ops_x + ops_w + 2, oy[1] + 18, label="read", label_dy=-8)
-    c.arrow(ops_x + ops_w, oy[1] + 40, wiki_x - 2, top + 110, label="save answer to queries/", label_dx=8, label_dy=14)
+    c.arrow(ops_x + ops_w, oy[1] + 40, wiki_x - 2, top + 110, label="save to queries/", label_dy=14)
     # wiki → lint, lint → wiki
     c.arrow(wiki_x, top + 150, ops_x + ops_w + 2, oy[2] + 18, label="scan", label_dy=-8)
-    c.arrow(ops_x + ops_w, oy[2] + 40, wiki_x - 2, top + 176, label="report to lint/", label_dy=12)
+    c.arrow(ops_x + ops_w, oy[2] + 40, wiki_x - 2, top + 176, label="report to lint/", label_dy=14)
     c.text(W - 28, H - 14, "Every write is versioned and attributed (you, Cursor, agent:<model>)", size=10.5, fill=p["faint"], anchor="end")
     return c.render()
 
