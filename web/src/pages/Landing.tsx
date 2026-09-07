@@ -123,10 +123,12 @@ export default function Landing() {
           <p className="mt-3 max-w-[70ch] text-[14px] leading-relaxed text-ink-soft">{c.openBody}</p>
           <div className="mt-5 flex flex-wrap gap-3"><Link to="/register" className={btnPrimary} data-testid="landing-cta-2">{c.cta}</Link><Link to="/help/karpathy" className={btnGhost}>{lang === 'en' ? 'The LLM Wiki pattern' : 'LLM Wiki 模式'}</Link></div>
         </section>
-        <footer className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-5 text-[12px] text-ink-faint">
-          <span>{c.footer}</span>
-          <span className="flex flex-wrap gap-x-4"><Link to="/privacy" className="hover:text-celadon-deep hover:underline">{lang === 'en' ? 'Privacy' : '隱私權政策'}</Link><Link to="/terms" className="hover:text-celadon-deep hover:underline">{lang === 'en' ? 'Terms' : '服務條款'}</Link><a href={SOURCE_URL} target="_blank" rel="noreferrer" className="hover:text-celadon-deep hover:underline">GitHub</a><a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-celadon-deep hover:underline">{CONTACT_EMAIL}</a></span>
-          <span className="ml-auto flex items-center gap-3"><LangSwitch className="text-[11px]" /><Version className="" /></span>
+        <footer className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-5 text-[12px] text-ink-faint">
+          <div>
+            <div>{c.footer}</div>
+            <span className="mt-1 flex flex-wrap gap-x-4"><Link to="/privacy" className="hover:text-celadon-deep hover:underline">{lang === 'en' ? 'Privacy' : '隱私權政策'}</Link><Link to="/terms" className="hover:text-celadon-deep hover:underline">{lang === 'en' ? 'Terms' : '服務條款'}</Link><a href={SOURCE_URL} target="_blank" rel="noreferrer" className="hover:text-celadon-deep hover:underline">GitHub</a><a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-celadon-deep hover:underline">{CONTACT_EMAIL}</a></span>
+          </div>
+          <span className="flex items-center gap-3"><LangSwitch className="text-[11px]" /><Version className="" /></span>
         </footer>
       </main>
     </div>
