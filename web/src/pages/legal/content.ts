@@ -16,129 +16,145 @@ export const privacy: LegalDoc = {
   updated: UPDATED,
   title: { 'zh-TW': '隱私權政策', en: 'Privacy Policy' },
   body: {
-    'zh-TW': `生效日期：${UPDATED}　版本 1.0
+    'zh-TW': `生效日期：${UPDATED}　版本 1.1
 
-## 1. 我們是誰
+一句話版本：**你的筆記是你的。** 我們只在你按下按鈕時把內容送去你選的 AI 模型，不拿它做別的事，不追蹤你，不賣資料；帳號一刪，資料就從主資料庫連鎖刪掉。下面用問答把細節講清楚，這份文件同時也是個人資料保護法要求的告知事項（經營者、目的、資料類別、存放地、期間、你的權利）。
 
-本服務由 ${OPERATOR} 提供，網址 wikibrain.app，聯絡信箱 ${CONTACT}。
+本服務由 ${OPERATOR} 提供，網址 wikibrain.app，有問題寫信到 ${CONTACT}。
 
-## 2. 我們蒐集哪些資料
+## 我的筆記會被拿去訓練 AI 嗎？
 
-| 類別 | 內容 | 來源 |
+不會。我們自己不訓練任何模型，也不會把你的內容拿去做產品以外的用途。當你按「自動編纂」「對話」或「健檢」時，相關筆記會送到**你在設定頁選的模型供應商**（Anthropic、OpenAI 或 OpenRouter），用你自己的 API key；那一段的處理方式依該供應商的條款，多數供應商對 API 流量預設不用來訓練，但請自行確認你選的那一家。
+
+## 誰看得到我的筆記？
+
+只有你，以及你授權的客戶端（Cursor、Claude Code、Claude.ai、ChatGPT 等，透過你自己建立的 MCP token 或 OAuth 授權）。每一筆查詢都帶工作區隔離，別的帳號看不到你的東西。我們的營運者不會主動閱讀你的內容；只有在你回報問題並同意時，或為了處理資安事件、法律要求時才會查看必要的部分。
+
+## 你們會追蹤我嗎？
+
+不會。沒有 Google Analytics，沒有廣告像素，沒有第三方追蹤程式。網站只用一個登入用的 session cookie（必要性 cookie），所以也不需要 cookie 同意橫幅。伺服器日誌會記 IP、時間與路徑，用來限流與查資安問題，最多保留 90 天。
+
+## 資料放在哪裡？
+
+新加坡。主機與 PostgreSQL 資料庫在 Railway 的新加坡機房，每日備份也在同一區域。這在法律上屬於個人資料的國際傳輸，我們以契約與加密控管；若主管機關依個資法第 21 條限制特定傳輸，我們會配合調整。
+
+## 什麼時候內容會離開你們的伺服器？
+
+只在你觸發對應功能時，而且只送完成那件事需要的部分：
+
+1. **AI 模型供應商**：如上，用你的 key，送你相關的筆記、規則頁與對話文字。
+2. **平台 OpenRouter 帳號（試用）**：體驗期前 10 次 agent 工作若你還沒填 key，會經由我們的 OpenRouter 帳號送到我們選的便宜模型；適用 [OpenRouter 的隱私政策](https://openrouter.ai/privacy)。
+3. **書目查詢**：匯入含 DOI／arXiv／PubMed 識別碼的來源時，向 Crossref、arXiv、PubMed（NCBI）的公開 API 查書目，送出的只有識別碼與你貼的網址。
+4. **貼網址匯入**：由我們的伺服器代你抓那個網頁，對方看到的是我們的伺服器。
+5. **Zotero**：你主動連結後，我們用你的 Zotero API key 讀你指定的文獻庫，依你的設定每小時同步。
+6. **Resend**：寄驗證信、重設密碼、訂閱通知這類交易型郵件，送出的是你的電子郵件地址與信件內容。
+7. **Paddle（金流商）**：結帳時你直接和 Paddle 互動，信用卡資料由 Paddle 保管，我們只收到訂閱狀態、客戶與訂閱編號、到期日。
+8. **法律要求**：依法院命令或主管機關的合法要求提供時，我們會在法律允許的範圍內通知你。
+
+除了上面這些，我們不出售、不出租、不和任何第三方分享你的內容。
+
+## 你們到底存了哪些資料？
+
+| 類別 | 內容 | 從哪裡來 |
 |---|---|---|
-| 帳號 | 電子郵件、密碼（雜湊）、顯示名稱；若用 Google 登入則有 Google 帳號識別碼 | 您註冊時提供 |
-| 知識庫內容 | 筆記（raw／wiki／schema 三層）、每次儲存的版本快照、圖片附件、您匯入的網頁／PDF／Word 轉出的 Markdown | 您或您授權的 agent 建立 |
-| 對話與工作紀錄 | 與 agent 的對話內容、每次自動編纂／對話／健檢工作的步驟紀錄（呼叫了哪些工具、tokens 數、估算費用、錯誤訊息） | 您使用對話或自動編纂時產生 |
-| 金鑰 | 您選擇儲存的 AI 供應商 API key、Zotero API key，以 AES-256-GCM 加密後儲存，介面只顯示末四碼 | 您在設定頁填寫 |
-| 存取憑證 | MCP token（只存雜湊）、OAuth 授權紀錄、登入 session | 您連接 Cursor、Claude 等客戶端時 |
-| 訂閱 | 方案、訂閱狀態、金流商的客戶與訂閱編號、到期日（付費方案開放後） | 金流商以 webhook 通知；信用卡資料由金流商保管，我們不會取得 |
-| 使用計量 | 每月 agent 工作次數、MCP 呼叫次數、筆記數與容量 | 系統自動計算，用於方案限制與防濫用 |
-| 技術紀錄 | 伺服器存取日誌中的 IP、時間、路徑，用於速率限制與資安調查 | 自動產生 |
+| 帳號 | 電子郵件、密碼（只存雜湊）、使用者名稱；用 Google 登入則有 Google 帳號識別碼 | 你註冊時提供 |
+| 知識庫內容 | 筆記（raw／wiki／schema 三層）、每次儲存的版本快照、圖片附件、匯入的網頁／PDF／Word 轉成的 Markdown | 你或你授權的 agent 建立 |
+| 對話與工作紀錄 | 與 agent 的對話、每次自動編纂／對話／健檢的步驟紀錄（呼叫了哪些工具、tokens 數、估算費用、錯誤訊息） | 你使用時產生 |
+| 金鑰 | 你選擇儲存的 AI 供應商 API key、Zotero API key，以 AES-256-GCM 加密，介面只顯示末四碼 | 你在設定頁填寫 |
+| 存取憑證 | MCP token（只存雜湊）、OAuth 授權紀錄、登入 session | 你連接客戶端時 |
+| 訂閱 | 方案、訂閱狀態、Paddle 的客戶與訂閱編號、到期日 | Paddle 以 webhook 通知 |
+| 使用計量 | 每月 agent 工作次數、MCP 呼叫次數、筆記數與容量 | 系統自動計算，用於方案上限與防濫用 |
+| 技術紀錄 | 伺服器日誌裡的 IP、時間、路徑 | 自動產生 |
 
-我們**不使用**任何分析、廣告或行為追蹤工具，不植入第三方追蹤程式。
+用途：提供並維護服務、帳號安全與防濫用、依你的指示執行 AI 編纂與對話、計費與訂閱管理、寄帳號相關通知、法令遵循。（個資法特定目的編號：○六九契約管理、○九○消費者保護、一三五資（通）訊服務、一三六資（通）訊與資料庫管理、一八一其他經營合於營業登記項目或組織章程所定之業務。）
 
-## 3. 蒐集目的與法律依據
+## 會保留多久？
 
-提供並維護服務（契約履行）、帳號安全與防濫用、依您的指示執行 AI 編纂與對話、計費與訂閱管理、寄送帳號相關通知（驗證信、重設密碼、訂閱異動）、法令遵循。目的編號參考：○六九契約管理、○九○消費者保護、一三五資（通）訊服務、一三六資（通）訊與資料庫管理、一八一其他經營合於營業登記項目或組織章程所定之業務。
+- 每則筆記的**最新版本**在帳號存續期間永久保留；**較舊的版本快照** Pro 與體驗期保留 90 天、Free 保留 7 天，之後自動刪除。
+- 對話、工作紀錄、匯入的來源頁、附件：帳號存續期間保留，你隨時可以刪除或封存。
+- 金鑰：直到你刪除或替換。
+- 伺服器日誌：最多 90 天。
 
-## 4. 資料存放地與國際傳輸
+## 刪除帳號會發生什麼？
 
-資料儲存於**新加坡**的雲端主機（Railway）及其 PostgreSQL 資料庫；每日備份亦在同一區域。這構成個人資料的國際傳輸，我們以契約與加密控管；若主管機關依個資法第 21 條限制特定傳輸，我們將配合調整。
+設定頁最下面有「刪除帳號」。按下去並確認後，工作區裡所有筆記、版本、對話、工作紀錄、附件、金鑰、token 會立刻從主資料庫連鎖刪除；備份裡的副本最多 30 天內失效。Paddle 保有的交易紀錄依它的法定義務保留。刪除前記得先「匯出 zip」把全部筆記與附件帶走（Obsidian 相容）。
 
-## 5. 哪些資料會離開我們的伺服器
+## 我有哪些權利？
 
-只在您觸發對應功能時傳送，且以完成該功能為限：
+查詢或閱覽、複製（設定頁匯出 zip）、補充或更正、請求停止蒐集處理利用、刪除（設定頁刪除帳號，或寫信到 ${CONTACT}）。我們在收到請求後 15 日內處理，必要時可延長 15 日。要建立帳號一定得提供電子郵件，不提供就無法註冊。
 
-1. **AI 模型供應商**（Anthropic、OpenAI、OpenRouter，依您在設定頁的選擇）：自動編纂、對話、健檢時，您的相關筆記內容、規則頁、對話文字會送到您指定的供應商，使用您自己的 API key；費用由該供應商直接向您收取，資料處理受該供應商條款規範。
-2. **平台 OpenRouter 帳號（試用）**：試用期內前 5 次 agent 工作若您尚未填 key，會經由我們的 OpenRouter 帳號送到我們選定的模型；[OpenRouter 的隱私政策](https://openrouter.ai/privacy)適用。
-3. **書目查詢**：匯入含 DOI／arXiv／PubMed 識別碼的來源時，我們會向 Crossref、arXiv、PubMed（NCBI）的公開 API 查詢書目，送出的只有該識別碼與您貼的網址。
-4. **Zotero**：您主動連結後，我們用您的 Zotero API key 讀取您指定的文獻庫，並依您設定每小時同步。
-5. **Resend**：寄送驗證、重設密碼、訂閱通知等交易型郵件，送出的是您的電子郵件與信件內容。
-6. **金流商**：付費方案開放後，結帳時您直接與金流商互動，我們只收到訂閱狀態與識別碼。
-7. **法律要求**：依法院命令或主管機關合法要求提供，我們會在法律允許範圍內通知您。
+## 你們怎麼保護資料？
 
-除上述外，我們不出售、不出租、不與任何第三方分享您的內容。
+全程 HTTPS；密碼只存雜湊；API key 與 Zotero key 用 AES-256-GCM 加密，加密金鑰和登入簽章金鑰分開保管；MCP token 只存雜湊；所有查詢帶工作區隔離；每 IP、每 token、每人限流；對外抓網頁有 SSRF 防護。真的發生外洩時，我們會在知悉後 72 小時內用電子郵件通知受影響的你，並說明影響與處理方式。
 
-## 6. 保存期間
+## 未滿 18 歲可以用嗎？
 
-- 每則筆記的**最新版本**在您帳號存續期間永久保留；**較舊的版本快照**在 Pro 與體驗期保留 90 天、Free 保留 7 天，之後自動刪除。
-- 對話紀錄、工作紀錄、匯入的來源頁、附件：帳號存續期間保留，您可自行刪除或封存。
-- 金鑰：直到您刪除或替換。
-- 伺服器技術日誌：最多 90 天。
-- **刪除帳號**：您在設定頁刪除帳號後，工作區內所有筆記、版本、對話、工作紀錄、附件、金鑰、token 立即從主資料庫連鎖刪除；備份中的副本最多 30 天內失效。金流商保有的交易紀錄依其法定義務保留。
+本服務不以未滿 18 歲者為對象。未滿 18 歲請經法定代理人同意後使用；我們知悉未經同意蒐集時會刪除資料。
 
-## 7. 您的權利
+## 自己架的版本也適用嗎？
 
-您可隨時：查詢或請求閱覽、複製（設定頁「匯出 zip」可下載全部筆記與附件，Obsidian 相容）、補充或更正、請求停止蒐集處理利用、刪除（設定頁刪除帳號，或寄信至 ${CONTACT}）。我們於收到請求後 15 日內處理（可延長 15 日）。若您不提供必要資料（電子郵件），將無法建立帳號。
+不適用。核心程式以 AGPL-3.0 公開在 ${REPO}，自行架設者的資料由自己負責；本政策只適用於我們營運的 wikibrain.app。
 
-## 8. Cookie
+## 政策會改嗎？
 
-我們只使用一個登入 session cookie（必要性 cookie），沒有廣告或分析 cookie，因此不顯示 cookie 同意橫幅。
+會，但重大變更會在生效前 14 天用電子郵件與網站公告通知。本政策以中華民國法律為準據法。有任何疑問：${CONTACT}。`,
+    en: `Effective ${UPDATED} · version 1.1 · *The Traditional Chinese text is the binding version; this English text is a faithful summary.*
 
-## 9. 資料安全
+In one sentence: **your notes are yours.** We send content to the AI model you chose only when you press a button, do nothing else with it, do not track you, do not sell data, and deleting your account cascades through everything. The questions below spell out the details and double as the notice required by Taiwan's Personal Data Protection Act.
 
-傳輸全程 HTTPS；密碼以雜湊儲存；API key 與 Zotero key 以 AES-256-GCM 加密，加密金鑰與登入簽章金鑰分開保管；MCP token 只存雜湊；所有查詢帶工作區隔離；每 IP、每 token、每人限流；對外連線有 SSRF 防護。若發生個資外洩，我們會在知悉後 72 小時內以電子郵件通知受影響的您，並說明影響與因應措施。
+The service is operated by ${OPERATOR_EN} at wikibrain.app; contact ${CONTACT}.
 
-## 10. 年齡
+## Are my notes used to train AI?
 
-本服務不以未滿 18 歲者為對象。未滿 18 歲者請由法定代理人同意後使用；我們知悉未經同意蒐集時將刪除資料。
+No. We train no models and use your content for nothing beyond the product. When you press ingest, chat or lint, the relevant notes go to **the model provider you picked in Settings** (Anthropic, OpenAI or OpenRouter) with your own API key; that leg is governed by the provider's terms. Most providers do not train on API traffic by default, but check the one you chose.
 
-## 11. 開源版本
+## Who can see my notes?
 
-本服務的核心程式以 AGPL-3.0 授權公開於 ${REPO}。自行架設者的資料由其自行負責，本政策只適用於我們營運的託管服務 wikibrain.app。
+You, and the clients you authorise (Cursor, Claude Code, Claude.ai, ChatGPT, through MCP tokens or OAuth grants you create). Every query is scoped to your workspace. The operator does not read your content, except the minimum needed when you report a problem and agree, or to handle a security incident or a lawful request.
 
-## 12. 變更與聯絡
+## Do you track me?
 
-重大變更會在生效前 14 天以電子郵件與網站公告通知。聯絡：${CONTACT}。本政策以中華民國法律為準據法。`,
-    en: `Effective ${UPDATED} · version 1.0 · *The Traditional Chinese text is the binding version; this English text is a faithful summary.*
+No. No Google Analytics, no ad pixels, no third-party trackers. The site uses one essential login-session cookie, so there is no cookie banner. Server logs record IP, time and path for rate limiting and security investigation, kept at most 90 days.
 
-## 1. Who we are
+## Where is my data?
 
-The service is operated by ${OPERATOR_EN} at wikibrain.app; contact ${CONTACT}. We are the data controller under Taiwan's Personal Data Protection Act.
+Singapore. Servers and PostgreSQL run in Railway's Singapore region; daily backups stay in the same region. Legally this is an international transfer, controlled by contract and encryption.
 
-## 2. What we store
+## When does content leave your servers?
 
-Account data (e-mail, hashed password, display name, Google account id if you sign in with Google); your knowledge base (notes in the raw / wiki / schema layers, version snapshots, image attachments, Markdown converted from pages, PDFs and Word files you import); chat transcripts with the agent and per-job logs (tools called, tokens, estimated cost, errors); API keys you choose to save (AI providers, Zotero), stored encrypted with AES-256-GCM and shown only by their last four characters; access credentials (MCP tokens stored as hashes, OAuth grants, login sessions); subscription state once paid plans open (card details stay with the payment processor); usage counters; and server access logs (IP, time, path) for rate limiting and security. We run **no analytics, advertising or tracking**.
+Only when you trigger a feature, and only what that feature needs: the AI provider you configured (your key); during the trial, the first 10 runs without a key go through our OpenRouter account ([OpenRouter privacy](https://openrouter.ai/privacy)); Crossref, arXiv and PubMed public APIs receive only an identifier when you import a source with a DOI; URL imports are fetched by our server; Zotero is read with your key once you link it; Resend delivers transactional e-mails; Paddle handles checkout and card data, sending us only subscription status and ids; lawful requests, with notice to you where the law allows. Nothing else is sold, rented or shared.
 
-## 3. Why
+## What exactly do you store?
 
-To provide and maintain the service, keep accounts secure, run AI ingest / query / lint on your instruction, manage billing, send account e-mails (verification, password reset, subscription changes) and comply with the law.
+Account data (e-mail, hashed password, username, Google account id if used); your knowledge base (notes in the raw / wiki / schema layers, version snapshots, image attachments, Markdown converted from imported pages, PDFs and Word files); chat and job logs (tool calls, tokens, estimated cost, errors); API keys you choose to save (AES-256-GCM, only the last four characters shown); MCP tokens (hashed), OAuth grants and sessions; subscription state from Paddle; usage counters; server logs. Purposes: providing the service, account security and abuse prevention, running AI jobs on your instruction, billing, account e-mails, legal compliance.
 
-## 4. Where
+## How long do you keep it?
 
-Servers and database are in **Singapore** (Railway, PostgreSQL); daily backups stay in the same region.
+The latest version of every note while your account exists; older snapshots 90 days on Pro and trial, 7 days on Free. Chats, job logs, imported sources and attachments until you delete or archive them. Keys until you remove them. Server logs at most 90 days.
 
-## 5. What leaves our servers, and only when you trigger it
+## What happens when I delete my account?
 
-Your notes, rules and chat text go to the **AI provider you configured with your own key** (Anthropic, OpenAI or OpenRouter); during the trial, the first 5 runs without a key go through our OpenRouter account ([OpenRouter privacy](https://openrouter.ai/privacy)). Importing a paper sends the DOI / arXiv / PubMed id or the URL you pasted to Crossref, arXiv or PubMed. If you link Zotero we read the library you chose with your key, hourly. Account e-mails are delivered by Resend. Once paid plans open, checkout happens with the payment processor and we receive only subscription status and ids. We may disclose data when legally required and will tell you where the law allows. We never sell, rent or share your content otherwise.
+Settings → Delete account removes all notes, versions, chats, job logs, attachments, keys and tokens from the primary database immediately; copies in backups expire within 30 days. Paddle keeps transaction records as its legal obligations require. Export a zip first if you want to keep your notes.
 
-## 6. Retention
+## What are my rights?
 
-The latest version of every note is kept while your account exists; older snapshots are kept 90 days on Pro and trial, 7 days on Free. Chats, job logs, imported sources and attachments stay until you delete or archive them. Server logs are kept at most 90 days. **Deleting your account** removes all notes, versions, chats, jobs, attachments, keys and tokens from the main database immediately; copies in backups expire within 30 days.
+Access, copy (Settings → Export zip, Obsidian-compatible), correct, restrict, and delete (Settings → Delete account, or e-mail ${CONTACT}). We respond within 15 days, extendable by 15. An e-mail address is required to have an account.
 
-## 7. Your rights
+## How is it protected?
 
-Access, copy (Settings → Export zip gives you everything, Obsidian-compatible), correct, restrict, and delete (Settings → Delete account, or e-mail ${CONTACT}). We respond within 15 days (extendable by 15). An e-mail address is required to have an account.
+HTTPS throughout; hashed passwords; API and Zotero keys encrypted with AES-256-GCM using a key kept separate from the login signing secret; hashed MCP tokens; workspace isolation on every query; per-IP, per-token and per-user rate limits; SSRF protection on outbound fetches. If a breach affects you, we notify you by e-mail within 72 hours of learning about it.
 
-## 8. Cookies
+## Under 18?
 
-Only one essential login-session cookie; no advertising or analytics cookies, hence no cookie banner.
+The service is not directed at people under 18; use it with a legal guardian's consent. We delete data collected without such consent once we learn of it.
 
-## 9. Security
+## Does this apply to self-hosted copies?
 
-HTTPS everywhere; hashed passwords; API keys encrypted with a key kept separate from the session-signing secret; MCP tokens stored as hashes; workspace isolation on every query; per-IP, per-token and per-user rate limits; SSRF protection on outbound requests. If a breach affects you we notify you by e-mail within 72 hours of learning of it.
+No. The core is open source under AGPL-3.0 at ${REPO}; self-hosters are responsible for their own data. This policy covers only wikibrain.app as operated by us.
 
-## 10. Age
+## Will this change?
 
-The service is not directed at people under 18; minors need a legal guardian's consent.
-
-## 11. Open source
-
-The core is published under AGPL-3.0 at ${REPO}. Self-hosters are responsible for their own data; this policy covers only the hosted service at wikibrain.app.
-
-## 12. Changes and contact
-
-Material changes are announced by e-mail and on the site 14 days before they take effect. Contact ${CONTACT}. Governing law: Taiwan (R.O.C.).`,
+Material changes are announced by e-mail and on the site 14 days before they take effect. Governing law: Taiwan (R.O.C.). Questions: ${CONTACT}.`,
   },
 };
 
@@ -170,7 +186,7 @@ export const terms: LegalDoc = {
 1. AI 功能需您在設定頁提供自己的 API key 並選擇供應商與模型；**模型費用由該供應商直接向您收取，不含在本服務訂閱費內**。統計頁的費用是依公開價目的估算，實際帳單以供應商為準。
 2. agent 產出可能有錯誤或遺漏；由 agent 寫入的頁面請自行審核。我們不對模型輸出的正確性負責。
 3. 您的 key 加密儲存，但您應自行在供應商端設定用量上限並在懷疑洩露時撤銷。若我們的系統發生事故導致 key 外洩，我們將依隱私權政策通知並協助您撤銷。
-4. 試用期前 5 次免 key 的工作使用我們的 OpenRouter 帳號與我們選定的模型，不保證模型品質。
+4. 試用期前 10 次免 key 的工作使用我們的 OpenRouter 帳號與我們選定的模型，不保證模型品質。
 
 ## 6. 方案、費用與試用
 
@@ -231,7 +247,7 @@ You keep all rights to your notes, attachments and chats and grant us only the l
 
 ## 5. AI features and bring-your-own-key
 
-AI features run on a provider you configure with your own API key; **model fees are billed to you by that provider and are not part of our subscription**. Cost figures in the app are estimates. Agent output may contain errors; review what it writes. Keys are stored encrypted, but set spending limits at your provider and revoke a key you suspect is exposed; if an incident on our side exposes keys we will notify you and help you revoke them. The first 5 trial runs without a key use our OpenRouter account and a model of our choosing, with no quality guarantee.
+AI features run on a provider you configure with your own API key; **model fees are billed to you by that provider and are not part of our subscription**. Cost figures in the app are estimates. Agent output may contain errors; review what it writes. Keys are stored encrypted, but set spending limits at your provider and revoke a key you suspect is exposed; if an incident on our side exposes keys we will notify you and help you revoke them. The first 10 trial runs without a key use our OpenRouter account and a model of our choosing, with no quality guarantee.
 
 ## 6. Plans, fees and trial
 
