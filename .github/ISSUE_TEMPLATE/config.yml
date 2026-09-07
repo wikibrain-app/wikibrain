@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security issue
+    url: mailto:hello@wikibrain.app
+    about: Please report vulnerabilities by e-mail, not as a public issue.
+  - name: Help pages
+    url: https://wikibrain.app/help
+    about: Usage questions are answered in the help pages first.

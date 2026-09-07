@@ -1,0 +1,34 @@
+name: test
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: wikibrain
+          POSTGRES_PASSWORD: wikibrain
+          POSTGRES_DB: wikibrain
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U wikibrain" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgres://wikibrain:wikibrain@localhost:5432/wikibrain
+      BETTER_AUTH_SECRET: ci-only-secret-0123456789abcdef0123456789abcdef
+      KEY_ENCRYPTION_SECRET: ci-only-key-secret-fedcba9876543210fedcba9876543210
+      APP_URL: http://localhost:3000
+      IMPORT_HEADLESS: '0'
+      IMPORT_ALLOW_PRIVATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
