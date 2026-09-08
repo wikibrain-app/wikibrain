@@ -16,6 +16,7 @@ import OAuthConsent from './pages/OAuthConsent';
 import Landing from './pages/Landing';
 import Share from './pages/Share';
 import Admin from './pages/Admin';
+import Compare from './pages/Compare';
 
 export default function App() {
   const [me, setMe] = useState<Me | null | undefined>(undefined); // undefined = loading
@@ -43,6 +44,8 @@ export default function App() {
       <Route path="/register" element={me ? <Navigate to="/" replace /> : <Register />} />
       <Route path="/help" element={<Help signedIn={!!me} />} />
       <Route path="/help/:page" element={<Help signedIn={!!me} />} />
+      <Route path="/compare" element={<Compare signedIn={!!me} />} />
+      <Route path="/compare/:slug" element={<Compare signedIn={!!me} />} />
       <Route path="/privacy" element={<Legal slug="privacy" signedIn={!!me} />} />
       <Route path="/terms" element={<Legal slug="terms" signedIn={!!me} />} />
       <Route path="/s/:token" element={<Share />} />

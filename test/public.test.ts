@@ -50,3 +50,16 @@ test('PWA: manifest, service worker, icons and offline page are served (when web
   const html = await (await fetch(base + '/help')).text(); assert.match(html, /rel="manifest"/); assert.match(html, /apple-touch-icon/);
 });
 
+test('comparison pages: index and three comparisons pre-rendered in both languages, in sitemap and robots (when web/dist exists)', async (t) => {
+  const dist = join(process.cwd(), 'web', 'dist');
+  if (!existsSync(join(dist, 'compare.html'))) { t.skip('web/dist not built'); return; }
+  const idx = await (await fetch(base + '/compare')).text(); assert.match(idx, /data-testid="compare-index"/); assert.match(idx, /lang="zh-Hant-TW"/);
+  for (const slug of ['notebooklm', 'obsidian', 'hjarni']) {
+    const zh = await (await fetch(base + `/compare/${slug}`)).text(); assert.match(zh, new RegExp(`data-compare="${slug}"`)); assert.match(zh, /我們承認的取捨/);
+    const en = await (await fetch(base + `/compare/${slug}`, { headers: { 'accept-language': 'en' } })).text(); assert.match(en, /Trade-offs we admit/); assert.match(en, /<link rel="canonical" href="[^"]*\/compare\/[a-z]+\?lang=en">/);
+  }
+  assert.equal((await fetch(base + '/compare/nope')).status, 200, 'unknown slug falls through to the SPA which redirects to /compare');
+  assert.match(await (await fetch(base + '/sitemap.xml')).text(), /\/compare\/hjarni\?lang=en/);
+  assert.match(await (await fetch(base + '/robots.txt')).text(), /Allow: \/compare/);
+});
+

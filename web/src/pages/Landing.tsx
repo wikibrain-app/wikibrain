@@ -121,7 +121,7 @@ export default function Landing() {
         <section className="mt-16 rounded-[12px] border border-line bg-paper p-6 sb:p-8">
           <h2 className="font-serif text-[22px] font-bold">{c.openTitle}</h2>
           <p className="mt-3 max-w-[70ch] text-[14px] leading-relaxed text-ink-soft">{c.openBody}</p>
-          <div className="mt-5 flex flex-wrap gap-3"><Link to="/register" className={btnPrimary} data-testid="landing-cta-2">{c.cta}</Link><Link to="/help/karpathy" className={btnGhost}>{lang === 'en' ? 'The LLM Wiki pattern' : 'LLM Wiki 模式'}</Link></div>
+          <div className="mt-5 flex flex-wrap gap-3"><Link to="/register" className={btnPrimary} data-testid="landing-cta-2">{c.cta}</Link><Link to="/help/karpathy" className={btnGhost}>{lang === 'en' ? 'The LLM Wiki pattern' : 'LLM Wiki 模式'}</Link><Link to="/compare" className={btnGhost} data-testid="landing-compare">{lang === 'en' ? 'Compare with NotebookLM, Obsidian, Hjarni' : '和 NotebookLM、Obsidian、Hjarni 比一比'}</Link></div>
         </section>
         <footer className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-5 text-[12px] text-ink-faint">
           <div>

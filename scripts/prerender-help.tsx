@@ -11,6 +11,8 @@ import Help from '../web/src/pages/Help';
 import Landing from '../web/src/pages/Landing';
 import Legal from '../web/src/pages/Legal';
 import { legalDocs } from '../web/src/pages/legal/content';
+import Compare from '../web/src/pages/Compare';
+import { compareDocs } from '../web/src/pages/compare/content';
 import * as zhTW from '../web/src/pages/help/zh-TW';
 import * as en from '../web/src/pages/help/en';
 
@@ -80,6 +82,29 @@ for (const lang of ['zh-TW', 'en'] as Lang[]) for (const doc of legalDocs) {
   let html = index.replace(/<title>[^<]*<\/title>/, head).replace('<html lang="zh-Hant">', `<html lang="${meta[lang].htmlLang}">`);
   html = html.replace('<div id="root"></div>', `<div id="root">${markup}</div>`);
   const out = join(dist, `legal.${doc.slug}${lang === 'en' ? '.en' : ''}.html`);
+  writeFileSync(out, html);
+  console.log(`prerendered ${out} (${(html.length / 1024).toFixed(0)} KB)`);
+}
+
+// Comparison pages (/compare and /compare/<slug>): content marketing for people searching "X vs Y".
+for (const lang of ['zh-TW', 'en'] as Lang[]) for (const doc of [null, ...compareDocs]) {
+  const path = doc ? `/compare/${doc.slug}` : '/compare';
+  const markup = renderToStaticMarkup(createElement(StaticRouter, { location: path }, createElement(LangProvider, { initial: lang }, createElement(Routes, null, createElement(Route, { path: '/compare', element: createElement(Compare, { signedIn: false }) }), createElement(Route, { path: '/compare/:slug', element: createElement(Compare, { signedIn: false }) })))));
+  const other = lang === 'en' ? 'zh-TW' : 'en';
+  const title = doc ? `${doc.title[lang]} — ${name}` : (lang === 'en' ? `Compare WikiBrain with NotebookLM, Obsidian and Hjarni — ${name}` : `WikiBrain 與 NotebookLM、Obsidian、Hjarni 的比較 — ${name}`);
+  const description = doc ? doc.lede[lang] : (lang === 'en' ? 'Honest, dated comparisons: when to choose the other tool, when to choose WikiBrain, and the trade-offs we admit.' : '誠實、有查證日期的比較：什麼時候該選對方、什麼時候該選 WikiBrain、我們承認的取捨。');
+  const head = [
+    `<title>${title}</title>`,
+    `<meta name="description" content="${description.replace(/"/g, '&quot;')}">`,
+    `<link rel="canonical" href="${appUrl}${path}${lang === 'en' ? '?lang=en' : ''}">`,
+    `<link rel="alternate" hreflang="${meta[lang].htmlLang}" href="${appUrl}${path}${lang === 'en' ? '?lang=en' : ''}">`,
+    `<link rel="alternate" hreflang="${meta[other].htmlLang}" href="${appUrl}${path}${other === 'en' ? '?lang=en' : ''}">`,
+    `<link rel="alternate" hreflang="x-default" href="${appUrl}${path}">`,
+    `<meta property="og:type" content="article"><meta property="og:title" content="${title}"><meta property="og:description" content="${description.replace(/"/g, '&quot;')}"><meta property="og:url" content="${appUrl}${path}">`,
+  ].join('\n    ');
+  let html = index.replace(/<title>[^<]*<\/title>/, head).replace('<html lang="zh-Hant">', `<html lang="${meta[lang].htmlLang}">`);
+  html = html.replace('<div id="root"></div>', `<div id="root">${markup}</div>`);
+  const out = join(dist, `compare${doc ? '.' + doc.slug : ''}${lang === 'en' ? '.en' : ''}.html`);
   writeFileSync(out, html);
   console.log(`prerendered ${out} (${(html.length / 1024).toFixed(0)} KB)`);
 }
