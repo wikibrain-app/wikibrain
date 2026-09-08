@@ -22,7 +22,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex w-[min(640px,calc(100%-2rem))] flex-col-reverse gap-2 pointer-events-none" role="status" aria-live="polite">
         {items.map(t => (
-          <div key={t.id} className={`toast pointer-events-auto flex items-center gap-3 rounded-[10px] px-4 py-2.5 text-[13px] text-white shadow-lg ${t.kind === 'error' ? 'bg-danger' : 'bg-ink'}`}>
+          <div key={t.id} role={t.kind === 'error' ? 'alert' : undefined} className={`toast pointer-events-auto flex items-center gap-3 rounded-[10px] px-4 py-2.5 text-[13px] text-white shadow-lg ${t.kind === 'error' ? 'bg-danger' : 'bg-ink'}`}>
             <span>{t.message}</span>
             {t.action && (
               <button className="rounded-md bg-white/15 px-2.5 py-1 text-[12px] font-semibold hover:bg-white/25" onClick={() => { t.action!.onClick(); dismiss(t.id); }}>

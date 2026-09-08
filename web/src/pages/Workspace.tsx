@@ -95,7 +95,7 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
   useEffect(() => {
     if (!ingesting || ingestJobId === null) return;
     const timer = setInterval(async () => {
-      try { const { job } = await api.ingestJob(ingestJobId); if (job.status === 'done' || job.status === 'failed') { setIngesting(false); reloadTree(); if (path) reloadNote(path); if (job.status === 'failed') toast(t('workspace.ingestFailed', { error: job.error ?? '' }), { kind: 'error', sticky: true }); } }
+      try { const { job } = await api.ingestJob(ingestJobId); if (job.status === 'done' || job.status === 'failed') { setIngesting(false); reloadTree(); if (path) reloadNote(path); if (job.status === 'failed') toast(t('workspace.ingestFailed', { error: job.error ?? '' }), { kind: 'error', sticky: true, action: { label: t('workspace.viewLog'), onClick: () => navigate('/settings#ai') } }); } }
       catch { /* retry next tick */ }
     }, 2000);
     return () => clearInterval(timer);

@@ -85,7 +85,7 @@ export function Sidebar({ notes, pending = [], active, onOpen, onNew, onImport }
             <span className="text-[11px] text-ink-faint">{count(l)}</span>
             {l === 'raw'
               ? <button className="ml-auto rounded-md px-1.5 text-[12px] text-celadon-deep hover:bg-celadon-mist" onClick={onImport} title={t('sidebar.importTitle')}>{t('sidebar.import')}</button>
-              : <span className="ml-auto text-[11px] text-ink-faint">{t(LAYER_HINT[l])}</span>}
+              : <span className="ml-auto cursor-help text-[11px] text-ink-faint" title={t(LAYER_HINT[l])} aria-label={t(LAYER_HINT[l])}>ⓘ</span>}
             <button className="rounded-md px-1.5 text-[12px] text-celadon-deep hover:bg-celadon-mist" aria-label={t('sidebar.newIn', { layer: l })} onClick={() => onNew(l)}>＋</button>
           </div>
           {isOpen(l) && renderFolder(tree[l], 0)}

@@ -119,7 +119,7 @@ with sync_playwright() as p:
       page.click('[data-testid=version-1] button:has-text("檢視")')
       page.wait_for_selector('text=這是 v1 的歷史版本')
       ok_hist = page.locator(f'[data-missing-link], a.wl:has-text("{TITLE_B}")').count() >= 1  # v1 content contains [[B]]
-      page.click('button:has-text("回滾到此版")')
+      page.click('button:has-text("復原到此版本")')
       page.wait_for_selector('[data-testid=version-4]')
       ok_rb = page.locator('text=v4').count() > 0 and page.locator(f'a.wl:has-text("{TITLE_B}")').count() == 1
       ac('AC-14 version view and rollback', ok_hist and ok_rb); shot(page, '06-versions')

@@ -83,7 +83,7 @@ const components: { 'zh-TW': Record<string, string>; en: Record<string, string> 
     'layer.wiki': 'wiki／知識頁',
     'layer.schema': 'schema／規則層',
     'agent.quote': '「{q}」',
-    'version.rollback': '回滾到此版',
+    'version.rollback': '復原到此版本',
 
     // AddModal
     'addModal.title': '新增',
@@ -203,8 +203,8 @@ const components: { 'zh-TW': Record<string, string>; en: Record<string, string> 
     'graph.zoom': '縮放',
     'graph.zoomIn': '放大',
     'graph.zoomOut': '縮小',
-    'graph.zoomReset': '重置檢視',
-    'graph.reset': '重置',
+    'graph.zoomReset': '重設檢視',
+    'graph.reset': '重設',
     'graph.legendRaw': 'raw 來源',
     'graph.legendWiki': 'wiki 頁',
     'graph.legendSchema': 'schema 規則',

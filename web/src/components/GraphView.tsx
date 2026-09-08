@@ -170,6 +170,7 @@ export function GraphView({ graph: full, onOpen, focusPath = null }: { graph: Gr
   return (
     <div ref={wrapRef} className="relative h-full w-full" data-testid="graph" data-node-count={graph.nodes.length}>
       <canvas ref={canvasRef} className="block h-full w-full cursor-grab touch-none" aria-label={tr('graph.label')} />
+      <ul className="sr-only" aria-label={tr('graph.label')}>{graph.nodes.slice(0, 300).map(n => <li key={n.path}><button type="button" onClick={() => onOpen(n.path)}>{n.title} ({n.layer})</button></li>)}</ul>
       <div className="absolute left-4 top-3.5 flex max-w-[calc(100%-2rem)] flex-wrap items-center gap-2 text-[12px]">
         <button className={`rounded-md border px-2.5 py-1 ${active ? 'border-celadon bg-celadon-mist text-celadon-deep' : 'border-line bg-paper text-ink-soft'} hover:bg-celadon-mist`} onClick={() => setShowFilters(v => !v)} data-testid="graph-filter-toggle">{tr('graph.filter')}{active ? ` · ${graph.nodes.length}/${full.nodes.length}` : ''}</button>
         {!showFilters && <span className="text-ink-faint">{tr('graph.hint')}</span>}
