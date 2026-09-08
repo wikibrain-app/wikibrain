@@ -165,7 +165,7 @@ with sync_playwright() as p:
 
       # AC-15: delete B
       page.goto(f'{BASE}/n/{B}'); page.wait_for_selector('article h1')
-      page.click('button:has-text("刪除")')
+      page.click('button:has-text("刪除")'); page.click('[data-testid=confirm-ok]')
       page.wait_for_url(BASE + '/')
       gone = page.locator(f'[data-testid=sidebar] >> text={TITLE_B}').count() == 0
       page.goto(f'{BASE}/n/{B}'); page.wait_for_selector('text=找不到筆記')
@@ -188,7 +188,7 @@ with sync_playwright() as p:
       shot(page, '08-settings')
       ac('ZOTERO settings section present', page.locator('[data-testid=zotero-settings] >> text=Zotero').count() >= 1 and page.locator('[data-testid=oauth-intro]').count() == 1)
       row = page.locator('tr', has_text='cursor').first
-      row.locator('button:has-text("撤銷")').click()
+      row.locator('button:has-text("撤銷")').click(); page.click('[data-testid=confirm-ok]')
       page.wait_for_selector('text=已撤銷')
       after = mcp(fresh, 'list_folder', {})
       ac('AC-16 token create/copy/revoke', fresh.startswith('wb_live_') and clip == fresh and before == 200 and after == 401, f'before={before} after={after}')
@@ -244,7 +244,7 @@ with sync_playwright() as p:
       ok_import = page.locator('article h1').inner_text().strip() == f'E2E 匯入 {TS}'
       page.wait_for_selector('[data-testid=pending-banner]')                      # Karpathy: a new source shows as pending ingest
       ok_pending = page.locator('[data-testid=sidebar] [data-testid=pending-tag]').count() >= 1
-      page.click('[data-testid=pending-banner] button:has-text("複製提示詞給 Cursor")')
+      (page.locator('[data-testid=pending-more]').click() if page.locator('[data-testid=pending-more]').count() else None); page.click('[data-testid=pending-banner] button:has-text("複製提示詞給 Cursor")')
       ok_prompt = 'get_instructions' in page.evaluate('navigator.clipboard.readText()')
       shot(page, '15-pending-source')
       # discuss before ingest -> chat panel carries the prompt, green bar has "ingest from discussion" (not actually sent, to avoid spending)
@@ -325,7 +325,7 @@ with sync_playwright() as p:
       ac('AC-18 mobile drawer, read, search, edit', hidden)
 
       # cleanup: delete A (B already deleted)
-      page.goto(f'{BASE}/n/{A}'); page.wait_for_selector('article h1'); page.click('button:has-text("刪除")'); page.wait_for_url(BASE + '/')
+      page.goto(f'{BASE}/n/{A}'); page.wait_for_selector('article h1'); page.click('button:has-text("刪除")'); page.click('[data-testid=confirm-ok]'); page.wait_for_url(BASE + '/')
       browser.close()
 
   except Exception as e:

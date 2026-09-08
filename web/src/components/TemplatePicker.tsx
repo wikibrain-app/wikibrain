@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, type CustomTemplate, type Lang, type Template } from '../lib/api';
 import { TemplateEditor } from './TemplateEditor';
 import { useToast } from '../lib/toast';
+import { useConfirm } from '../lib/confirm';
 import { Modal, btnGhost, btnPrimary } from './ui';
 import { Markdown } from './Markdown';
 import { useT } from '../i18n';
@@ -16,6 +17,7 @@ export function TemplatePicker({ onApplied, compact, minimal }: { onApplied: (r:
   const [picked, setPicked] = useState('general');
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<{ files: { path: string; content: string }[]; open: string } | null>(null);
+  const confirmDialog = useConfirm();
   const { toast } = useToast();
   async function openPreview() {
     try {
@@ -28,8 +30,8 @@ export function TemplatePicker({ onApplied, compact, minimal }: { onApplied: (r:
   useEffect(() => { load(); }, []);
   const isCustom = picked.startsWith('custom:');
   async function duplicate() { try { const { template } = await api.duplicateTemplate(picked, lang); await load(); setPicked(`custom:${template.id}`); setEditing(template.id); } catch (e) { toast((e as Error).message, { kind: 'error' }); } }
-  async function snapshot() { const name = prompt(t('tpl.snapshotName'), t('tpl.snapshotDefault')); if (name === null) return; try { const { template } = await api.snapshotTemplate(name); await load(); setPicked(`custom:${template.id}`); toast(t('tpl.snapshotted')); } catch (e) { toast((e as Error).message, { kind: 'error' }); } }
-  async function remove(id: number) { if (!confirm(t('tpl.confirmDelete'))) return; try { await api.deleteTemplate(id); await load(); if (picked === `custom:${id}`) setPicked('general'); } catch (e) { toast((e as Error).message, { kind: 'error' }); } }
+  async function snapshot() { const name = await confirmDialog({ title: t('tpl.snapshotTitle'), input: { label: t('tpl.snapshotName'), defaultValue: t('tpl.snapshotDefault') } }); if (typeof name !== 'string') return; try { const { template } = await api.snapshotTemplate(name); await load(); setPicked(`custom:${template.id}`); toast(t('tpl.snapshotted')); } catch (e) { toast((e as Error).message, { kind: 'error' }); } }
+  async function remove(id: number) { if (!(await confirmDialog({ title: t('tpl.deleteTitle'), body: t('tpl.confirmDelete'), confirmLabel: t('common.delete'), danger: true }))) return; try { await api.deleteTemplate(id); await load(); if (picked === `custom:${id}`) setPicked('general'); } catch (e) { toast((e as Error).message, { kind: 'error' }); } }
   async function apply() {
     setBusy(true);
     try {

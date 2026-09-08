@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, formatTime, type ZoteroLink } from '../lib/api';
 import { useToast } from '../lib/toast';
+import { useConfirm } from '../lib/confirm';
 import { useT } from '../i18n';
 import { Field, btnGhost, btnPrimary, input } from './ui';
 
@@ -8,6 +9,7 @@ import { Field, btnGhost, btnPrimary, input } from './ui';
 export function ZoteroSettings({ onSynced }: { onSynced?: () => void }) {
   const { t } = useT();
   const { toast } = useToast();
+  const confirmDialog = useConfirm();
   const [link, setLink] = useState<ZoteroLink | null>(null);
   const [key, setKey] = useState('');
   const [colls, setColls] = useState<{ key: string; name: string; parent: string | null; count: number }[] | null>(null);
@@ -39,7 +41,7 @@ export function ZoteroSettings({ onSynced }: { onSynced?: () => void }) {
     finally { setBusy(null); }
   }
   async function disconnect() {
-    if (!confirm(t('zotero.disconnectConfirm'))) return;
+    if (!(await confirmDialog({ title: t('zotero.disconnectTitle'), body: t('zotero.disconnectConfirm'), danger: true }))) return;
     try { await api.zoteroDelete(); setLink(null); setColls(null); setUser(null); setColl(''); toast(t('zotero.disconnected')); } catch (err) { toast((err as Error).message, { kind: 'error' }); }
   }
   const tree = (colls ?? []).filter(c => !c.parent).flatMap(c => [c, ...(colls ?? []).filter(x => x.parent === c.key).map(x => ({ ...x, name: `　${x.name}` }))]);

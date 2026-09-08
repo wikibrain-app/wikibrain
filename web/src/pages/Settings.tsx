@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { api, fmtTok, fmtUsd, formatTime, type AiConfig, type AiProvider, type IngestJob, type IngestStats, type Me, type ModelInfo, type TokenInfo } from '../lib/api';
 import { useToast } from '../lib/toast';
+import { useConfirm } from '../lib/confirm';
 import { LANGS, translate, useLang, useT, type Lang } from '../i18n';
 import { Field, btnGhost, btnPrimary, input } from '../components/ui';
 import { PageShell } from '../components/PageShell';
@@ -30,6 +31,7 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
   const [applied, setApplied] = useState<{ created: string[]; skipped: string[]; prompt: string } | null>(null);
   const [usage, setUsage] = useState<{ month: string; mcp_calls: number; note_count: number; storage_bytes: number } | null>(null);
   const { toast } = useToast();
+  const confirmDialog = useConfirm();
   const { t, lang, locale } = useT();
   const tt = t; // the tokens table's map parameter is also named t; use tt there
   const { setLang } = useLang();
@@ -55,7 +57,7 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
     catch (err) { toast((err as Error).message, { kind: 'error' }); }
   }
   async function removeAi() {
-    if (!confirm(t('settings.aiDeleteConfirm'))) return;
+    if (!(await confirmDialog({ title: t('settings.aiDeleteTitle'), body: t('settings.aiDeleteConfirm'), confirmLabel: t('common.delete'), danger: true }))) return;
     try { await api.deleteAi(); await reloadAi(); toast(t('settings.aiDeleted')); } catch (err) { toast((err as Error).message, { kind: 'error' }); }
   }
 
@@ -68,14 +70,14 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
     } catch (err) { toast((err as Error).message, { kind: 'error' }); }
   }
   async function revoke(id: number) {
-    if (!confirm(t('settings.revokeConfirm'))) return;
+    if (!(await confirmDialog({ title: t('settings.revokeTitle'), body: t('settings.revokeConfirm'), danger: true }))) return;
     try { await api.revokeToken(id); if (fresh?.id === id) setFresh(null); reload(); toast(t('settings.revoked')); }
     catch (err) { toast((err as Error).message, { kind: 'error' }); }
   }
   const copy = (s: string) => navigator.clipboard.writeText(s).then(() => toast(t('common.copied'))).catch(() => toast(t('common.clipboardFail'), { kind: 'error' }));
   async function deleteAccount() {
-    if (!confirm(t('settings.danger.confirm1'))) return;
-    const pw = prompt(t('settings.danger.password')); if (!pw) return;
+    const pw = await confirmDialog({ title: t('settings.danger.title2'), body: t('settings.danger.confirm1'), confirmLabel: t('settings.danger.ok'), danger: true, input: { label: t('settings.danger.password'), type: 'password' } });
+    if (typeof pw !== 'string' || !pw) return;
     try { await api.deleteAccount(pw); toast(t('settings.danger.done')); onSignedOut(); navigate('/'); }
     catch (e) { toast((e as Error).message || t('settings.danger.failed'), { kind: 'error' }); }
   }

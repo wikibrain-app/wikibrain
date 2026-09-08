@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { useToast } from '../lib/toast';
 import { useT } from '../i18n';
@@ -7,7 +7,15 @@ import { Markdown } from './Markdown';
 import { btnGhost, btnPrimary } from './ui';
 
 export function Editor({ note, initial, notes, onSave, onCancel, busy }: { note: Note; initial?: string; notes: NoteSummary[]; onSave: (content: string) => void; onCancel: () => void; busy: boolean }) {
+  const draftKey = `wb-draft:${note.path}`;
   const [draft, setDraft] = useState(initial ?? note.content);
+  const [stored, setStored] = useState<string | null>(() => { try { const v = localStorage.getItem(draftKey); return v !== null && v !== (initial ?? note.content) ? v : null; } catch { return null; } });
+  // Keep the unsaved draft in localStorage (debounced) so a closed tab or a crash does not lose it; cleared on save/cancel
+  useEffect(() => {
+    const id = window.setTimeout(() => { try { if (draft !== note.content) localStorage.setItem(draftKey, draft); else localStorage.removeItem(draftKey); } catch { /* ignore */ } }, 500);
+    return () => window.clearTimeout(id);
+  }, [draft, note.content, draftKey]);
+  const clearDraft = () => { try { localStorage.removeItem(draftKey); } catch { /* ignore */ } };
   const [pane, setPane] = useState<'edit' | 'preview'>('edit');
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -34,10 +42,17 @@ export function Editor({ note, initial, notes, onSave, onCancel, busy }: { note:
           </div>
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml,image/avif" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) insertImage(f); e.target.value = ''; }} />
           <button className={btnGhost} onClick={() => fileRef.current?.click()} disabled={busy} title={t('editor.insertImageTitle')} data-testid="insert-image">{t('editor.insertImage')}</button>
-          <button className={btnGhost} onClick={onCancel} disabled={busy}>{t('common.cancel')}</button>
-          <button className={btnPrimary} onClick={() => onSave(draft)} disabled={busy || draft === note.content}>{busy ? t('editor.saving') : t('common.save')}</button>
+          <button className={btnGhost} onClick={() => { clearDraft(); onCancel(); }} disabled={busy}>{t('common.cancel')}</button>
+          <button className={btnPrimary} onClick={() => { clearDraft(); onSave(draft); }} disabled={busy || draft === note.content}>{busy ? t('editor.saving') : t('common.save')}</button>
         </div>
       </div>
+      {stored !== null && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-amber/40 bg-amber-mist px-4 py-2 text-[12.5px]" data-testid="draft-bar">
+          <span>{t('editor.draftFound')}</span>
+          <button className={btnPrimary} onClick={() => { setDraft(stored); setStored(null); }} data-testid="draft-restore">{t('editor.draftRestore')}</button>
+          <button className={btnGhost} onClick={() => { clearDraft(); setStored(null); }}>{t('editor.draftDiscard')}</button>
+        </div>
+      )}
       <div className="grid min-h-0 flex-1 rail:grid-cols-2">
         <textarea
           ref={taRef}

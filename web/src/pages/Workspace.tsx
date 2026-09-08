@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { bibMap, BibProvider } from '../lib/cite';
 import { api, ApiError, layerOf, type Graph, type Me, type Note, type BibEntry, type NoteSummary, type SearchHit, type Version } from '../lib/api';
+import { btnGhost, btnPrimary } from '../components/ui';
 import { useToast } from '../lib/toast';
+import { useConfirm } from '../lib/confirm';
 import { useT } from '../i18n';
 import { Topbar } from '../components/Topbar';
 import { Sidebar } from '../components/Sidebar';
@@ -25,6 +27,7 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const confirmDialog = useConfirm();
   const { t } = useT();
   const path = params['*'] ? decodeURIComponent(params['*']) : null;
   const view: 'note' | 'graph' | 'table' = location.pathname === '/graph' ? 'graph' : location.pathname === '/table' ? 'table' : 'note';
@@ -126,7 +129,8 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
     catch (e) { fail(e); }
   }
   async function remove() {
-    if (!note || !confirm(t('workspace.deleteConfirm', { title: note.title }))) return;
+    if (!note) return;
+    if (!(await confirmDialog({ title: t('workspace.deleteTitle'), body: t('workspace.deleteConfirm', { title: note.title }), confirmLabel: t('common.delete'), danger: true }))) return;
     try { await api.remove(note.path); toast(t('workspace.deleted')); await reloadTree(); navigate('/'); }
     catch (e) { fail(e); }
   }
@@ -168,8 +172,9 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
     if (mode === 'search' && search) return <SearchResults query={search.query} hits={search.hits} onOpen={openNote} />;
     if (notFound) return <div className="mx-auto max-w-[660px] px-10 pt-16 text-center"><h1 className="font-serif text-[22px] font-bold mb-2">{t('workspace.notFound')}</h1><p className="text-[13px] text-ink-soft font-mono">{path}</p></div>;
     if (!note) return (
-      <div className="mx-auto max-w-[660px] px-10 pt-16 text-center text-ink-soft">
+      <div className="mx-auto max-w-[660px] px-6 sb:px-10 pt-12 sb:pt-16 text-center text-ink-soft">
         <h1 className="font-serif text-[24px] font-bold text-ink mb-3">{t('workspace.welcome')}</h1>
+        <StartChecklist notes={notes} pending={pending} onPasteUrl={() => setAdd({ tab: 'url', layer: 'raw' })} onWrite={() => setAdd({ tab: 'write', layer: 'wiki' })} />
         <p className="text-[13.5px] leading-relaxed">{notes.length === 0 ? <>{t('workspace.empty1')}<a className="text-celadon-deep underline" href="/settings">{t('workspace.emptyLink')}</a>{t('workspace.empty2')}</> : <>{t('workspace.pickHint')}</>}<br />{t('workspace.helpBefore')}<a className="text-celadon-deep underline" href="/help">{t('workspace.helpLink')}</a>{t('workspace.helpAfter')}</p>
       </div>
     );
@@ -222,5 +227,30 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
       )}
     </div>
     </BibProvider>
+  );
+}
+
+// First-run checklist on the welcome screen (PRD §8 funnel: source → ingest → query). Hidden once all three are done.
+function StartChecklist({ notes, pending, onPasteUrl, onWrite }: { notes: NoteSummary[]; pending: string[]; onPasteUrl: () => void; onWrite: () => void }) {
+  const { t } = useT();
+  const sources = notes.filter(n => n.path.startsWith('raw/') && !n.path.startsWith('raw/archive/') && !/README/i.test(n.path));
+  const hasSource = sources.length > 0;
+  const ingested = hasSource && sources.some(n => !pending.includes(n.path));
+  let asked = false; try { asked = localStorage.getItem('wb-first-query') === '1'; } catch { /* ignore */ }
+  if (hasSource && ingested && asked) return null;
+  const steps: [string, string, boolean][] = [[t('start.addSource'), t('start.addSourceHint'), hasSource], [t('start.ingest'), t('start.ingestHint'), ingested], [t('start.ask'), t('start.askHint'), asked]];
+  return (
+    <div className="mx-auto mt-6 max-w-[480px] rounded-[12px] border border-line bg-paper p-5 text-left" data-testid="start-checklist">
+      <div className="text-[12px] font-semibold uppercase tracking-[.06em] text-ink-faint">{t('start.title')}</div>
+      <ol className="mt-3 space-y-2.5">
+        {steps.map(([title, hint, done], i) => (
+          <li key={title} className="flex items-start gap-3">
+            <span className={`mt-[2px] flex h-5 w-5 flex-none items-center justify-center rounded-full text-[11px] font-bold ${done ? 'bg-celadon text-white' : 'border border-line text-ink-faint'}`} aria-label={done ? t('start.done') : ''}>{done ? '✓' : i + 1}</span>
+            <span><span className={`text-[14px] font-semibold ${done ? 'text-ink-faint line-through' : 'text-ink'}`}>{title}</span><span className="block text-[12.5px] text-ink-soft">{hint}</span></span>
+          </li>
+        ))}
+      </ol>
+      {!hasSource && <div className="mt-4 flex flex-wrap gap-2"><button className={btnPrimary} onClick={onPasteUrl} data-testid="start-paste-url">{t('start.pasteUrl')}</button><button className={btnGhost} onClick={onWrite}>{t('start.write')}</button></div>}
+    </div>
   );
 }

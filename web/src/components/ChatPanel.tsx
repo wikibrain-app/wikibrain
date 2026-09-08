@@ -57,6 +57,7 @@ export function ChatPanel({ aiReady, notes, draft, onDraftUsed, onOpen, onClose,
     try {
       const s = session ?? (await api.chatCreate()).session;
       const r = await api.chatSend(s.id, msg);
+      try { localStorage.setItem('wb-first-query', '1'); } catch { /* ignore */ }
       setSession(r.session); setPendingJob(r.job.id); setText('');
     } catch (err) { toast((err as Error).message, { kind: 'error' }); }
   }
