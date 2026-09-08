@@ -8,11 +8,12 @@ interface Props {
   viewing: number | null;
   onOpen: (p: string) => void;
   onView: (v: Version) => void;
+  onCompare?: (v: Version) => void;
   onRollback: (v: number) => void;
   readonly: boolean;
 }
 
-export function Rail({ backlinks, versions, current, viewing, onOpen, onView, onRollback, readonly }: Props) {
+export function Rail({ backlinks, versions, current, viewing, onOpen, onView, onCompare, onRollback, readonly }: Props) {
   const { t } = useT();
   return (
     <aside className="h-full overflow-y-auto bg-paper px-[18px] py-[22px]" aria-label={t('rail.label')}>
@@ -36,6 +37,7 @@ export function Rail({ backlinks, versions, current, viewing, onOpen, onView, on
             {v.version !== current && (
               <span className="flex w-full gap-2">
                 <button className="text-[11px] text-celadon-deep hover:underline" onClick={() => onView(v)}>{t('rail.view')}</button>
+                {onCompare && <button className="text-[11px] text-celadon-deep hover:underline" onClick={() => onCompare(v)} data-testid={`compare-${v.version}`}>{t('rail.compare')}</button>}
                 {!readonly && <button className="text-[11px] text-celadon-deep hover:underline" onClick={() => onRollback(v.version)}>{t('version.rollback')}</button>}
               </span>
             )}

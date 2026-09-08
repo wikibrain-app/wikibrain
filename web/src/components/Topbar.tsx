@@ -32,12 +32,12 @@ export function Topbar(p: Props) {
         <input type="search" aria-label={t('topbar.search')} placeholder={t('topbar.searchPh')} className="flex-1 bg-transparent text-[13px] text-ink outline-none" value={q} onChange={e => setQ(e.target.value)} />
       </form>
       <div className="ml-auto flex items-center gap-1.5 sb:gap-2.5">
-        <div className="flex overflow-hidden rounded-lg border border-line" role="tablist" aria-label={t('topbar.views')}>
+        <div className="hidden sb:flex overflow-hidden rounded-lg border border-line" role="tablist" aria-label={t('topbar.views')}>
           <button role="tab" aria-selected={p.view === 'note'} className={`whitespace-nowrap px-2.5 sb:px-3 py-[7px] text-[12.5px] sb:text-[13px] ${p.view === 'note' ? 'bg-celadon-mist font-semibold text-celadon-deep' : 'text-ink-soft'}`} onClick={() => p.onView('note')}>{t('topbar.note')}</button>
           <button role="tab" aria-selected={p.view === 'graph'} className={`whitespace-nowrap px-2.5 sb:px-3 py-[7px] text-[12.5px] sb:text-[13px] ${p.view === 'graph' ? 'bg-celadon-mist font-semibold text-celadon-deep' : 'text-ink-soft'}`} onClick={() => p.onView('graph')}>{t('topbar.graph')}</button>
           <button role="tab" aria-selected={p.view === 'table'} className={`whitespace-nowrap px-2.5 sb:px-3 py-[7px] text-[12.5px] sb:text-[13px] ${p.view === 'table' ? 'bg-celadon-mist font-semibold text-celadon-deep' : 'text-ink-soft'}`} onClick={() => p.onView('table')} data-testid="tab-table">{t('topbar.table')}</button>
         </div>
-        <button className={btnGhost} onClick={p.onNew} title={t('topbar.newTitle')}>{t('topbar.new')}</button>
+        <button className={`${btnGhost} hidden sb:inline-flex`} onClick={p.onNew} title={t('topbar.newTitle')}>{t('topbar.new')}</button>
         <button className={`${btnGhost} ${p.chatOpen ? 'border-celadon text-celadon-deep' : ''}`} onClick={p.onChat} aria-pressed={p.chatOpen} data-testid="chat-toggle"><span className="sb:hidden">{t('topbar.chatShort')}</span><span className="hidden sb:inline">{t('topbar.chat')}</span></button>
         <Link to="/lint" className={`${btnGhost} hidden whitespace-nowrap sb:inline-flex`} title={t('topbar.lintTitle')} data-testid="lint-link">{t('topbar.lintBtn')}</Link>
         <button className={`${btnGhost} rail:hidden px-2.5`} aria-label={t('topbar.rail')} onClick={p.onToggleRail}>☷</button>

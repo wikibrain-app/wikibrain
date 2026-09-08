@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { bibMap, BibProvider } from '../lib/cite';
 import { api, ApiError, layerOf, type Graph, type Me, type Note, type BibEntry, type NoteSummary, type SearchHit, type Version } from '../lib/api';
 import { btnGhost, btnPrimary } from '../components/ui';
 import { useToast } from '../lib/toast';
 import { useConfirm } from '../lib/confirm';
+import { CommandPalette, type PaletteAction } from '../components/CommandPalette';
+import { DiffModal } from '../components/DiffModal';
 import { useT } from '../i18n';
 import { Topbar } from '../components/Topbar';
 import { Sidebar } from '../components/Sidebar';
@@ -103,6 +105,30 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
   const setView = (v: 'note' | 'graph' | 'table') => navigate(v === 'graph' ? '/graph' : v === 'table' ? '/table' : path ? `/n/${path}` : '/');
 
   const [keepDraft, setKeepDraft] = useState<string | null>(null); // draft kept after a 409
+  const [palette, setPalette] = useState(false);
+  const [compare, setCompare] = useState<Version | null>(null);
+  const [chatWidth, setChatWidth] = useState(() => { try { return Math.min(640, Math.max(320, Number(localStorage.getItem('wb-chat-width')) || 380)); } catch { return 380; } });
+  const dragRef = useRef<{ x: number; w: number } | null>(null);
+  // ⌘K / Ctrl+K opens the palette anywhere in the workspace (not while typing in the editor's textarea)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette(p => !p); } };
+    window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  const startDrag = (e: React.PointerEvent) => {
+    dragRef.current = { x: e.clientX, w: chatWidth }; (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    const move = (ev: PointerEvent) => { if (!dragRef.current) return; const w = Math.min(640, Math.max(320, dragRef.current.w + (dragRef.current.x - ev.clientX))); setChatWidth(w); };
+    const up = () => { dragRef.current = null; window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); try { localStorage.setItem('wb-chat-width', String(chatWidth)); } catch { /* ignore */ } };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+  };
+  const paletteActions: PaletteAction[] = [
+    { id: 'new', label: t('topbar.new'), run: () => setAdd({ tab: 'write', layer: layerOf(path ?? 'wiki/x') || 'wiki' }) },
+    { id: 'import', label: t('sidebar.import'), run: () => setAdd({ tab: 'url', layer: 'raw' }) },
+    { id: 'chat', label: t('topbar.chat'), run: () => setChatOpen(true) },
+    { id: 'graph', label: t('topbar.graph'), run: () => setView('graph') },
+    { id: 'table', label: t('topbar.table'), run: () => setView('table') },
+    { id: 'settings', label: t('topbar.settings'), run: () => navigate('/settings') },
+    { id: 'help', label: t('topbar.help'), run: () => navigate('/help') },
+  ];
   async function save(content: string) {
     if (!note) return;
     setBusy(true);
@@ -167,10 +193,14 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
   async function signOut() { await api.signOut().catch(() => {}); onSignedOut(); navigate('/login'); }
 
   const main = () => {
+    const EmptyView = ({ text }: { text: string }) => <div className="mx-auto max-w-[520px] px-6 pt-20 text-center text-ink-soft"><p className="text-[14px] leading-relaxed">{text}</p><button className={`${btnPrimary} mt-4`} onClick={() => setAdd({ tab: 'url', layer: 'raw' })}>{t('empty.cta')}</button></div>;
+    if (view === 'table' && notes.length === 0) return <EmptyView text={t('empty.table')} />;
+    if (view === 'graph' && graph && graph.nodes.length === 0) return <EmptyView text={t('empty.graph')} />;
     if (view === 'table') return <TableView onOpen={p => navigate(`/n/${p}`)} folders={[...new Set(notes.map(n => n.path.split('/').slice(0, -1).join('/')).filter(f => f.includes('/')))].sort()} />;
     if (view === 'graph') return graph ? <GraphView graph={graph} focusPath={path || null} onOpen={p => { navigate(`/n/${p}`); }} /> : <div className="p-10 text-ink-soft">{t('workspace.loadingGraph')}</div>;
     if (mode === 'search' && search) return <SearchResults query={search.query} hits={search.hits} onOpen={openNote} />;
     if (notFound) return <div className="mx-auto max-w-[660px] px-10 pt-16 text-center"><h1 className="font-serif text-[22px] font-bold mb-2">{t('workspace.notFound')}</h1><p className="text-[13px] text-ink-soft font-mono">{path}</p></div>;
+    if (!note && path && !notFound) return <NoteSkeleton />;
     if (!note) return (
       <div className="mx-auto max-w-[660px] px-6 sb:px-10 pt-12 sb:pt-16 text-center text-ink-soft">
         <h1 className="font-serif text-[24px] font-bold text-ink mb-3">{t('workspace.welcome')}</h1>
@@ -197,19 +227,20 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
       <div className="relative flex min-h-0 flex-1">
         {sidebarOpen && <button className="fixed inset-0 z-20 bg-ink/30 sb:hidden" aria-label={t('workspace.closeSidebar')} onClick={() => setSidebarOpen(false)} />}
         <div className={`${sidebarOpen ? 'fixed inset-y-0 left-0 z-30 w-[260px] shadow-2xl' : 'hidden'} sb:static sb:block sb:w-[240px] sb:flex-none border-r border-line`} data-testid="sidebar">
-          <Sidebar notes={notes} pending={pending} active={path} onOpen={openNote} onNew={l => setAdd({ tab: 'write', layer: l })} onImport={() => setAdd({ tab: 'url', layer: 'raw' })} />
+          {treeLoaded ? <Sidebar notes={notes} pending={pending} active={path} onOpen={openNote} onNew={l => setAdd({ tab: 'write', layer: l })} onImport={() => setAdd({ tab: 'url', layer: 'raw' })} /> : <SidebarSkeleton />}
         </div>
         <main className={`min-w-0 flex-1 ${mode === 'edit' || view === 'graph' || view === 'table' ? 'overflow-hidden' : 'overflow-y-auto'}`}>{main()}</main>
         {railOpen && <button className="fixed inset-0 z-20 bg-ink/30 rail:hidden" aria-label={t('workspace.closeRail')} onClick={() => setRailOpen(false)} />}
         {chatOpen && (
-          <div className="fixed inset-y-0 right-0 z-30 w-full max-w-[420px] border-l border-line shadow-2xl sb:static sb:z-auto sb:w-[380px] sb:max-w-none sb:flex-none sb:shadow-none" data-testid="chat-drawer">
+          <div className="relative fixed inset-y-0 right-0 z-30 w-full max-w-[420px] border-l border-line shadow-2xl sb:static sb:z-auto sb:max-w-none sb:flex-none sb:shadow-none" style={window.innerWidth >= 680 ? { width: chatWidth } : undefined} data-testid="chat-drawer">
+            <div className="absolute inset-y-0 left-0 hidden w-1.5 cursor-col-resize hover:bg-celadon/40 sb:block" onPointerDown={startDrag} title="⇔" aria-hidden />
             <ChatPanel aiReady={aiReady} notes={notes} draft={chatDraft} onDraftUsed={() => setChatDraft(null)} onOpen={p => { openNote(p); }} onClose={() => setChatOpen(false)} onChanged={() => { reloadTree(); if (path) reloadNote(path); }} pending={pending} ingesting={ingesting} onIngestFromChat={(src, guidance) => { navigate(`/n/${src}`); autoIngest([src], guidance); }} />
           </div>
         )}
         {note && view === 'note' && mode !== 'search' && !chatOpen && (
           <div className={`${railOpen ? 'fixed inset-y-0 right-0 z-30 w-[280px] shadow-2xl' : 'hidden'} rail:static rail:block rail:w-[250px] rail:flex-none border-l border-line`} data-testid="rail">
             <Rail backlinks={backlinks} versions={versions} current={note.version} viewing={historical?.version ?? null} onOpen={p => { setRailOpen(false); openNote(p); }}
-              onView={v => { setHistorical(v); setMode('read'); setRailOpen(false); }} onRollback={rollback} readonly={layerOf(note.path) === 'raw'} />
+              onView={v => { setHistorical(v); setMode('read'); setRailOpen(false); }} onCompare={v => { setCompare(v); setRailOpen(false); }} onRollback={rollback} readonly={layerOf(note.path) === 'raw'} />
           </div>
         )}
       </div>
@@ -225,6 +256,15 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
           onSkip={() => { setOnboardingSkipped(true); try { localStorage.setItem(`wb-onboarding-skipped:${me.workspace.id}`, '1'); } catch { /* fine without storage */ } }}
         />
       )}
+      <nav className="flex border-t border-line bg-paper sb:hidden" aria-label={t('topbar.views')} data-testid="bottom-bar">
+        {([['note', t('topbar.note')], ['graph', t('topbar.graph')], ['table', t('topbar.table')]] as const).map(([v, label]) => (
+          <button key={v} className={`flex-1 py-2.5 text-[12px] ${view === v ? 'font-semibold text-celadon-deep' : 'text-ink-soft'}`} aria-current={view === v} onClick={() => setView(v)}>{label}</button>
+        ))}
+        <button className="flex-1 py-2.5 text-[12px] text-ink-soft" onClick={() => setAdd({ tab: 'url', layer: 'raw' })}>{t('topbar.new')}</button>
+        <button className={`flex-1 py-2.5 text-[12px] ${chatOpen ? 'font-semibold text-celadon-deep' : 'text-ink-soft'}`} onClick={() => setChatOpen(o => !o)}>{t('topbar.chatShort')}</button>
+      </nav>
+      {palette && <CommandPalette notes={notes} actions={paletteActions} onOpen={p => { setView('note'); openNote(p); }} onClose={() => setPalette(false)} />}
+      {compare && note && <DiffModal version={compare} current={note.content} currentVersion={note.version} onClose={() => setCompare(null)} onRollback={layerOf(note.path) === 'raw' ? undefined : rollback} />}
     </div>
     </BibProvider>
   );
@@ -251,6 +291,24 @@ function StartChecklist({ notes, pending, onPasteUrl, onWrite }: { notes: NoteSu
         ))}
       </ol>
       {!hasSource && <div className="mt-4 flex flex-wrap gap-2"><button className={btnPrimary} onClick={onPasteUrl} data-testid="start-paste-url">{t('start.pasteUrl')}</button><button className={btnGhost} onClick={onWrite}>{t('start.write')}</button></div>}
+    </div>
+  );
+}
+
+function SidebarSkeleton() {
+  const { t } = useT();
+  return (
+    <div className="animate-pulse space-y-3 p-4" aria-label={t('loading.skeleton')} aria-busy="true">
+      {[3, 5, 4].map((n, i) => <div key={i} className="space-y-2"><div className="h-3 w-24 rounded bg-line" />{Array.from({ length: n }).map((_, k) => <div key={k} className="ml-4 h-3 rounded bg-line/70" style={{ width: `${55 + ((k * 17) % 35)}%` }} />)}</div>)}
+    </div>
+  );
+}
+function NoteSkeleton() {
+  const { t } = useT();
+  return (
+    <div className="mx-auto max-w-[660px] animate-pulse px-5 pt-9 sb:px-10" aria-label={t('loading.skeleton')} aria-busy="true">
+      <div className="h-3 w-20 rounded bg-line" /><div className="mt-4 h-7 w-2/3 rounded bg-line" /><div className="mt-3 h-3 w-40 rounded bg-line/70" />
+      <div className="mt-8 space-y-3">{[92, 100, 85, 96, 70, 88].map((w, i) => <div key={i} className="h-3 rounded bg-line/70" style={{ width: `${w}%` }} />)}</div>
     </div>
   );
 }
