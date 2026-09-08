@@ -8,7 +8,7 @@ import { useConfirm } from '../lib/confirm';
 import { LANGS, translate, useLang, useT, type Lang } from '../i18n';
 import { Field, btnGhost, btnPrimary, input } from '../components/ui';
 import { PageShell } from '../components/PageShell';
-import { THEMES, getTheme, setTheme, type Theme } from '../theme';
+import { ACCENT_PRESETS, THEMES, getAccent, getTheme, setAccent, setTheme, type Theme } from '../theme';
 import { AppliedResult, TemplatePicker } from '../components/TemplatePicker';
 import { ConnectCursorModal } from '../components/ConnectCursorModal';
 
@@ -17,6 +17,8 @@ const NAV = ['account', 'plan', 'connect', 'ai', 'data', 'templates', 'danger'] 
 export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
   const [tokens, setTokens] = useState<TokenInfo[]>([]);
   const [theme, setThemeState] = useState<Theme>(() => getTheme());
+  const [accent, setAccentState] = useState<number | null>(() => getAccent());
+  const changeAccent = (h: number | null) => { setAccent(h); setAccentState(h); };
   const changeTheme = (th: Theme) => { setTheme(th); setThemeState(th); };
   const [label, setLabel] = useState('cursor');
   const [fresh, setFresh] = useState<{ id: number; token: string } | null>(null);
@@ -122,6 +124,23 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
                 className={`px-3.5 py-[7px] text-[12.5px] sb:text-[13px] ${theme === th ? 'bg-celadon-mist font-semibold text-celadon-deep' : 'text-ink-soft hover:bg-porcelain'}`}>{t(`theme.${th}`)}</button>
             ))}
           </div>
+              </div>
+              <div data-testid="accent-settings" className="sm:col-span-2">
+                <div className="text-[13px] font-semibold">{t('theme.accent')}</div>
+                <p className="text-[12px] text-ink-soft mb-2 leading-relaxed">{t('theme.accentHint')}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  {ACCENT_PRESETS.map(p => (
+                    <button key={p.id} type="button" onClick={() => changeAccent(p.id === 'celadon' ? null : p.hue)} title={t(`theme.preset.${p.id}`)} aria-label={t(`theme.preset.${p.id}`)} aria-pressed={p.id === 'celadon' ? accent === null : accent === p.hue} data-testid={`accent-${p.id}`}
+                      className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[12px] ${(p.id === 'celadon' ? accent === null : accent === p.hue) ? 'border-celadon bg-celadon-mist text-celadon-deep' : 'border-line text-ink-soft hover:bg-porcelain'}`}>
+                      <span className="inline-block h-4 w-4 rounded-full border border-black/10" style={{ background: p.id === 'celadon' ? '#3E7D6B' : `oklch(52% 0.085 ${p.hue})` }} />{t(`theme.preset.${p.id}`)}
+                    </button>
+                  ))}
+                </div>
+                <label className="mt-3 flex items-center gap-3 text-[12px] text-ink-soft">{t('theme.accentCustom')}
+                  <input type="range" min={0} max={359} value={accent ?? 165} onChange={e => changeAccent(Number(e.target.value))} className="flex-1 accent-celadon" data-testid="accent-hue" aria-label={t('theme.accentCustom')} />
+                  <span className="w-8 tabular-nums text-right">{accent ?? '—'}</span>
+                  {accent !== null && <button type="button" className={btnGhost} onClick={() => changeAccent(null)}>{t('theme.accentReset')}</button>}
+                </label>
               </div>
             </div>
           </section>

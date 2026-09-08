@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="WikiBrain" />
-    <script>try{var t=localStorage.getItem("wb-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+    <script>try{var t=localStorage.getItem("wb-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);var a=localStorage.getItem("wb-accent");if(a!==null&&isFinite(Number(a))){document.documentElement.setAttribute("data-accent","custom");document.documentElement.style.setProperty("--accent-h",String(Number(a)))}}catch(e){}</script>
   </head>
   <body>
     <div id="root"></div>

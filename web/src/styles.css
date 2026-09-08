@@ -35,6 +35,28 @@
     --ramp-1: #24332E; --ramp-2: #2F4D43; --ramp-3: #3B6B5B; --ramp-4: #4C8A75; --ramp-5: #5FA38D; --ramp-6: #8CC7B2;
   }
 }
+/* Accent colour (Settings → 外觀 → 主題色): the celadon tokens are re-derived from one hue in OKLCH when <html> carries
+   data-accent (web/src/theme.ts sets --accent-h). Without the attribute the hand-tuned celadon palette above applies. */
+:root[data-accent] {
+  --celadon: oklch(52% 0.085 var(--accent-h)); --celadon-deep: oklch(42% 0.09 var(--accent-h)); --celadon-mist: oklch(94% 0.025 var(--accent-h));
+  --underline: oklch(80% 0.05 var(--accent-h));
+  --ramp-1: oklch(94% 0.025 var(--accent-h)); --ramp-2: oklch(86% 0.05 var(--accent-h)); --ramp-3: oklch(74% 0.075 var(--accent-h));
+  --ramp-4: oklch(62% 0.09 var(--accent-h)); --ramp-5: oklch(52% 0.085 var(--accent-h)); --ramp-6: oklch(42% 0.09 var(--accent-h));
+}
+:root[data-accent][data-theme="dark"] {
+  --celadon: oklch(70% 0.09 var(--accent-h)); --celadon-deep: oklch(80% 0.08 var(--accent-h)); --celadon-mist: oklch(28% 0.03 var(--accent-h));
+  --underline: oklch(50% 0.06 var(--accent-h));
+  --ramp-1: oklch(28% 0.03 var(--accent-h)); --ramp-2: oklch(38% 0.05 var(--accent-h)); --ramp-3: oklch(48% 0.07 var(--accent-h));
+  --ramp-4: oklch(58% 0.085 var(--accent-h)); --ramp-5: oklch(70% 0.09 var(--accent-h)); --ramp-6: oklch(80% 0.08 var(--accent-h));
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-accent]:not([data-theme="light"]) {
+    --celadon: oklch(70% 0.09 var(--accent-h)); --celadon-deep: oklch(80% 0.08 var(--accent-h)); --celadon-mist: oklch(28% 0.03 var(--accent-h));
+    --underline: oklch(50% 0.06 var(--accent-h));
+    --ramp-1: oklch(28% 0.03 var(--accent-h)); --ramp-2: oklch(38% 0.05 var(--accent-h)); --ramp-3: oklch(48% 0.07 var(--accent-h));
+    --ramp-4: oklch(58% 0.085 var(--accent-h)); --ramp-5: oklch(70% 0.09 var(--accent-h)); --ramp-6: oklch(80% 0.08 var(--accent-h));
+  }
+}
 @theme inline {
   --color-porcelain: var(--porcelain);
   --color-paper: var(--paper);
