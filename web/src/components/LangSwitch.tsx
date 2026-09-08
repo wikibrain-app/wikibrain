@@ -10,7 +10,7 @@ export function LangSwitch({ className = '' }: { className?: string }) {
     <span className={`inline-flex overflow-hidden rounded-lg border border-line text-[12px] ${className}`} role="group" aria-label="Language" data-testid="lang-switch">
       {LANGS.map(l => (
         <button key={l} type="button" lang={l === 'en' ? 'en' : 'zh-Hant'} aria-pressed={lang === l} onClick={() => { markChosen(); setLang(l); api.setLang(l).catch(() => {}); }}
-          className={`px-2.5 py-[5px] ${lang === l ? 'bg-celadon-mist font-semibold text-celadon-deep' : 'text-ink-soft hover:bg-porcelain'}`}>{label[l]}</button>
+          className={`whitespace-nowrap px-2.5 py-[5px] ${lang === l ? 'bg-celadon-mist font-semibold text-celadon-deep' : 'text-ink-soft hover:bg-porcelain'}`}>{label[l]}</button>
       ))}
     </span>
   );

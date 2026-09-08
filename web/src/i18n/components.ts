@@ -279,6 +279,7 @@ const components: { 'zh-TW': Record<string, string>; en: Record<string, string> 
 
     // PageShell
     'shell.back': '回到知識庫',
+    'shell.backShort': '← 知識庫',
 
     // Rail
     'rail.label': '脈絡面板',
@@ -700,6 +701,7 @@ const components: { 'zh-TW': Record<string, string>; en: Record<string, string> 
 
     // PageShell
     'shell.back': 'Back to knowledge base',
+    'shell.backShort': '← Home',
 
     // Rail
     'rail.label': 'Context panel',
