@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { useT, type Lang } from '../i18n';
 import { Brand, btnGhost, btnPrimary } from '../components/ui';
 import { LangSwitch } from '../components/LangSwitch';
+import { helpAsset } from './help/common';
 import { Version } from '../components/Version';
 import { CONTACT_EMAIL, SOURCE_URL } from '../components/Footer';
 
@@ -13,6 +14,8 @@ const copy: Record<Lang, {
   howTitle: string; how: { title: string; body: string }[];
   audienceTitle: string; audience: { title: string; body: string }[];
   plansTitle: string; plans: { name: string; price: string; body: string }[]; plansNote: string;
+  agentsTitle: string; agentsBody: string; agentsCaptions: [string, string];
+  graphTitle: string; graphBody: string; heroCaption: string;
   openTitle: string; openBody: string; footer: string;
 }> = {
   'zh-TW': {
@@ -41,6 +44,8 @@ const copy: Record<Lang, {
       { name: 'Pro', price: 'US$6／月 或 60／年', body: '10,000 則、1 GB、agent 工作不限、多把 token、90 天版本歷史。' },
     ],
     plansNote: '模型費用不包含在內：你用自己的 key，一般用法每月約幾十美分到幾美元；用 Cursor 的人不需要 key。結帳由 Paddle 處理，隨時可取消。',
+    agentsTitle: '你已經在用的 agent，直接讀寫這座 wiki', agentsBody: 'Cursor 與 Claude Code 貼一把 token；Claude.ai 與 ChatGPT 用 OAuth 登入即可。同一組六個工具：讀規則、搜尋、閱讀、建立、更新、列資料夾。', agentsCaptions: ['Cursor：agent 透過 MCP 讀三層、寫回 wiki', 'Claude.ai：對話裡直接交代，工具自己呼叫'],
+    graphTitle: '知識會長成一張圖', graphBody: '每一頁的 [[連結]] 與 [@引用] 都是圖譜上的一條邊。來源越多，樞紐頁越明顯；時間軸可以回放這座 wiki 是怎麼長出來的。', heroCaption: '20 秒：貼一個網址，wiki 頁出現，再問它一個問題。',
     openTitle: '開源核心，資料在你手上', openBody: '程式碼以 AGPL-3.0 開源，可以用 docker compose 自架；託管版由我們維運。整座 wiki 隨時匯出成 Obsidian 相容的 Markdown zip，書目匯出 .bib。介面繁中與英文，內容語言不限。',
     footer: 'WikiBrain · personal knowledge base · 靈感來自 Andrej Karpathy 的 LLM Wiki 筆記',
   },
@@ -70,6 +75,8 @@ const copy: Record<Lang, {
       { name: 'Pro', price: 'US$6 / month or 60 / year', body: '10,000 notes, 1 GB, unlimited agent runs, multiple tokens, 90-day version history.' },
     ],
     plansNote: 'Model costs are not included: you use your own key, typically a few cents to a few dollars a month; Cursor users need no key. Checkout by Paddle; cancel any time.',
+    agentsTitle: 'The agents you already use read and write this wiki', agentsBody: 'Cursor and Claude Code paste a token; Claude.ai and ChatGPT sign in with OAuth. The same six tools everywhere: read rules, search, read, create, update, list.', agentsCaptions: ['Cursor: the agent reads the layers over MCP and writes back', 'Claude.ai: just ask in the chat; the tools are called for you'],
+    graphTitle: 'Knowledge grows into a graph', graphBody: 'Every [[link]] and [@citation] on a page is an edge. The more sources, the clearer the hub pages; the timeline replays how the wiki grew.', heroCaption: '20 seconds: paste a URL, a wiki page appears, then ask it a question.',
     openTitle: 'Open-source core, your data in your hands', openBody: 'The code is released under AGPL-3.0 and self-hosts with docker compose; the hosted version is run by us. Export the whole wiki any time as an Obsidian-compatible Markdown zip, and the bibliography as .bib. Interface in Traditional Chinese and English; write in any language.',
     footer: "WikiBrain · personal knowledge base · inspired by Andrej Karpathy's LLM Wiki note",
   },
@@ -89,7 +96,8 @@ export default function Landing() {
         </span>
       </header>
       <main className="mx-auto max-w-[1080px] px-5 pb-20 sb:px-8">
-        <section className="py-10 sb:py-16">
+        <section className="grid items-center gap-8 py-10 sb:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] sb:py-14">
+          <div>
           <div className="text-[12px] uppercase tracking-[.08em] text-ink-faint">{c.eyebrow}</div>
           <h1 className="mt-3 max-w-[22ch] font-serif text-[34px] font-bold leading-[1.2] sb:text-[44px]" style={{ textWrap: 'balance' }}>{c.h1}</h1>
           <p className="mt-5 max-w-[60ch] text-[16px] leading-relaxed text-ink-soft">{c.lede}</p>
@@ -97,6 +105,11 @@ export default function Landing() {
             <Link to="/register" className={`${btnPrimary} px-5 py-2.5 text-[14px]`} data-testid="landing-cta">{c.cta}</Link>
             <Link to="/help" className="text-[13.5px] text-celadon-deep hover:underline">{c.help} →</Link>
           </div>
+          </div>
+          <figure className="min-w-0">
+            <video autoPlay muted loop playsInline preload="metadata" poster={helpAsset(lang, 'home.png')} src={helpAsset(lang, 'tour.webm')} className="w-full rounded-[12px] border border-line bg-ink shadow-[0_12px_40px_-16px_rgba(34,49,58,.35)]" aria-label={c.heroCaption} />
+            <figcaption className="mt-2 text-[12px] text-ink-faint">{c.heroCaption}</figcaption>
+          </figure>
         </section>
         <section className="grid gap-4 sb:grid-cols-3">
           {c.props.map(p => <div key={p.title} className="rounded-[12px] border border-line bg-paper p-5"><h2 className="font-serif text-[18px] font-bold">{p.title}</h2><p className="mt-2 text-[14px] leading-relaxed text-ink-soft">{p.body}</p></div>)}
@@ -104,8 +117,20 @@ export default function Landing() {
         <section className="mt-16">
           <h2 className="font-serif text-[24px] font-bold">{c.howTitle}</h2>
           <ol className="mt-5 grid gap-4 sb:grid-cols-3">
-            {c.how.map(s => <li key={s.title} className="rounded-[12px] border-l-[3px] border-celadon bg-paper px-5 py-4"><h3 className="text-[15px] font-semibold">{s.title}</h3><p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-soft">{s.body}</p></li>)}
+            {c.how.map((s, i) => <li key={s.title} className="overflow-hidden rounded-[12px] border border-line bg-paper"><img src={helpAsset(lang, ['add.png', 'pending.png', 'chat.png'][i])} alt="" loading="lazy" className="aspect-[16/10] w-full border-b border-line object-cover object-top" /><div className="border-l-[3px] border-celadon px-5 py-4"><h3 className="text-[15px] font-semibold">{s.title}</h3><p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-soft">{s.body}</p></div></li>)}
           </ol>
+        </section>
+        <section className="mt-16">
+          <h2 className="font-serif text-[24px] font-bold">{c.agentsTitle}</h2>
+          <p className="mt-2 max-w-[70ch] text-[14px] leading-relaxed text-ink-soft">{c.agentsBody}</p>
+          <div className="mt-5 grid gap-4 sb:grid-cols-2">
+            <figure className="min-w-0"><img src={helpAsset(lang, 'cursor-chat.png')} alt={c.agentsCaptions[0]} loading="lazy" className="aspect-[4/3] w-full rounded-[12px] border border-line bg-paper object-cover object-top" /><figcaption className="mt-2 text-[12px] text-ink-faint">{c.agentsCaptions[0]}</figcaption></figure>
+            <figure className="min-w-0"><img src="/help/shared/claude-chat.png" alt={c.agentsCaptions[1]} loading="lazy" className="aspect-[4/3] w-full rounded-[12px] border border-line bg-paper object-cover object-top" /><figcaption className="mt-2 text-[12px] text-ink-faint">{c.agentsCaptions[1]}</figcaption></figure>
+          </div>
+        </section>
+        <section className="mt-16 grid items-center gap-8 sb:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+          <div><h2 className="font-serif text-[24px] font-bold">{c.graphTitle}</h2><p className="mt-3 text-[14px] leading-relaxed text-ink-soft">{c.graphBody}</p></div>
+          <img src={helpAsset(lang, 'graph.png')} alt={c.graphTitle} loading="lazy" className="w-full rounded-[12px] border border-line bg-paper" />
         </section>
         <section className="mt-16 grid gap-4 sb:grid-cols-3">
           <h2 className="font-serif text-[24px] font-bold sb:col-span-3">{c.audienceTitle}</h2>
