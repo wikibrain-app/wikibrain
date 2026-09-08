@@ -125,7 +125,7 @@ export default function Landing() {
           <p className="mt-2 max-w-[70ch] text-[14px] leading-relaxed text-ink-soft">{c.agentsBody}</p>
           <div className="mt-5 grid gap-4 sb:grid-cols-2">
             <figure className="min-w-0"><img src={helpAsset(lang, 'cursor-chat.png')} alt={c.agentsCaptions[0]} loading="lazy" className="aspect-[4/3] w-full rounded-[12px] border border-line bg-paper object-cover object-top" /><figcaption className="mt-2 text-[12px] text-ink-faint">{c.agentsCaptions[0]}</figcaption></figure>
-            <figure className="min-w-0"><img src="/help/shared/claude-chat.png" alt={c.agentsCaptions[1]} loading="lazy" className="aspect-[4/3] w-full rounded-[12px] border border-line bg-paper object-cover object-top" /><figcaption className="mt-2 text-[12px] text-ink-faint">{c.agentsCaptions[1]}</figcaption></figure>
+            <figure className="min-w-0"><img src={`/help/shared/${lang}/claude-chat.png`} onError={e => { const im = e.currentTarget; if (!im.dataset.fb) { im.dataset.fb = '1'; im.src = '/help/shared/claude-chat.png'; } }} alt={c.agentsCaptions[1]} loading="lazy" className="aspect-[4/3] w-full rounded-[12px] border border-line bg-paper object-cover object-top" /><figcaption className="mt-2 text-[12px] text-ink-faint">{c.agentsCaptions[1]}</figcaption></figure>
           </div>
         </section>
         <section className="mt-16 grid items-center gap-8 sb:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">

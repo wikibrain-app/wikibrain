@@ -15,11 +15,13 @@ export const frame: Record<Lang, { title: string; login: string; nav: string; on
 export const helpAsset = (lang: Lang, file: string) => `/help/${lang}/${file}`;
 export function Shot({ src, alt, caption, shared }: { src: string; alt: string; caption: string; shared?: boolean }) {
   const { lang } = useT();
-  const [missing, setMissing] = useState(false);
-  if (missing) return null;
+  // shared: third-party UI screenshots; a language-specific copy under /help/shared/<lang>/ wins, else the common one
+  const [state, setState] = useState<'lang' | 'common' | 'missing'>(shared ? 'lang' : 'common');
+  if (state === 'missing') return null;
+  const url = shared ? (state === 'lang' ? `/help/shared/${lang}/${src}` : `/help/shared/${src}`) : helpAsset(lang, src);
   return (
     <figure className="my-4 min-w-0 font-sans">
-      <img src={shared ? `/help/shared/${src}` : helpAsset(lang, src)} alt={alt} loading="lazy" onError={() => setMissing(true)} className="w-full rounded-[10px] border border-line shadow-sm" />
+      <img src={url} alt={alt} loading="lazy" onError={() => setState(s => (s === 'lang' ? 'common' : 'missing'))} className="w-full rounded-[10px] border border-line shadow-sm" />
       <figcaption className="mt-1.5 text-[12px] text-ink-soft">{caption}</figcaption>
     </figure>
   );
