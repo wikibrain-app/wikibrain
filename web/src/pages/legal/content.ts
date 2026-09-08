@@ -193,7 +193,6 @@ export const terms: LegalDoc = {
 - 註冊起 14 天 Pro 體驗，不需信用卡，到期自動轉為 Free，不會自動扣款。
 - Free：永久免費，受筆記數、容量、每月 agent 工作次數、版本保留天數等限制（限制數字以說明頁「方案與計價」為準）。到達上限時服務轉唯讀，不刪除資料。
 - Pro：每月 6 美元或每年 60 美元（含稅價由金流商依您所在地計算並顯示），自動續約，可隨時於「管理訂閱」取消，取消於當期結束生效，已付費期間不按比例退還（法定退款除外）。結帳與付款資料由 Paddle 處理，我們不會取得您的信用卡資料。
-- 早鳥價限前 100 位且有公開截止日，續約沿用早鳥價直到取消。
 - 價格變動會在下一個計費週期至少 30 天前通知。
 
 ## 7. 退款與解除權
@@ -251,7 +250,7 @@ AI features run on a provider you configure with your own API key; **model fees 
 
 ## 6. Plans, fees and trial
 
-14-day Pro trial from sign-up, no card, then Free automatically with no charge. Free is permanently free with limits on notes, storage, monthly agent runs and version retention (numbers on the help page); at a limit the service becomes read-only and nothing is deleted. Pro is USD 6 per month or 60 per year (tax shown at checkout), renews automatically, can be cancelled any time effective at period end, no pro-rata refunds beyond what the law requires. Checkout and payment data are handled by Paddle; we never see your card details. Early-bird pricing is limited to the first 100 subscribers with a public end date. Price changes are announced at least 30 days before the next billing cycle.
+14-day Pro trial from sign-up, no card, then Free automatically with no charge. Free is permanently free with limits on notes, storage, monthly agent runs and version retention (numbers on the help page); at a limit the service becomes read-only and nothing is deleted. Pro is USD 6 per month or 60 per year (tax shown at checkout), renews automatically, can be cancelled any time effective at period end, no pro-rata refunds beyond what the law requires. Checkout and payment data are handled by Paddle; we never see your card details. Price changes are announced at least 30 days before the next billing cycle.
 
 ## 7. Refunds and withdrawal
 

@@ -88,13 +88,18 @@ export async function ensureCatalog(): Promise<Catalog> {
 /* ── Early-bird discount (decision 17: US$4/month for the first 100 subscribers, public deadline, kept on renewal) ──
    A recurring 33.34% discount (6 → 4.00, 60 → 40.00), usage_limit 100, restricted to the two Pro prices, expiring at
    PADDLE_EARLYBIRD_UNTIL (default 2026-12-31). Created once (custom_data.wikibrain=earlybird) and applied automatically
-   at checkout while it is active and has uses left; PADDLE_EARLYBIRD=0 disables it. */
+   at checkout while it is active and has uses left. Opt-in with PADDLE_EARLYBIRD=1 (decision 2026-09-08: off by default,
+   because a visible "spots left" counter reveals how few paying users there are); when off, a leftover discount is archived. */
 export const EARLYBIRD_PERCENT = 33.34, EARLYBIRD_LIMIT = 100;
 async function ensureEarlyBird(priceIds: string[]): Promise<DiscountInfo | null> {
-  if (process.env.PADDLE_EARLYBIRD === '0') return null;
+  const enabled = process.env.PADDLE_EARLYBIRD === '1';
   const until = process.env.PADDLE_EARLYBIRD_UNTIL ?? '2026-12-31T23:59:59Z';
   const list = await call<PDiscount[]>('GET', '/discounts?status=active&per_page=200').catch(() => [] as PDiscount[]);
   let d = list.find(x => x.custom_data?.wikibrain === 'earlybird');
+  if (!enabled) {
+    if (d) await call('PATCH', `/discounts/${encodeURIComponent(d.id)}`, { status: 'archived' }).catch(e => console.error('could not archive early-bird discount:', e));
+    return null;
+  }
   if (!d) {
     d = await call<PDiscount>('POST', '/discounts', {
       description: 'WikiBrain early bird', type: 'percentage', amount: String(EARLYBIRD_PERCENT), code: 'EARLYBIRD', enabled_for_checkout: true,

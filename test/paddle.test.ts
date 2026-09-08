@@ -34,7 +34,7 @@ const subEvent = (type: string, status: string, occurred: string, extra: Record<
 before(async () => {
   await migrate();
   // Fixture Paddle API: empty catalog at first, then remembers what the server creates.
-  const products: Record<string, unknown>[] = [], prices: Record<string, unknown>[] = [], discounts: Record<string, unknown>[] = [];
+  const products: Record<string, unknown>[] = [], prices: Record<string, unknown>[] = [], discounts: Record<string, unknown>[] = [{ id: 'dsc_old', status: 'active', code: 'EARLYBIRD', amount: '33.34', type: 'percentage', usage_limit: 100, times_used: 3, expires_at: null, custom_data: { wikibrain: 'earlybird' } }];
   fixture = createServer(async (req, res) => {
     const url = new URL(req.url!, 'http://x'); let body = ''; for await (const c of req) body += c;
     const json = (code: number, data: unknown) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify({ data })); };
@@ -45,6 +45,7 @@ before(async () => {
     if (req.method === 'POST' && url.pathname === '/prices') { const p = { id: `pri_fx${prices.length + 1}`, status: 'active', ...JSON.parse(body) }; prices.push(p); created.push('price'); return json(201, p); }
     if (req.method === 'GET' && url.pathname === '/discounts') return json(200, discounts);
     if (req.method === 'POST' && url.pathname === '/discounts') { const d = { id: 'dsc_fx1', status: 'active', times_used: 3, ...JSON.parse(body) }; discounts.push(d); created.push('discount'); return json(201, d); }
+    if (req.method === 'PATCH' && url.pathname.startsWith('/discounts/')) { created.push('archive'); return json(200, { id: url.pathname.split('/')[2], status: 'archived' }); }
     if (req.method === 'GET' && url.pathname === '/client-tokens') return json(200, []);
     if (req.method === 'POST' && url.pathname === '/client-tokens') { created.push('token'); return json(201, { id: 'ctkn_1', name: 'WikiBrain web', token: 'test_client_token', status: 'active' }); }
     if (req.method === 'POST' && url.pathname === '/customers/ctm_test1/portal-sessions') return json(201, { urls: { general: { overview: 'https://sandbox-customer-portal.paddle.com/cpl_x' }, subscriptions: [{ id: 'sub_test1', cancel_subscription: 'https://portal/cancel', update_subscription_payment_method: 'https://portal/pay' }] } });
@@ -106,8 +107,8 @@ test('GET /api/billing creates the catalog once and returns checkout config; POS
   assert.equal(b.error, null); assert.equal(b.paddle.environment, 'sandbox'); assert.equal(b.paddle.client_token, 'test_client_token');
   assert.equal(b.paddle.prices.month.amount, 600); assert.equal(b.paddle.prices.year.amount, 6000); assert.equal(b.paddle.prices.year.interval, 'year');
   assert.equal(b.paddle.workspace_id, wsId); assert.equal(b.paddle.email, email);
-  assert.deepEqual([...created].sort(), ['discount', 'price', 'price', 'product', 'token']);
-  assert.equal(b.paddle.prices.discount.code, 'EARLYBIRD'); assert.equal(b.paddle.prices.discount.percent, 33.34); assert.equal(b.paddle.prices.discount.remaining, 97); assert.equal(b.paddle.prices.discount.usage_limit, 100);
+  assert.deepEqual([...created].sort(), ['archive', 'price', 'price', 'product', 'token'], 'early bird is off by default: a leftover discount is archived, none created');
+  assert.equal(b.paddle.prices.discount, null);
   await api('GET', '/api/billing');
   assert.equal(created.length, 5, 'second call is served from the cache');
   const p = await api('POST', '/api/billing/portal');
