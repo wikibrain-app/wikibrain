@@ -25,6 +25,7 @@ export function PlanCard() {
   const sub = b?.subscription;
   const paddle = b?.paddle ?? null;
   const showUpgrade = p.plan !== 'pro' && !!paddle;
+  const disc = (pr: { amount: number; currency: string }) => { const d = paddle?.prices.discount; const cents = d ? Math.round(pr.amount * (1 - d.percent / 100)) : pr.amount; return fmtPrice(cents, pr.currency); };
 
   const buy = async (priceId: string) => {
     if (!paddle) return;
@@ -46,7 +47,7 @@ export function PlanCard() {
           }, 2000);
         }
         if (name === 'checkout.closed') setBusy(false);
-      });
+      }, paddle.prices.discount?.id ?? null);
     } catch (e) { toast(t('plan.checkoutError', { err: (e as Error).message }), { kind: 'error' }); setBusy(false); }
   };
   const portal = async () => {
@@ -91,9 +92,16 @@ export function PlanCard() {
           <div className="mt-2 border-t border-line pt-2" data-testid="plan-upgrade">
             <div className="font-semibold">{t('plan.upgradeTitle')}</div>
             <p className="text-ink-soft">{t('plan.upgradeBody')}</p>
+            {paddle.prices.discount && (
+              <div className="mt-2 rounded-[8px] border border-amber/40 bg-amber-mist px-3 py-2 text-[12.5px]" data-testid="plan-earlybird">
+                <b>{t('plan.earlyTitle', { pct: Math.round(paddle.prices.discount.percent) })}</b> {t('plan.earlyBody', { month: disc(paddle.prices.month), year: disc(paddle.prices.year) })}
+                {paddle.prices.discount.remaining !== null && <> · {t('plan.earlyLeft', { n: paddle.prices.discount.remaining, total: paddle.prices.discount.usage_limit ?? 0 })}</>}
+                {paddle.prices.discount.expires_at && <> · {t('plan.earlyUntil', { date: fmtDate(lang, paddle.prices.discount.expires_at) })}</>}
+              </div>
+            )}
             <div className="mt-2 flex flex-wrap gap-2">
-              <button type="button" className={btnPrimary} onClick={() => buy(paddle.prices.year.id)} disabled={busy} data-testid="plan-buy-year">{t('plan.buyYear', { price: fmtPrice(paddle.prices.year.amount, paddle.prices.year.currency) })}</button>
-              <button type="button" className={btnGhost} onClick={() => buy(paddle.prices.month.id)} disabled={busy} data-testid="plan-buy-month">{t('plan.buyMonth', { price: fmtPrice(paddle.prices.month.amount, paddle.prices.month.currency) })}</button>
+              <button type="button" className={btnPrimary} onClick={() => buy(paddle.prices.year.id)} disabled={busy} data-testid="plan-buy-year">{t('plan.buyYear', { price: paddle.prices.discount ? disc(paddle.prices.year) : fmtPrice(paddle.prices.year.amount, paddle.prices.year.currency) })}</button>
+              <button type="button" className={btnGhost} onClick={() => buy(paddle.prices.month.id)} disabled={busy} data-testid="plan-buy-month">{t('plan.buyMonth', { price: paddle.prices.discount ? disc(paddle.prices.month) : fmtPrice(paddle.prices.month.amount, paddle.prices.month.currency) })}</button>
             </div>
             {paddle.environment === 'sandbox' && <div className="mt-1 text-[12px] text-amber">{t('plan.sandbox')}</div>}
           </div>

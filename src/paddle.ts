@@ -47,11 +47,13 @@ export function verifySignature(raw: string | Buffer, header: string | undefined
 
 // ── Catalog ──
 export interface PriceInfo { id: string; amount: number; currency: string; interval: 'month' | 'year' }
-export interface Catalog { product_id: string; month: PriceInfo; year: PriceInfo }
+export interface DiscountInfo { id: string; code: string; percent: number; usage_limit: number | null; times_used: number; remaining: number | null; expires_at: string | null }
+export interface Catalog { product_id: string; month: PriceInfo; year: PriceInfo; discount: DiscountInfo | null }
 interface PProduct { id: string; name: string; status: string; custom_data?: Record<string, unknown> | null }
+interface PDiscount { id: string; status: string; code: string | null; amount: string; type: string; usage_limit: number | null; times_used: number; expires_at: string | null; custom_data?: Record<string, unknown> | null }
 interface PPrice { id: string; product_id: string; status: string; unit_price: { amount: string; currency_code: string }; billing_cycle?: { interval: string; frequency: number } | null; custom_data?: Record<string, unknown> | null }
 let catalogCache: { at: number; value: Catalog } | null = null;
-const CATALOG_TTL = 60 * 60_000;
+const CATALOG_TTL = 10 * 60_000;
 export function resetPaddleCache() { catalogCache = null; tokenCache = null; }
 
 export async function ensureCatalog(): Promise<Catalog> {
@@ -76,13 +78,33 @@ export async function ensureCatalog(): Promise<Catalog> {
     }
     return { id: price.id, amount: Number(price.unit_price.amount), currency: price.unit_price.currency_code, interval };
   };
-  const value: Catalog = {
-    product_id: product.id,
-    month: await pick('pro-month', process.env.PADDLE_PRICE_MONTH, 'month', PRO_MONTH_CENTS, 'WikiBrain Pro, monthly'),
-    year: await pick('pro-year', process.env.PADDLE_PRICE_YEAR, 'year', PRO_YEAR_CENTS, 'WikiBrain Pro, yearly'),
-  };
+  const month = await pick('pro-month', process.env.PADDLE_PRICE_MONTH, 'month', PRO_MONTH_CENTS, 'WikiBrain Pro, monthly');
+  const year = await pick('pro-year', process.env.PADDLE_PRICE_YEAR, 'year', PRO_YEAR_CENTS, 'WikiBrain Pro, yearly');
+  const value: Catalog = { product_id: product.id, month, year, discount: await ensureEarlyBird([month.id, year.id]) };
   catalogCache = { at: Date.now(), value };
   return value;
+}
+
+/* ── Early-bird discount (decision 17: US$4/month for the first 100 subscribers, public deadline, kept on renewal) ──
+   A recurring 33.34% discount (6 → 4.00, 60 → 40.00), usage_limit 100, restricted to the two Pro prices, expiring at
+   PADDLE_EARLYBIRD_UNTIL (default 2026-12-31). Created once (custom_data.wikibrain=earlybird) and applied automatically
+   at checkout while it is active and has uses left; PADDLE_EARLYBIRD=0 disables it. */
+export const EARLYBIRD_PERCENT = 33.34, EARLYBIRD_LIMIT = 100;
+async function ensureEarlyBird(priceIds: string[]): Promise<DiscountInfo | null> {
+  if (process.env.PADDLE_EARLYBIRD === '0') return null;
+  const until = process.env.PADDLE_EARLYBIRD_UNTIL ?? '2026-12-31T23:59:59Z';
+  const list = await call<PDiscount[]>('GET', '/discounts?status=active&per_page=200').catch(() => [] as PDiscount[]);
+  let d = list.find(x => x.custom_data?.wikibrain === 'earlybird');
+  if (!d) {
+    d = await call<PDiscount>('POST', '/discounts', {
+      description: 'WikiBrain early bird', type: 'percentage', amount: String(EARLYBIRD_PERCENT), code: 'EARLYBIRD', enabled_for_checkout: true,
+      recur: true, maximum_recurring_intervals: null, usage_limit: EARLYBIRD_LIMIT, restrict_to: priceIds, expires_at: until, custom_data: { wikibrain: 'earlybird' },
+    });
+  }
+  const remaining = d.usage_limit === null ? null : Math.max(0, d.usage_limit - (d.times_used ?? 0));
+  const expired = !!d.expires_at && new Date(d.expires_at).getTime() < Date.now();
+  if (d.status !== 'active' || expired || remaining === 0) return null;
+  return { id: d.id, code: d.code ?? 'EARLYBIRD', percent: Number(d.amount), usage_limit: d.usage_limit, times_used: d.times_used ?? 0, remaining, expires_at: d.expires_at };
 }
 
 // ── Client-side token for Paddle.js (safe to expose) ──

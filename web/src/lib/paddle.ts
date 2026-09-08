@@ -19,7 +19,7 @@ export function loadPaddle(): Promise<PaddleJs> {
     document.head.appendChild(s);
   }));
 }
-export async function openCheckout(cfg: { environment: 'sandbox' | 'production'; client_token: string; email: string; workspace_id: string }, priceId: string, onEvent: (name: string, detail?: string) => void) {
+export async function openCheckout(cfg: { environment: 'sandbox' | 'production'; client_token: string; email: string; workspace_id: string }, priceId: string, onEvent: (name: string, detail?: string) => void, discountId?: string | null) {
   const P = await loadPaddle();
   if (!initialised) {
     if (cfg.environment === 'sandbox') P.Environment.set('sandbox');
@@ -34,6 +34,7 @@ export async function openCheckout(cfg: { environment: 'sandbox' | 'production';
   }
   P.Checkout.open({
     items: [{ priceId, quantity: 1 }],
+    ...(discountId ? { discountId } : {}),
     customer: { email: cfg.email },
     customData: { workspace_id: cfg.workspace_id },
     settings: { variant: 'one-page', displayMode: 'overlay', allowLogout: false, showAddDiscounts: true },

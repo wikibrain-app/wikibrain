@@ -41,7 +41,7 @@ const copy: Record<Lang, {
     plansTitle: '方案', plans: [
       { name: 'Pro 體驗', price: '14 天免費', body: '不用信用卡。全部功能，agent 工作不限；前 10 次連 API key 都不用。' },
       { name: 'Free', price: '永久免費', body: '200 則筆記、每月 20 次 agent 工作、自帶 API key。' },
-      { name: 'Pro', price: 'US$6／月 或 60／年', body: '10,000 則、1 GB、agent 工作不限、多把 token、90 天版本歷史。' },
+      { name: 'Pro', price: 'US$6／月 或 60／年', body: '10,000 則、1 GB、agent 工作不限、多把 token、90 天版本歷史。早鳥價 US$4／月或 40／年，限前 100 位，結帳自動套用。' },
     ],
     plansNote: '模型費用不包含在內：你用自己的 key，一般用法每月約幾十美分到幾美元；用 Cursor 的人不需要 key。結帳由 Paddle 處理，隨時可取消。',
     agentsTitle: '你已經在用的 agent，直接讀寫這座 wiki', agentsBody: 'Cursor 與 Claude Code 貼一把 token；Claude.ai 與 ChatGPT 用 OAuth 登入即可。同一組六個工具：讀規則、搜尋、閱讀、建立、更新、列資料夾。', agentsCaptions: ['Cursor：agent 透過 MCP 讀三層、寫回 wiki', 'Claude.ai：對話裡直接交代，工具自己呼叫'],
@@ -72,7 +72,7 @@ const copy: Record<Lang, {
     plansTitle: 'Plans', plans: [
       { name: 'Pro trial', price: '14 days free', body: 'No card. Everything, unlimited agent runs; the first 10 runs need no API key at all.' },
       { name: 'Free', price: 'Free forever', body: '200 notes, 20 agent runs a month, bring your own API key.' },
-      { name: 'Pro', price: 'US$6 / month or 60 / year', body: '10,000 notes, 1 GB, unlimited agent runs, multiple tokens, 90-day version history.' },
+      { name: 'Pro', price: 'US$6 / month or 60 / year', body: '10,000 notes, 1 GB, unlimited agent runs, multiple tokens, 90-day version history. Early bird US$4 / month or 40 / year for the first 100 subscribers, applied at checkout.' },
     ],
     plansNote: 'Model costs are not included: you use your own key, typically a few cents to a few dollars a month; Cursor users need no key. Checkout by Paddle; cancel any time.',
     agentsTitle: 'The agents you already use read and write this wiki', agentsBody: 'Cursor and Claude Code paste a token; Claude.ai and ChatGPT sign in with OAuth. The same six tools everywhere: read rules, search, read, create, update, list.', agentsCaptions: ['Cursor: the agent reads the layers over MCP and writes back', 'Claude.ai: just ask in the chat; the tools are called for you'],
