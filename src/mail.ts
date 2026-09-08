@@ -1,4 +1,5 @@
 import { config } from './config.js';
+import { track } from './events.js';
 
 export interface Mail { to: string; subject: string; text: string }
 
@@ -9,6 +10,7 @@ export const outbox: Mail[] = [];
 export async function sendMail(mail: Mail): Promise<void> {
   outbox.push(mail);
   if (outbox.length > 20) outbox.shift();
+  track('email', {}, { subject: mail.subject }); // counted for capacity planning (Resend quota)
   if (!config.resendApiKey) {
     console.log(`\n[mail → ${mail.to}] ${mail.subject}\n${mail.text}\n`);
     return;

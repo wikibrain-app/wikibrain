@@ -57,7 +57,22 @@ export interface AdminStatus {
   issues: { at: string; kind: string; detail: string }[];
   registry: { service: string; plan: string; price: string; renews_on?: string | null; billing?: string; limits?: string; account?: string; manage_url?: string; notes?: string; days_left: number | null }[];
   quotas: { service: string; used: string; limit?: string; state: ProbeState; detail?: string }[];
+  capacity: Capacity | null;
   generated_at: string;
+}
+export type CapacityLevel = 'ok' | 'warn' | 'critical';
+export type CapacityKey = 'db' | 'backup' | 'email_month' | 'email_day' | 'runs_month' | 'mcp_month' | 'trial_spend' | 'ws_notes';
+export interface CapacityConfig {
+  db_volume_bytes: number; backup_bucket_bytes: number; backup_keep_days: number; resend_month: number; resend_day: number; runs_month: number; mcp_calls_month: number;
+  trial_budget_usd: number; trial_run_cost_usd: number; ws_notes_soft: number; assume_runs_pro: number; warn: number; critical: number; email_alerts: boolean;
+}
+export interface CapacityResource { key: CapacityKey; unit: 'bytes' | 'count' | 'usd'; used: number; projected: number; committed: number | null; capacity: number; level: CapacityLevel; ratio: number; projected_ratio: number; detail?: string }
+export interface Capacity {
+  config: CapacityConfig;
+  limits: { free_runs: number; trial_free_runs: number; free_bytes: number; pro_bytes: number; free_notes: number; pro_notes: number };
+  tiers: { free: number; trial: number; pro: number; total: number; signups_30d: number };
+  observed: { bytes_per_ws: number; notes_per_ws: number; runs_per_active_ws: number; emails_per_signup: number; largest_ws_notes: number };
+  resources: CapacityResource[]; alerts: CapacityResource[]; generated_at: string;
 }
 export interface ShareInfo { token: string; url: string; created_at: string }
 export interface SharedNote { path: string; title: string; content: string; updated_at: string; layer: 'raw' | 'wiki' | 'schema' }
@@ -147,6 +162,7 @@ export const api = {
   billing: () => request<BillingInfo>('GET', '/api/billing'),
   adminStatus: () => request<AdminStatus>('GET', '/api/admin/status'),
   adminRegistry: (items: AdminStatus['registry']) => request<{ ok: true }>('PUT', '/api/admin/registry', { items }),
+  adminCapacity: (cfg: Partial<CapacityConfig>) => request<{ ok: true; config: CapacityConfig; capacity: Capacity }>('PUT', '/api/admin/capacity', cfg),
   share: (path: string) => request<{ share: ShareInfo | null }>('GET', `/api/share?path=${encodeURIComponent(path)}`),
   createShare: (path: string) => request<{ share: ShareInfo }>('POST', '/api/share', { path }),
   revokeShare: (path: string) => request<{ revoked: boolean }>('DELETE', `/api/share?path=${encodeURIComponent(path)}`),

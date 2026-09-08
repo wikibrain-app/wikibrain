@@ -7,7 +7,7 @@ import { pool } from './db.js';
    first_ai_write    once per workspace, the first note written by an agent or a token client
    upgrade / churn   every plan change (free → pro, pro → free) from the billing webhook
    "Once" kinds are enforced by a partial unique index; duplicates are ignored, so callers just fire and forget. */
-export type EventKind = 'signup' | 'verified' | 'mcp_connected' | 'first_ai_write' | 'upgrade' | 'churn';
+export type EventKind = 'signup' | 'verified' | 'mcp_connected' | 'first_ai_write' | 'upgrade' | 'churn' | 'email';
 const seen = new Set<string>(); // process-local cache so hot paths (/api/me, token auth) do not hit the DB every time
 
 export function track(kind: EventKind, ids: { userId?: string | null; workspaceId?: string | null }, meta?: Record<string, unknown>): void {
