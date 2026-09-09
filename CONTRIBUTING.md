@@ -10,6 +10,17 @@ Thanks for looking. This project follows a few conventions that keep it small an
 - **Two languages.** Interface strings live in `web/src/i18n/*.ts` (keys must exist in both `zh-TW` and `en`). Agent prompts and MCP messages take a `lang` parameter. Wiki content is never translated.
 - **Karpathy's pattern is the spec.** Three layers, `index.md`/`log.md`, Ingest/Query/Lint. Features that fight the pattern are out of scope.
 
+## Local setup
+
+```bash
+cp .env.example .env             # DATABASE_URL, BETTER_AUTH_SECRET, DEV_MCP_TOKEN (openssl rand -hex 32)
+createdb wikibrain               # PostgreSQL 16 or newer
+npm install && npm run db:seed   # migrations, a verified dev account, a workspace and an MCP token
+npm run dev                      # API on 3000, Vite on 5173 - open http://localhost:5173
+```
+
+Running it in Docker instead is described in [DEPLOY.md](DEPLOY.md).
+
 ## Workflow
 
 1. Open an issue describing the problem and the smallest change that fixes it.

@@ -61,7 +61,7 @@ open http://localhost:3000
 
 Verification emails are printed to the container log unless `RESEND_API_KEY` is set. Google sign-in is enabled when `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are set. The image includes headless Chromium so JavaScript-rendered pages can be imported (about 1.8 GB); set `IMPORT_HEADLESS=0` to disable it.
 
-See [DEPLOY.md](DEPLOY.md) for Replit and other hosts, and `.env.example` for every variable.
+See [DEPLOY.md](DEPLOY.md) for self-hosting with Docker behind a reverse proxy, and `.env.example` for every variable.
 
 ## Connect an AI client
 
