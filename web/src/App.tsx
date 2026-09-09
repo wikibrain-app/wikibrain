@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { createElement, useEffect, useState, type ComponentType } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { api, type Me } from './lib/api';
 import { takeChosen, useLang, useT } from './i18n';
@@ -15,8 +15,11 @@ import Stats from './pages/Stats';
 import OAuthConsent from './pages/OAuthConsent';
 import Landing from './pages/Landing';
 import Share from './pages/Share';
-import Admin from './pages/Admin';
 import Compare from './pages/Compare';
+
+/* The operator console (/admin) ships only with the hosted deployment. A glob resolves to an empty object when the page
+   is not part of the build, so the route simply does not exist there. */
+const adminPage = Object.values(import.meta.glob<{ default: ComponentType<{ me: Me }> }>('./pages/Admin.tsx', { eager: true }))[0]?.default ?? null;
 
 export default function App() {
   const [me, setMe] = useState<Me | null | undefined>(undefined); // undefined = loading
@@ -54,7 +57,7 @@ export default function App() {
       <Route path="/settings" element={guard(<Settings me={me!} onSignedOut={() => setMe(null)} />)} />
       <Route path="/lint" element={guard(<Lint me={me!} />)} />
       <Route path="/stats" element={guard(<Stats me={me!} />)} />
-      <Route path="/admin" element={guard(<Admin me={me!} />)} />
+      {adminPage && <Route path="/admin" element={guard(createElement(adminPage, { me: me! }))} />}
       <Route path="/oauth/consent" element={guard(<OAuthConsent me={me!} />)} />
       <Route path="/n/*" element={guard(<Workspace me={me!} onSignedOut={() => setMe(null)} />)} />
       <Route path="/graph" element={guard(<Workspace me={me!} onSignedOut={() => setMe(null)} />)} />
