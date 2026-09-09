@@ -232,11 +232,16 @@ export async function arxivMeta(id: string, fetchImpl: Fetcher): Promise<Partial
   } catch { return {}; }
 }
 
-async function renderSpa(url: string, allowPrivate?: boolean): Promise<{ html: string; finalUrl: string } | null> {
+async function renderSpa(url: string, allowPrivate?: boolean, key?: string): Promise<{ html: string; finalUrl: string } | null> {
+  const { renderWithBrowser, RenderBusyError } = await import('./headless.js');
   try {
-    const { renderWithBrowser } = await import('./headless.js');
-    return await renderWithBrowser(url, { allowPrivate });
+    return await renderWithBrowser(url, { allowPrivate, key });
   } catch (e) {
+    // A full queue is a temporary capacity problem, not a bad page: tell the caller to retry instead of claiming the
+    // page needs JavaScript we could not run.
+    if (e instanceof RenderBusyError) {
+      throw new NoteError('BUSY', { 'zh-TW': '目前排隊等待轉譯的網頁太多，請稍後再試，或改用「貼上文字」匯入。', en: 'Too many pages are queued for rendering. Try again shortly, or paste the text instead.' });
+    }
     console.warn('Headless rendering failed (skipped):', (e as Error).message.split('\n')[0]);
     return null;
   }
@@ -246,7 +251,7 @@ async function toSafe(r: Response): Promise<{ status: number; ok: boolean; heade
   return { status: r.status, ok: r.ok, headers: r.headers, url: r.url, body: Buffer.from(await r.arrayBuffer()) };
 }
 
-export async function convertUrl(rawUrl: string, opts: { fetchImpl?: Fetcher; allowPrivate?: boolean; headless?: boolean } = {}): Promise<ConvertedWithWarning> {
+export async function convertUrl(rawUrl: string, opts: { fetchImpl?: Fetcher; allowPrivate?: boolean; headless?: boolean; key?: string } = {}): Promise<ConvertedWithWarning> {
   const url = await assertPublicHttpUrl(rewriteGoogleDocs(rawUrl), { allowPrivate: opts.allowPrivate });
   const fetchImpl = opts.fetchImpl ?? fetch;
   const fetched_at = new Date().toISOString();
@@ -268,10 +273,10 @@ export async function convertUrl(rawUrl: string, opts: { fetchImpl?: Fetcher; al
   if (!res.ok) {
     // 403 / 5xx is usually a WAF blocking non-browser connections; a real browser often gets through.
     if ((res.status === 403 || res.status >= 500) && headlessOn) {
-      const rendered = await renderSpa(url.href, opts.allowPrivate);
+      const rendered = await renderSpa(url.href, opts.allowPrivate, opts.key);
       if (rendered) {
         const r2 = htmlToMarkdown(rendered.html, rendered.finalUrl);
-        const viaBrowser = await finishHtml(r2, url, rendered.finalUrl, fetched_at, fetchImpl, rawUrl, { html: rendered.html, headlessOn: false, secondPass: true });
+        const viaBrowser = await finishHtml(r2, url, rendered.finalUrl, fetched_at, fetchImpl, rawUrl, { html: rendered.html, headlessOn: false, secondPass: true, key: opts.key });
         if (viaBrowser) return { ...viaBrowser, warning: viaBrowser.warning ?? '網站擋自動抓取，已改用 headless 瀏覽器擷取。' };
       }
     }
@@ -294,7 +299,7 @@ export async function convertUrl(rawUrl: string, opts: { fetchImpl?: Fetcher; al
 
   const html = buf.toString('utf8');
   const r1 = htmlToMarkdown(html, url.href);
-  const out = await finishHtml(r1, url, res.url || url.href, fetched_at, fetchImpl, rawUrl, { html, headlessOn, allowPrivate: opts.allowPrivate });
+  const out = await finishHtml(r1, url, res.url || url.href, fetched_at, fetchImpl, rawUrl, { html, headlessOn, allowPrivate: opts.allowPrivate, key: opts.key });
   if (!out) throw new NoteError('BAD_PATH', { 'zh-TW': '抓不到正文。請改用「貼上文字」或上傳 PDF。', en: 'Could not extract the main text. Use "Paste text" or upload a PDF instead.' });
   return out;
 }
@@ -302,7 +307,7 @@ export async function convertUrl(rawUrl: string, opts: { fetchImpl?: Fetcher; al
 // Shared pipeline after fetching HTML: site special cases, bibliography enrichment, thin-content detection (re-fetch headless if needed).
 async function finishHtml(
   r: ReturnType<typeof htmlToMarkdown>, url: URL, finalUrl: string, fetched_at: string, fetchImpl: Fetcher, rawUrl: string,
-  ctx: { html?: string; headlessOn?: boolean; allowPrivate?: boolean; secondPass?: boolean } = {},
+  ctx: { html?: string; headlessOn?: boolean; allowPrivate?: boolean; secondPass?: boolean; key?: string } = {},
 ): Promise<ConvertedWithWarning | null> {
   const { title, markdown, meta } = r;
   let m: SourceMeta = { source_type: 'web', title, source_url: url.href, fetched_at, ...meta };
@@ -347,12 +352,12 @@ async function finishHtml(
   const hasBiblio = !!(m.doi || (m.authors?.length && m.year));
 
   if ((thin || challenge) && !hasBiblio && ctx.headlessOn) {
-    const rendered = await renderSpa(url.href, ctx.allowPrivate);
+    const rendered = await renderSpa(url.href, ctx.allowPrivate, ctx.key);
     if (rendered) {
       const r2 = htmlToMarkdown(rendered.html, rendered.finalUrl);
       const c2 = r2.markdown.replace(/\s+/g, '').length;
       if (c2 >= LIMITS.minContentChars && (r2.article || c2 >= 3000) && !isChallengePage(r2.title, r2.markdown)) {
-        const again = await finishHtml(r2, url, rendered.finalUrl, fetched_at, fetchImpl, rawUrl, { html: rendered.html, headlessOn: false, secondPass: true });
+        const again = await finishHtml(r2, url, rendered.finalUrl, fetched_at, fetchImpl, rawUrl, { html: rendered.html, headlessOn: false, secondPass: true, key: ctx.key });
         if (again) return { ...again, warning: '此頁由瀏覽器端產生內容，已用 headless 瀏覽器擷取；版面可能與原頁略有差異。' };
       }
     }

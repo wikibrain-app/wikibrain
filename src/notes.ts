@@ -29,7 +29,7 @@ const authorOf = (a: Actor) => `${a.kind}:${a.name}`;
 // Error messages may be a single string (same text for both languages) or { 'zh-TW', en }; the API layer picks one via localized() by workspace language.
 export class NoteError extends Error {
   readonly messages: string | Bilingual;
-  constructor(public code: 'NOT_FOUND' | 'CONFLICT' | 'BAD_PATH' | 'FORBIDDEN', message: string | Bilingual) {
+  constructor(public code: 'NOT_FOUND' | 'CONFLICT' | 'BAD_PATH' | 'FORBIDDEN' | 'BUSY', message: string | Bilingual) {
     super(pick(message));
     this.messages = message;
   }

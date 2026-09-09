@@ -35,7 +35,7 @@ import { createSession, deleteSession, fileAnswer, getSession, listSessions, sen
 export const api = Router();
 api.use(originCheck);
 
-const noteStatus: Record<NoteError['code'], number> = { BAD_PATH: 400, NOT_FOUND: 404, FORBIDDEN: 403, CONFLICT: 409 };
+const noteStatus: Record<NoteError['code'], number> = { BAD_PATH: 400, NOT_FOUND: 404, FORBIDDEN: 403, CONFLICT: 409, BUSY: 429 };
 const langOf = (res: Response): Lang => (res.locals.workspace?.lang as Lang | undefined) ?? 'zh-TW';
 const msg = (res: Response, zh: string, en: string) => pick({ 'zh-TW': zh, en }, langOf(res));
 // Path params must be positive integers, otherwise 400 (keeps NaN from reaching pg and becoming a 500)

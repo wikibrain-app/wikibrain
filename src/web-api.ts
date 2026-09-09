@@ -11,7 +11,7 @@ import {
 // Notes REST for the web UI; mounted after requireSession in api.ts, all data access goes through notes.ts.
 export const webApi = Router();
 
-const status: Record<NoteError['code'], number> = { BAD_PATH: 400, NOT_FOUND: 404, FORBIDDEN: 403, CONFLICT: 409 };
+const status: Record<NoteError['code'], number> = { BAD_PATH: 400, NOT_FOUND: 404, FORBIDDEN: 403, CONFLICT: 409, BUSY: 429 };
 function sendError(res: Response, e: unknown) {
   const lang = langOf(res);
   if (e instanceof ConflictError) {

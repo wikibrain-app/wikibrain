@@ -104,3 +104,4 @@ Users can also export their own workspace as a Markdown archive from Settings, w
 - **Imported pages come back empty.** The site needs JavaScript and `IMPORT_HEADLESS` is off, or the site blocks the fetch. Paste the text instead.
 - **Prerendered pages link to the wrong domain.** The image was built with a different `APP_URL`. Rebuild the app image.
 - **Agent runs stop partway.** A proxy or load balancer is cutting the response short. Raise its timeouts.
+- **Imports return 429 saying too many pages are queued.** More pages are waiting for the renderer than `HEADLESS_QUEUE_MAX` allows. Raise `HEADLESS_CONCURRENCY` if the host has memory to spare (about 275 MB per concurrent page), or let the queue drain.

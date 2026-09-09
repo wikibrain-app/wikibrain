@@ -40,7 +40,7 @@ async function sessionOrToken(req: Request, res: Response, next: NextFunction) {
 }
 importApi.use(sessionOrToken);
 
-const status: Record<NoteError['code'], number> = { BAD_PATH: 400, NOT_FOUND: 404, FORBIDDEN: 403, CONFLICT: 409 };
+const status: Record<NoteError['code'], number> = { BAD_PATH: 400, NOT_FOUND: 404, FORBIDDEN: 403, CONFLICT: 409, BUSY: 429 };
 const msg = (res: Response, zh: string, en: string) => pick({ 'zh-TW': zh, en }, res.locals.lang ?? 'zh-TW');
 const send = (res: Response, p: Promise<any>) => p.then(r => res.status(201).json({ ...r, ingestPrompt: ingestPrompt(r.paths ?? [r.path], res.locals.lang) })).catch(e => {
   if (e instanceof NoteError) { res.status(status[e.code]).json({ error: e.code, message: e.localized(res.locals.lang ?? 'zh-TW') }); return; }
@@ -77,7 +77,7 @@ importApi.post('/', async (req, res) => {
   const { kind, url, text, title, folder } = req.body ?? {};
   const ws: string = res.locals.workspaceId, actor: Actor = res.locals.actor;
   if (kind === 'url' && typeof url === 'string') {
-    return send(res, convertUrl(url, { allowPrivate: allowPrivate() }).then(c => withLocalImages(ws, c)).then(async c => ({ ...(await saveSource(ws, c, actor, folder)), warning: c.warning })));
+    return send(res, convertUrl(url, { allowPrivate: allowPrivate(), key: ws }).then(c => withLocalImages(ws, c)).then(async c => ({ ...(await saveSource(ws, c, actor, folder)), warning: c.warning })));
   }
   if (kind === 'text' && typeof text === 'string' && text.trim()) {
     return send(res, saveSource(ws, convertText(text, { title }), actor, folder));

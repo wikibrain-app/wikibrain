@@ -8,11 +8,11 @@ import { assertPublicHttpUrl, isPrivateIp } from './net-guard.js';
 /* ── Headless browser rendering (fallback for SPA pages) ──
    Chromium always goes out through a local "filtering proxy": every request (including each hop after a 302, WebSockets, subresources)
    has its destination host validated at the proxy and connects to a pinned IP, so the browser itself never reaches the internal network.
-   One shared browser, one page at a time, closed automatically after 60 s idle. */
+   One shared browser, closed automatically after 60 s idle, with a bounded pool of concurrent pages (see the scheduler
+   below). */
 
 let browser: Browser | null = null;
 let idleTimer: NodeJS.Timeout | null = null;
-let queue: Promise<unknown> = Promise.resolve();
 const proxies: Record<'strict' | 'open', { port: number } | null> = { strict: null, open: null };
 
 // Resolve and validate the destination host; return a connectable IP (allowPrivate admits internal networks, for test fixtures)
@@ -77,7 +77,52 @@ function touchIdle() {
   idleTimer.unref();
 }
 
-export async function renderWithBrowser(url: string, opts: { timeoutMs?: number; settleMs?: number; allowPrivate?: boolean } = {}): Promise<{ html: string; finalUrl: string }> {
+/* ── Scheduler ──
+   Rendering is the slowest part of an import (about two seconds a page), so it runs a few pages at a time instead of
+   one. Two rules keep one busy workspace from starving everyone else:
+     - at most HEADLESS_CONCURRENCY pages across the whole server (memory and CPU bound), and
+     - at most HEADLESS_PER_KEY of those for any single workspace, so a bulk import always leaves slots for others.
+   Waiting work is picked in arrival order, skipping anyone already at their per-workspace limit, and the queue is
+   bounded: beyond HEADLESS_QUEUE_MAX the request is rejected straight away rather than left to time out upstream. */
+const MAX_CONCURRENT = Math.max(1, Number(process.env.HEADLESS_CONCURRENCY ?? 3));
+const MAX_PER_KEY = Math.max(1, Number(process.env.HEADLESS_PER_KEY ?? 1));
+const MAX_QUEUE = Math.max(1, Number(process.env.HEADLESS_QUEUE_MAX ?? 24));
+
+export class RenderBusyError extends Error {
+  constructor(public readonly queued: number) { super(`Too many pages are waiting to be rendered (${queued})`); }
+}
+interface Waiter { key: string; run: () => Promise<unknown>; resolve: (v: never) => void; reject: (e: unknown) => void }
+const waiting: Waiter[] = [];
+const inFlight = new Map<string, number>();
+let running = 0;
+
+export const renderStats = () => ({ running, waiting: waiting.length, maxConcurrent: MAX_CONCURRENT, maxPerKey: MAX_PER_KEY, maxQueue: MAX_QUEUE });
+
+function pump(): void {
+  while (running < MAX_CONCURRENT && waiting.length > 0) {
+    // Prefer a workspace that is still under its share. If every waiting page belongs to a workspace already at its
+    // share, take the oldest anyway: an idle slot helps nobody, and a workspace that arrives later still gets picked
+    // first as soon as the next slot frees up.
+    const under = waiting.findIndex(w => (inFlight.get(w.key) ?? 0) < MAX_PER_KEY);
+    const [w] = waiting.splice(under < 0 ? 0 : under, 1);
+    running++; inFlight.set(w.key, (inFlight.get(w.key) ?? 0) + 1);
+    void w.run().then(w.resolve as (v: unknown) => void, w.reject).finally(() => {
+      running--;
+      const n = (inFlight.get(w.key) ?? 1) - 1;
+      if (n > 0) inFlight.set(w.key, n); else inFlight.delete(w.key);
+      pump();
+    });
+  }
+}
+function schedule<T>(key: string, run: () => Promise<T>): Promise<T> {
+  if (waiting.length >= MAX_QUEUE) return Promise.reject(new RenderBusyError(waiting.length));
+  return new Promise<T>((resolve, reject) => {
+    waiting.push({ key, run: run as () => Promise<unknown>, resolve: resolve as (v: never) => void, reject });
+    pump();
+  });
+}
+
+export async function renderWithBrowser(url: string, opts: { timeoutMs?: number; settleMs?: number; allowPrivate?: boolean; key?: string } = {}): Promise<{ html: string; finalUrl: string }> {
   const run = async () => {
     const b = await getBrowser();
     const ctx = await b.newContext({
@@ -99,9 +144,7 @@ export async function renderWithBrowser(url: string, opts: { timeoutMs?: number;
       touchIdle();
     }
   };
-  const p = queue.then(run, run);
-  queue = p.catch(() => {});
-  return p;
+  return schedule(opts.key ?? 'anonymous', run);
 }
 
 export async function closeBrowser(): Promise<void> {
