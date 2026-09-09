@@ -1,0 +1,47 @@
+# Self-hosting: docker compose up -d, then open http://localhost:3000
+# Before the first run set BETTER_AUTH_SECRET to `openssl rand -hex 32` and APP_URL to your public URL
+# (OAuth and verification e-mails are built from it). See DEPLOY.md.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: wikibrain
+      POSTGRES_USER: wikibrain
+      POSTGRES_PASSWORD: wikibrain
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wikibrain -d wikibrain"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  app:
+    build:
+      context: .
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-}   # e.g. GIT_COMMIT=$(git rev-parse --short HEAD) docker compose build
+        APP_URL: ${APP_URL:-http://localhost:3000}   # canonical URL baked into the prerendered pages; same value at run time
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://wikibrain:wikibrain@db:5432/wikibrain
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change_me_openssl_rand_hex_32}
+      NODE_ENV: production
+      KEY_ENCRYPTION_SECRET_FILE: /run/secrets/wikibrain_key   # kept in a file, never in the environment: openssl rand -hex 32 > ./secrets/wikibrain_key
+      IMPORT_HEADLESS: "1"           # the image bundles headless Chromium; set 0 if you do not need it
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-WikiBrain <no-reply@example.com>}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    secrets:
+      - wikibrain_key
+    restart: unless-stopped
+secrets:
+  wikibrain_key:
+    file: ./secrets/wikibrain_key
+volumes:
+  pgdata:

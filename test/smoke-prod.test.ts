@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 /* Production smoke test (ops check). Skipped unless SMOKE_URL is set:
-     SMOKE_URL=https://wikibrain.app npm run smoke:prod
+     SMOKE_URL=https://example.com npm run smoke:prod
    Optional SMOKE_MCP_TOKEN (a real MCP token) also exercises the MCP transport end to end (initialize → tools/list →
    get_instructions), which is what breaks first when a proxy (e.g. Cloudflare orange cloud) buffers streams.
    Run it after every infrastructure change: DNS, proxy, Railway settings, secrets. */
