@@ -58,6 +58,12 @@ export interface AdminStatus {
   registry: { service: string; plan: string; price: string; renews_on?: string | null; billing?: string; limits?: string; account?: string; manage_url?: string; notes?: string; days_left: number | null }[];
   quotas: { service: string; used: string; limit?: string; state: ProbeState; detail?: string }[];
   capacity: Capacity | null;
+  acquisition: {
+    visitors_30d: number; views_30d: number; visitors_7d: number; views_7d: number;
+    signups_30d: number; conversion: number;
+    top_sources: { source: string; visitors: number }[];
+    top_pages: { page: string; views: number }[];
+  };
   generated_at: string;
 }
 export type CapacityLevel = 'ok' | 'warn' | 'critical';

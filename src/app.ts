@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { toNodeHandler } from 'better-auth/node';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { auth } from './auth-web.js';
+import { handleOptOut, pageView } from './analytics.js';
 import { api } from './api.js';
 import { importApi } from './import-api.js';
 import { bearerAuth, type AuthContext } from './auth.js';
@@ -166,12 +167,14 @@ export function createApp(opts: { webDist?: string; mcpRatePerMin?: number; ipRa
     // Pre-rendered help page (scripts/prerender-help.tsx) for crawlers and no-JS readers; the SPA takes over in the browser.
     // Landing for signed-out visitors: pre-rendered HTML when no session cookie; signed-in users get the SPA (which shows the workspace).
     app.get('/', (req, res, next) => {
+      if (handleOptOut(req, res)) return;
       if ((req.headers.cookie ?? '').includes('session_token')) return next();
       const al = String(req.headers['accept-language'] ?? '');
       const wantEn = req.query.lang === 'en' || (req.query.lang === undefined && /[a-z]{2}/i.test(al) && !/zh/i.test(al)); // any non-Chinese language → English; no header or '*' (bots, Node fetch) keeps zh-TW
       const file = join(webDist, `landing${wantEn ? '.en' : ''}.html`);
       if (!existsSync(file)) return next();
       res.setHeader('Vary', 'Accept-Language, Cookie');
+      pageView(req, 'landing');
       res.sendFile(file);
     });
     app.get(['/help', '/help/:page'], (req, res, next) => {
@@ -181,6 +184,7 @@ export function createApp(opts: { webDist?: string; mcpRatePerMin?: number; ipRa
       const file = join(webDist, `help.${slug}${wantEn ? '.en' : ''}.html`);
       if (!existsSync(file)) return next();
       res.setHeader('Vary', 'Accept-Language');
+      pageView(req, `help/${slug}`);
       res.sendFile(file);
     });
     app.get(['/compare', '/compare/:slug'], (req, res, next) => {
@@ -190,6 +194,7 @@ export function createApp(opts: { webDist?: string; mcpRatePerMin?: number; ipRa
       const file = join(webDist, `compare${slug}${wantEn ? '.en' : ''}.html`);
       if (!existsSync(file)) return next();
       res.setHeader('Vary', 'Accept-Language');
+      pageView(req, `compare${slug}`);
       res.sendFile(file);
     });
     app.get(['/privacy', '/terms'], (req, res, next) => {
@@ -199,6 +204,7 @@ export function createApp(opts: { webDist?: string; mcpRatePerMin?: number; ipRa
       const file = join(webDist, `legal.${slug}${wantEn ? '.en' : ''}.html`);
       if (!existsSync(file)) return next();
       res.setHeader('Vary', 'Accept-Language');
+      pageView(req, slug);
       res.sendFile(file);
     });
     app.use(express.static(webDist, { index: false, redirect: false }));

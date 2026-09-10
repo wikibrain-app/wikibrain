@@ -32,7 +32,9 @@ export const privacy: LegalDoc = {
 
 ## 你們會追蹤我嗎？
 
-不會。沒有 Google Analytics，沒有廣告像素，沒有第三方追蹤程式。網站只用一個登入用的 session cookie（必要性 cookie），所以也不需要 cookie 同意橫幅。伺服器日誌會記 IP、時間與路徑，用來限流與查資安問題，最多保留 90 天。
+不會。沒有 Google Analytics，沒有廣告像素，沒有第三方追蹤程式，也沒有任何資料離開我們的伺服器。網站只用一個登入用的 session cookie（必要性 cookie），所以也不需要 cookie 同意橫幅。伺服器日誌會記 IP、時間與路徑，用來限流與查資安問題，最多保留 90 天。
+
+公開頁面（首頁、說明、比較、法律頁）的瀏覽次數我們自己在伺服器上計數，用來知道哪個管道帶來訪客。每一筆記的是頁面、來源網站或活動標籤，以及一個「當日訪客代碼」——那是由位址與瀏覽器字串經加鹽雜湊而來，**每天重置、無法還原成 IP，也無法把昨天的你和今天的你連起來**。登入中的訪客與機器人不列入。不想被計入的話，開啟 /?noanalytics=1 就會在該瀏覽器永久排除（用 /?noanalytics=0 恢復）。
 
 ## 資料放在哪裡？
 
@@ -114,7 +116,7 @@ You, and the clients you authorise (Cursor, Claude Code, Claude.ai, ChatGPT, thr
 
 ## Do you track me?
 
-No. No Google Analytics, no ad pixels, no third-party trackers. The site uses one essential login-session cookie, so there is no cookie banner. Server logs record IP, time and path for rate limiting and security investigation, kept at most 90 days.
+No. No Google Analytics, no ad pixels, no third-party trackers, and no data leaves our servers. The site uses one essential login-session cookie, so no consent banner is needed. Server logs keep the IP, time and path for rate limiting and security investigation, for at most 90 days.\n\nWe count views of the public pages (landing, help, comparison, legal) on our own server, to see which channels bring visitors. Each row holds the page, the referring site or campaign tag, and a daily visitor code: a salted hash of the address and browser string that **resets every day, cannot be turned back into an IP, and cannot link you across days**. Signed-in visitors and crawlers are not counted. To be excluded entirely, open /?noanalytics=1 in your browser (/?noanalytics=0 restores counting).
 
 ## Where is my data?
 
