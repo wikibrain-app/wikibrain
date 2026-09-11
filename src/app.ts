@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { toNodeHandler } from 'better-auth/node';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { auth } from './auth-web.js';
+import { requireTurnstile } from './turnstile.js';
 import { handleOptOut, pageView } from './analytics.js';
 import { api } from './api.js';
 import { importApi } from './import-api.js';
@@ -34,6 +35,8 @@ export function createApp(opts: { webDist?: string; mcpRatePerMin?: number; ipRa
   const byIpApi = ipLimiter(opts.apiRatePerMin ?? config.apiRatePerMin);
 
   // better-auth must be mounted before express.json() (it reads the body itself).
+  // Turnstile only inspects a header, so it can run first without touching the body better-auth is about to read.
+  app.post('/api/auth/sign-up/email', requireTurnstile);   // byIp is applied by the catch-all below
   app.all('/api/auth/*splat', byIp, toNodeHandler(auth));
   // Paddle webhook: needs the raw body for the HMAC check, so it is mounted before express.json(). Only a 2xx counts as
   // delivered (Paddle retries anything else), so signature failures return 401 and unexpected errors 500.

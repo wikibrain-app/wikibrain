@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { api, ApiError } from '../lib/api';
 import { useToast } from '../lib/toast';
 import { useT } from '../i18n';
 import { AuthCard, Field, btnPrimary, input } from '../components/ui';
+import { Turnstile } from '../components/Turnstile';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -11,14 +12,17 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [siteKey, setSiteKey] = useState<string | null>(null);
+  const [token, setToken] = useState('');
   const { toast } = useToast();
   const { t, lang } = useT();
+  useEffect(() => { api.config().then(c => setSiteKey(c.turnstileSiteKey)).catch(() => {}); }, []);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
-      await api.signUp(email, password, name.trim());
+      await api.signUp(email, password, name.trim(), token);
       setSent(true);
     } catch (err) {
       const e = err as ApiError;
@@ -43,7 +47,8 @@ export default function Register() {
         <Field label={t('register.name')} htmlFor="name"><input id="name" className={input} autoComplete="username" required minLength={2} maxLength={40} value={name} onChange={e => setName(e.target.value)} /></Field>
         <Field label="Email" htmlFor="email"><input id="email" className={input} type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} /></Field>
         <Field label={t('register.password')} htmlFor="password"><input id="password" className={input} type="password" required minLength={8} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} /></Field>
-        <button className={`${btnPrimary} w-full mt-1`} disabled={busy}>{busy ? t('register.submitting') : t('register.submit')}</button>
+        {siteKey && <Turnstile siteKey={siteKey} onToken={setToken} />}
+        <button className={`${btnPrimary} w-full mt-1`} disabled={busy || (!!siteKey && !token)}>{busy ? t('register.submitting') : t('register.submit')}</button>
       </form>
       <p className="mt-4 text-[12px] leading-relaxed text-ink-faint">{lang === 'en' ? <>By creating an account you agree to the <Link to="/terms" className="text-celadon-deep hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-celadon-deep hover:underline">Privacy Policy</Link>.</> : <>建立帳號即表示你同意<Link to="/terms" className="text-celadon-deep hover:underline">服務條款</Link>與<Link to="/privacy" className="text-celadon-deep hover:underline">隱私權政策</Link>。</>}</p>
       <p className="text-[13px] text-ink-soft mt-5">{t('register.haveAccount')}<Link className="text-celadon-deep underline" to="/login">{t('auth.login')}</Link></p>

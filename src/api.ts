@@ -30,6 +30,7 @@ import { kbStats } from './stats.js';
 import multer from 'multer';
 import { ASSET_LIMITS, assetUrl, deleteAsset, getAsset, listAssets, storeAsset } from './assets.js';
 import { createSession, deleteSession, fileAnswer, getSession, listSessions, sendMessage } from './chat.js';
+import { siteKey } from './turnstile.js';
 
 // JSON API for the web UI; protected by better-auth's session cookie.
 export const api = Router();
@@ -43,7 +44,7 @@ const intParam = (v: string, res: Response): number | null => { const n = Number
 const handle = (res: Response, e: unknown) => { if (e instanceof NoteError) { res.status(noteStatus[e.code]).json({ error: e.code, message: e.localized((res.locals.workspace?.lang as Lang | undefined) ?? 'zh-TW') }); return; } throw e; };
 
 api.get('/config', (_req, res) => {
-  res.json({ googleEnabled: !!config.google, mcpUrl: `${config.appUrl}/mcp`, version: config.version, commit: config.commit });
+  res.json({ googleEnabled: !!config.google, mcpUrl: `${config.appUrl}/mcp`, version: config.version, commit: config.commit, turnstileSiteKey: siteKey() || null });
 });
 
 /* REST API with an API key (P1): the same MCP token works as `Authorization: Bearer <token>` on the notes REST
