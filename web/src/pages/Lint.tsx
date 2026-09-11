@@ -17,7 +17,11 @@ export default function Lint({ me }: { me: Me }) {
   const { t } = useT();
   const navigate = useNavigate();
   const load = () => Promise.all([api.lint().then(setData), api.tree().then(r => setReports(r.notes.filter(n => n.path.startsWith('wiki/lint/')).sort((a, b) => b.path.localeCompare(a.path))))]).catch(e => toast((e as Error).message, { kind: 'error' }));
-  useEffect(() => { load(); api.ai().then(r => setAiReady(!!r.config)).catch(() => {}); }, []);
+  // Same rule as the workspace: a trial with free runs left counts as ready, otherwise a trial user would be told
+  // here that they need an API key they do not actually need yet.
+  useEffect(() => { load(); Promise.all([api.ai(), api.plan().catch(() => null)])
+    .then(([r, p]) => setAiReady(!!r.config || !!(p && p.trial_active && p.trial_runs_used < p.trial_runs_free)))
+    .catch(() => {}); }, []);
   const open = (p: string) => navigate(`/n/${p}`);
   const copy = () => data && navigator.clipboard.writeText(data.prompt).then(() => toast(t('lint.copied'))).catch(() => toast(t('common.clipboardFail'), { kind: 'error' }));
   async function run() {

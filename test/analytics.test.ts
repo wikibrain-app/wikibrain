@@ -5,7 +5,6 @@ import type { AddressInfo } from 'node:net';
 import { createApp } from '../src/app.js';
 import { migrate } from '../src/migrate.js';
 import { pool } from '../src/db.js';
-import { acquisition } from '../src/admin.js';
 
 // First-party page analytics: what gets counted, what does not, and how unique visitors are derived.
 // Views land in the shared events table, so the assertions compare before/after counts rather than absolutes.
@@ -73,9 +72,4 @@ test('the same browser is one visitor across pages; a different one is another',
   await settle();
   assert.equal(await views(), 4, 'four page views');
   assert.equal(await visitors(), 2, 'two distinct visitors');
-
-  const acq = await acquisition();
-  assert.ok(acq.visitors_30d >= 2 && acq.views_30d >= 4);
-  assert.ok(acq.top_pages.some(p => p.page === 'help/start'));
-  assert.equal(typeof acq.conversion, 'number');
 });

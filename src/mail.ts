@@ -20,5 +20,11 @@ export async function sendMail(mail: Mail): Promise<void> {
     headers: { authorization: `Bearer ${config.resendApiKey}`, 'content-type': 'application/json' },
     body: JSON.stringify({ from: config.mailFrom, to: [mail.to], subject: mail.subject, text: mail.text }),
   });
-  if (!res.ok) throw new Error(`Resend 寄信失敗：${res.status} ${await res.text()}`);
+  if (!res.ok) {
+    /* A failure here means someone is waiting for a verification or reset link that will never arrive, and they have
+       no way to tell. Record it so it shows up on the operator page instead of only in the logs. */
+    const detail = `${res.status} ${(await res.text()).slice(0, 200)}`;
+    track('email_failed', {}, { subject: mail.subject, to: mail.to, detail });
+    throw new Error(`Resend 寄信失敗：${detail}`);
+  }
 }

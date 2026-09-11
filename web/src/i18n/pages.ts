@@ -29,6 +29,11 @@ const pages: { 'zh-TW': Record<string, string>; en: Record<string, string> } = {
     'login.register': '註冊',
     'login.forgot': '忘記密碼',
     'login.errUnverified': '信箱尚未驗證，請先點信中的驗證連結',
+    'login.unverifiedHelp': '這個帳號還沒完成信箱驗證。信可能被歸到垃圾郵件，或是根本沒寄到。',
+    'login.resend': '重寄驗證信',
+    'login.resent': '已重寄，請查看信箱（含垃圾郵件匣）',
+    'login.resentShort': '已重寄',
+    'login.resendFailed': '重寄失敗，請稍後再試',
     'login.errBad': 'Email 或密碼錯誤',
     // Register
     'register.title': '註冊',
@@ -330,6 +335,11 @@ const pages: { 'zh-TW': Record<string, string>; en: Record<string, string> } = {
     'login.register': 'Sign up',
     'login.forgot': 'Forgot password',
     'login.errUnverified': 'Email not verified yet. Click the link in the verification email first.',
+    'login.unverifiedHelp': 'This account has not verified its e-mail yet. The message may be in your spam folder, or it may never have arrived.',
+    'login.resend': 'Send it again',
+    'login.resent': 'Sent. Check your inbox, including spam.',
+    'login.resentShort': 'Sent',
+    'login.resendFailed': 'Could not resend; try again shortly',
     'login.errBad': 'Incorrect email or password',
     // Register
     'register.title': 'Sign up',
