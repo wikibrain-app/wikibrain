@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createNote, NoteError, readNote, updateNote, type Actor } from './notes.js';
+import { merge3 } from './merge3.js';
 
 // Scenario templates (PRD R9, Q7): a template = schema/ rule pages + starter folders + onboarding prompt; it affects content only, never the UI.
 // Applying is "add without overwriting": existing paths are always skipped, so a template can be re-applied or stacked with a second one.
@@ -68,17 +69,20 @@ const sha = (s: string) => createHash('sha256').update(s).digest('hex');
 /* Remember the template version and the exact bytes of every schema page as delivered. Only schema/ is recorded:
    those are the rules the agent reads, and the only pages we would ever offer to update. */
 async function recordApplied(ws: string, info: TemplateInfo, lang: Lang, dir: string, files: string[]): Promise<void> {
-  const hashes: Record<string, string> = {};
+  const hashes: Record<string, string> = {}, contents: Record<string, string> = {};
   for (const path of files.filter(f => f.startsWith('schema/'))) {
-    hashes[path] = sha(await readFile(join(dir, path), 'utf8'));
+    const text = await readFile(join(dir, path), 'utf8');
+    hashes[path] = sha(text);
+    contents[path] = text;          // the base for a later three-way merge
   }
   if (Object.keys(hashes).length === 0) return;
   await pool.query(
-    `INSERT INTO template_applied (workspace_id, template_id, lang, version, files)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO template_applied (workspace_id, template_id, lang, version, files, contents)
+     VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (workspace_id, template_id) DO UPDATE
-       SET lang = EXCLUDED.lang, version = EXCLUDED.version, files = EXCLUDED.files, applied_at = now()`,
-    [ws, info.id, lang, info.version ?? 1, JSON.stringify(hashes)]);
+       SET lang = EXCLUDED.lang, version = EXCLUDED.version, files = EXCLUDED.files,
+           contents = EXCLUDED.contents, applied_at = now()`,
+    [ws, info.id, lang, info.version ?? 1, JSON.stringify(hashes), JSON.stringify(contents)]);
 }
 
 /* ── Rule-page updates ──
@@ -89,16 +93,16 @@ async function recordApplied(ws: string, info: TemplateInfo, lang: Lang, dir: st
      edited     the user has changed it — we only ever show what is different, never overwrite
 
    Pages the user wrote themselves (no record of us delivering them) are not reported at all. */
-export type RuleState = 'untouched' | 'edited' | 'missing';
+export type RuleState = 'untouched' | 'merged' | 'edited' | 'missing';
 export interface RuleUpdate {
   templateId: string; templateName: Record<Lang, string>; lang: Lang;
   appliedVersion: number; currentVersion: number;
-  pages: { path: string; state: RuleState; current: string; next: string }[];
+  pages: { path: string; state: RuleState; current: string; next: string; merged: string | null }[];
 }
 
 export async function pendingRuleUpdates(ws: string): Promise<RuleUpdate[]> {
-  const { rows } = await pool.query<{ template_id: string; lang: Lang; version: number; files: Record<string, string> }>(
-    `SELECT template_id, lang, version, files FROM template_applied WHERE workspace_id = $1`, [ws]);
+  const { rows } = await pool.query<{ template_id: string; lang: Lang; version: number; files: Record<string, string>; contents: Record<string, string> }>(
+    `SELECT template_id, lang, version, files, contents FROM template_applied WHERE workspace_id = $1`, [ws]);
   if (rows.length === 0) return [];
   const templates = await listTemplates();
   const out: RuleUpdate[] = [];
@@ -113,9 +117,13 @@ export async function pendingRuleUpdates(ws: string): Promise<RuleUpdate[]> {
       const next = await readFile(join(root(), r.template_id, r.lang, path), 'utf8').catch(() => null);
       if (next === null) continue;                         // page no longer part of the template
       const note = await readNote(ws, path).catch(() => null);
-      if (!note) { pages.push({ path, state: 'missing', current: '', next }); continue; }
+      if (!note) { pages.push({ path, state: 'missing', current: '', next, merged: null }); continue; }
       if (sha(note.content_md) === sha(next)) continue;    // already identical to the new version
-      pages.push({ path, state: sha(note.content_md) === deliveredHash ? 'untouched' : 'edited', current: note.content_md, next });
+      if (sha(note.content_md) === deliveredHash) { pages.push({ path, state: 'untouched', current: note.content_md, next, merged: null }); continue; }
+      // Edited. With the delivered text as the base, their edits and ours can often both be kept.
+      const base = r.contents?.[path];
+      const m = base ? merge3(base, note.content_md, next) : { clean: false, text: null, conflicts: 1 };
+      pages.push({ path, state: m.clean ? 'merged' : 'edited', current: note.content_md, next, merged: m.text });
     }
     if (pages.length) out.push({ templateId: r.template_id, templateName: info.name, lang: r.lang, appliedVersion: r.version, currentVersion, pages });
   }
@@ -124,20 +132,40 @@ export async function pendingRuleUpdates(ws: string): Promise<RuleUpdate[]> {
 
 /* Apply the new rules for one template. Only pages we can prove the user never edited are written; edited pages are
    left exactly as they are and reported back, so the caller can show the difference instead. */
-export async function updateRules(ws: string, templateId: string, actor: Actor): Promise<{ updated: string[]; kept: string[] }> {
+/* `safe` takes the pages nobody edited and the ones that merge cleanly, and leaves the rest alone.
+   `overwrite` additionally replaces the conflicting pages with the new version. That is not destructive here: every
+   write is a new version, so the previous text stays in the page's history and one click restores it. The caller is
+   expected to say so plainly before offering it. */
+export async function updateRules(ws: string, templateId: string, actor: Actor, mode: 'safe' | 'overwrite' = 'safe'): Promise<{ updated: string[]; merged: string[]; overwritten: string[]; kept: string[] }> {
   const updates = (await pendingRuleUpdates(ws)).find(u => u.templateId === templateId);
-  if (!updates) return { updated: [], kept: [] };
-  const updated: string[] = [], kept: string[] = [];
+  if (!updates) return { updated: [], merged: [], overwritten: [], kept: [] };
+  const updated: string[] = [], merged: string[] = [], overwritten: string[] = [], kept: string[] = [];
   for (const page of updates.pages) {
-    if (page.state === 'edited') { kept.push(page.path); continue; }
+    if (page.state === 'edited' && mode === 'safe') { kept.push(page.path); continue; }
     if (page.state === 'missing') { await createNote(ws, page.path, page.next, actor); updated.push(page.path); continue; }
     const note = await readNote(ws, page.path);
-    await updateNote(ws, page.path, page.next, note.version, actor);
-    updated.push(page.path);
+    const text = page.state === 'merged' && page.merged !== null ? page.merged : page.next;
+    await updateNote(ws, page.path, text, note.version, actor);
+    if (page.state === 'merged') merged.push(page.path);
+    else if (page.state === 'edited') overwritten.push(page.path);
+    else updated.push(page.path);
   }
-  await pool.query(`UPDATE template_applied SET version = $3, files = $4, applied_at = now() WHERE workspace_id = $1 AND template_id = $2`,
-    [ws, templateId, updates.currentVersion, JSON.stringify(Object.fromEntries(updates.pages.filter(p => p.state !== 'edited').map(p => [p.path, sha(p.next)])))]);
-  return { updated, kept };
+  /* Only the pages we actually wrote get a new base. A page we left alone keeps the text we originally delivered as
+     its base — overwriting that with the user's own edit would make it look untouched next time, and would destroy
+     the common ancestor a future merge needs. */
+  const { rows: cur } = await pool.query<{ files: Record<string, string>; contents: Record<string, string> }>(
+    `SELECT files, contents FROM template_applied WHERE workspace_id = $1 AND template_id = $2`, [ws, templateId]);
+  const files = { ...(cur[0]?.files ?? {}) }, contents = { ...(cur[0]?.contents ?? {}) };
+  for (const page of updates.pages) {
+    const wrote = updated.includes(page.path) || merged.includes(page.path) || overwritten.includes(page.path);
+    if (!wrote) continue;
+    const text = page.state === 'merged' && page.merged !== null ? page.merged : page.next;
+    files[page.path] = sha(text);
+    contents[page.path] = text;
+  }
+  await pool.query(`UPDATE template_applied SET version = $3, files = $4, contents = $5, applied_at = now() WHERE workspace_id = $1 AND template_id = $2`,
+    [ws, templateId, kept.length ? updates.appliedVersion : updates.currentVersion, JSON.stringify(files), JSON.stringify(contents)]);
+  return { updated, merged, overwritten, kept };
 }
 
 // Preview: return all files of a template (path + content) to inspect before applying.

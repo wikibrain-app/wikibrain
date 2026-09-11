@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, type RuleUpdate } from '../lib/api';
 import { btnGhost, btnPrimary } from './ui';
 import { useToast } from '../lib/toast';
+import { useConfirm } from '../lib/confirm';
 import { useT } from '../i18n';
 import { diffLines, withContext } from '../lib/diff';
 
@@ -12,24 +13,36 @@ const c = {
   'zh-TW': {
     title: '規則有新版',
     lede: (name: string, from: number, to: number) => `「${name}」模版的編纂規則更新了（v${from} → v${to}）。規則決定 agent 怎麼寫你的 wiki，更新之後下一次編纂就會照新版做事。`,
-    untouched: '你沒有改過，可以直接更新',
-    edited: '你改過這一頁，不會被覆蓋',
+    untouched: '你沒有改過，直接換成新版',
+    merged: '你改的是不同段落，兩邊都會保留',
+    edited: '你和新版改到同一段，需要你決定',
     missing: '你的知識庫裡沒有這一頁，會補上',
-    take: '更新沒改過的頁',
+    take: '更新規則',
     diff: '看差異',
-    done: (n: number, kept: number) => kept ? `更新了 ${n} 頁，另外 ${kept} 頁因為你改過所以保留原樣` : `更新了 ${n} 頁`,
-    keptNote: '你改過的那幾頁維持原樣。想跟進新版的話，點「看差異」自己挑要不要合併。',
+    done: (n: number, kept: number) => kept ? `更新了 ${n} 頁，還有 ${kept} 頁要你決定` : `更新了 ${n} 頁`,
+    keptNote: '這幾頁你和新版改到同一個段落，自動合併會猜錯，所以留給你決定。',
+    force: '用新版覆蓋這幾頁',
+    forceNote: '覆蓋之後你原本的內容會留在該頁的版本歷史裡，隨時可以看差異並一鍵復原。',
+    forceConfirm: '要用新版覆蓋你改過的規則頁嗎？',
+    forceConfirmBody: '你目前的內容會存成一個舊版本，可以在版本歷史裡復原。',
+    forceDone: (n: number) => `覆蓋了 ${n} 頁，舊內容在版本歷史裡`,
   },
   en: {
     title: 'Newer rules are available',
     lede: (name: string, from: number, to: number) => `The "${name}" template's rules have changed (v${from} → v${to}). Rules decide how the agent writes your wiki, so the next ingest will follow the new ones.`,
-    untouched: 'You never edited this one, so it can be replaced',
-    edited: 'You edited this one; it will not be overwritten',
+    untouched: 'You never edited this one; it will be replaced',
+    merged: 'You edited a different section, so both sides are kept',
+    edited: 'You and the new version changed the same section',
     missing: 'This page is missing from your workspace and will be added',
-    take: 'Update the pages I never edited',
+    take: 'Update the rules',
     diff: 'See what changed',
-    done: (n: number, kept: number) => kept ? `Updated ${n} page(s); ${kept} left as they are because you edited them` : `Updated ${n} page(s)`,
-    keptNote: 'The pages you edited are untouched. Use "See what changed" if you want to merge anything by hand.',
+    done: (n: number, kept: number) => kept ? `Updated ${n} page(s); ${kept} need your decision` : `Updated ${n} page(s)`,
+    keptNote: 'Here you and the new version changed the same section, so merging would have to guess. Your call.',
+    force: 'Replace these with the new version',
+    forceNote: 'Your current text is kept in the page history, where you can compare it and restore it in one click.',
+    forceConfirm: 'Replace the rule pages you edited?',
+    forceConfirmBody: 'Your current text is saved as an earlier version and can be restored from the page history.',
+    forceDone: (n: number) => `Replaced ${n} page(s); the old text is in the page history`,
   },
 };
 
@@ -37,6 +50,7 @@ export function RuleUpdates({ onChanged }: { onChanged?: () => void }) {
   const { lang } = useT();
   const l = c[lang];
   const { toast } = useToast();
+  const confirmDialog = useConfirm();
   const [updates, setUpdates] = useState<RuleUpdate[]>([]);
   const [busy, setBusy] = useState(false);
   const [diff, setDiff] = useState<{ path: string; current: string; next: string } | null>(null);
@@ -45,11 +59,12 @@ export function RuleUpdates({ onChanged }: { onChanged?: () => void }) {
   useEffect(() => { void load(); }, []);
   if (updates.length === 0) return null;
 
-  const take = async (id: string) => {
+  const take = async (id: string, mode: 'safe' | 'overwrite' = 'safe') => {
+    if (mode === 'overwrite' && !(await confirmDialog({ title: l.forceConfirm, body: l.forceConfirmBody, danger: true }))) return;
     setBusy(true);
     try {
-      const r = await api.updateRules(id);
-      toast(l.done(r.updated.length, r.kept.length));
+      const r = await api.updateRules(id, mode);
+      toast(mode === 'overwrite' ? l.forceDone(r.overwritten.length) : l.done(r.updated.length + r.merged.length, r.kept.length));
       await load();
       onChanged?.();
     } catch (e) { toast((e as Error).message, { kind: 'error' }); }
@@ -67,16 +82,21 @@ export function RuleUpdates({ onChanged }: { onChanged?: () => void }) {
               <li key={p.path} className="flex flex-wrap items-baseline gap-2">
                 <code className="font-mono text-[12px]">{p.path}</code>
                 <span className={p.state === 'edited' ? 'text-amber' : 'text-ink-faint'}>
-                  {p.state === 'edited' ? l.edited : p.state === 'missing' ? l.missing : l.untouched}
+                  {p.state === 'edited' ? l.edited : p.state === 'merged' ? l.merged : p.state === 'missing' ? l.missing : l.untouched}
                 </span>
                 <button className="text-[12px] text-celadon-deep hover:underline"
                   onClick={() => setDiff({ path: p.path, current: p.current, next: p.next })}>{l.diff}</button>
               </li>
             ))}
           </ul>
-          {u.pages.some(p => p.state === 'edited') && <p className="mt-2 text-[12px] text-ink-faint">{l.keptNote}</p>}
-          <div className="mt-3">
+          {u.pages.some(p => p.state === 'edited') && (
+            <p className="mt-2 max-w-[70ch] text-[12px] text-ink-faint">{l.keptNote} {l.forceNote}</p>
+          )}
+          <div className="mt-3 flex flex-wrap gap-2">
             <button className={btnPrimary} disabled={busy || !u.pages.some(p => p.state !== 'edited')} onClick={() => take(u.templateId)}>{l.take}</button>
+            {u.pages.some(p => p.state === 'edited') && (
+              <button className={btnGhost} disabled={busy} onClick={() => take(u.templateId, 'overwrite')} data-testid="rule-overwrite">{l.force}</button>
+            )}
           </div>
         </div>
       ))}

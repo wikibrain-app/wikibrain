@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pool } from '../src/db.js';
 import { migrate } from '../src/migrate.js';
-import { createNote, readNote, updateNote } from '../src/notes.js';
+import { createNote, listVersions, readNote, updateNote } from '../src/notes.js';
 import { applyTemplate, pendingRuleUpdates, updateRules } from '../src/templates.js';
 
 /* Shipping better rules to a workspace that already has the old ones.
@@ -59,9 +59,9 @@ test('an untouched rule page can be updated; an edited one is kept and only repo
   assert.equal(updates.length, 1);
   assert.equal(updates[0].appliedVersion, 1);
   assert.equal(updates[0].currentVersion, 2);
-  const byPath = Object.fromEntries(updates[0].pages.map((p: { path: string }) => [p.path, p]));
+  const byPath = Object.fromEntries(updates[0].pages.map(p => [p.path, p]));
   assert.equal(byPath['schema/demo-rules.md'].state, 'untouched', '沒動過的頁可以安全更新');
-  assert.equal(byPath['schema/demo-style.md'].state, 'edited', '改過的頁只回報，不更新');
+  assert.equal(byPath['schema/demo-style.md'].state, 'edited', '同一段兩邊都改過，判定衝突，不自動合併');
   assert.match(byPath['schema/demo-rules.md'].next, /第二版/);
 
   const res = await updateRules(ws, 'demo', actor);
@@ -72,8 +72,18 @@ test('an untouched rule page can be updated; an edited one is kept and only repo
   assert.match((await readNote(ws, 'schema/demo-style.md')).content_md, /我自己改過的規則/, '改過的頁一個字都沒變');
 
   // Version is recorded, so the same update is not offered twice; the edited page is still reported as different.
+  // 還有一頁沒處理，所以版本不前進，提示仍在，但只剩那一頁
   const after2 = await pendingRuleUpdates(ws);
-  assert.equal(after2.length, 0, '更新後不再提示（改過的頁維持原樣，由使用者自行決定）');
+  assert.equal(after2.length, 1);
+  assert.deepEqual(after2[0].pages.map(p => p.path), ['schema/demo-style.md']);
+
+  // 明確選擇覆蓋：舊內容留在版本歷史裡，可以復原
+  const forced = await updateRules(ws, 'demo', actor, 'overwrite');
+  assert.deepEqual(forced.overwritten, ['schema/demo-style.md']);
+  assert.match((await readNote(ws, 'schema/demo-style.md')).content_md, /用語 v2/);
+  const history = await listVersions(ws, 'schema/demo-style.md');
+  assert.ok(history.some(v => v.content_md.includes('我自己改過的規則')), '被覆蓋的內容還在版本歷史裡');
+  assert.deepEqual(await pendingRuleUpdates(ws), [], '全部處理完就不再提示');
 
   delete process.env.TEMPLATES_DIR;
   await rm(root, { recursive: true, force: true });
@@ -84,4 +94,36 @@ test('a workspace that never had a template applied is never asked to update', a
   await pool.query(`INSERT INTO workspaces (id, owner_user_id, name) VALUES ($1, $2, 'own')`, [other, userId]);
   await createNote(other, 'schema/instructions.md', '# 我自己寫的規則\n', actor);
   assert.deepEqual(await pendingRuleUpdates(other), []);
+});
+
+test('edits in a different section are merged, keeping both sides', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'tpl2-'));
+  const dir = join(root, 'demo2', 'zh-TW', 'schema');
+  await mkdir(dir, { recursive: true });
+  const json = (v: number) => JSON.stringify({ id: 'demo2', version: v, name: { 'zh-TW': '示範2', en: 'Demo2' }, description: { 'zh-TW': 'd', en: 'd' }, prompt: { 'zh-TW': 'p', en: 'p' } });
+  await writeFile(join(root, 'demo2', 'template.json'), json(1));
+  await writeFile(join(dir, 'r.md'), '# 規則\n\n## 三層\n\nraw 唯讀。\n\n## 用語\n\n一律用繁體。\n');
+
+  process.env.TEMPLATES_DIR = root;
+  const ws2 = `tpl-ws3-${randomBytes(4).toString('hex')}`;
+  await pool.query(`INSERT INTO workspaces (id, owner_user_id, name) VALUES ($1, $2, 'm')`, [ws2, userId]);
+  await applyTemplate(ws2, 'demo2', 'zh-TW', actor);
+
+  // 使用者改「用語」那段，新版改「三層」那段
+  const n = await readNote(ws2, 'schema/r.md');
+  await updateNote(ws2, 'schema/r.md', '# 規則\n\n## 三層\n\nraw 唯讀。\n\n## 用語\n\n一律用繁體，專有名詞保留英文。\n', n.version, actor);
+  await writeFile(join(root, 'demo2', 'template.json'), json(2));
+  await writeFile(join(dir, 'r.md'), '# 規則\n\n## 三層\n\nraw 唯讀，只能封存不能刪除。\n\n## 用語\n\n一律用繁體。\n');
+
+  const [u] = await pendingRuleUpdates(ws2);
+  assert.equal(u.pages[0].state, 'merged', '改的是不同段落，可以自動合併');
+
+  const res = await updateRules(ws2, 'demo2', actor);
+  assert.deepEqual(res.merged, ['schema/r.md']);
+  const after = (await readNote(ws2, 'schema/r.md')).content_md;
+  assert.match(after, /只能封存不能刪除/, '新版的修改進來了');
+  assert.match(after, /專有名詞保留英文/, '使用者的修改也留著');
+
+  delete process.env.TEMPLATES_DIR;
+  await rm(root, { recursive: true, force: true });
 });

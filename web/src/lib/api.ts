@@ -83,7 +83,7 @@ export interface Capacity {
 export interface RuleUpdate {
   templateId: string; templateName: Record<Lang, string>; lang: Lang;
   appliedVersion: number; currentVersion: number;
-  pages: { path: string; state: 'untouched' | 'edited' | 'missing'; current: string; next: string }[];
+  pages: { path: string; state: 'untouched' | 'merged' | 'edited' | 'missing'; current: string; next: string; merged: string | null }[];
 }
 export interface ShareInfo { token: string; url: string; created_at: string }
 export interface SharedNote { path: string; title: string; content: string; updated_at: string; layer: 'raw' | 'wiki' | 'schema' }
@@ -182,7 +182,7 @@ export const api = {
   deleteAccount: (password: string) => request<unknown>('POST', '/api/auth/delete-user', { password }),
   setLang: (lang: Lang) => request<{ lang: Lang }>('PUT', '/api/me/lang', { lang }),
   templates: () => request<{ templates: Template[]; langs: Lang[]; custom: CustomTemplate[]; ruleUpdates: RuleUpdate[] }>('GET', '/api/templates'),
-  updateRules: (id: string) => request<{ updated: string[]; kept: string[] }>('POST', '/api/templates/update-rules', { id }),
+  updateRules: (id: string, mode: 'safe' | 'overwrite' = 'safe') => request<{ updated: string[]; merged: string[]; overwritten: string[]; kept: string[] }>('POST', '/api/templates/update-rules', { id, mode }),
   customTemplate: (id: number) => request<{ template: CustomTemplate }>('GET', `/api/templates/custom/${id}`),
   duplicateTemplate: (from: string, lang: Lang) => request<{ template: CustomTemplate }>('POST', '/api/templates/custom', { from, lang }),
   snapshotTemplate: (name: string) => request<{ template: CustomTemplate }>('POST', '/api/templates/custom', { fromSchema: true, name }),

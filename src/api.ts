@@ -104,8 +104,9 @@ api.get('/templates', async (_req, res) => {
    UI can show the difference instead. */
 api.post('/templates/update-rules', async (req, res) => {
   const id = req.body?.id;
+  const mode = req.body?.mode === 'overwrite' ? 'overwrite' as const : 'safe' as const;
   if (typeof id !== 'string') { res.status(400).json({ error: 'BAD_REQUEST', message: msg(res, '需要 id', 'id is required') }); return; }
-  try { res.json(await updateRules(res.locals.workspace.id, id, { kind: 'system', name: `template:${id}` })); }
+  try { res.json(await updateRules(res.locals.workspace.id, id, { kind: 'system', name: `template:${id}` }, mode)); }
   catch (e) { handle(res, e); }
 });
 
