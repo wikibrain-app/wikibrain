@@ -117,6 +117,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .wl { color: var(--color-celadon-deep); border-bottom: 1px solid var(--underline); padding-bottom: 1px; text-decoration: none; }
 .wl:hover { background: var(--color-celadon-mist); }
 .wl-missing { color: var(--color-ink-faint); border-bottom: 1px dashed var(--color-line); cursor: help; }
+.ext-img { display: inline-block; padding: 2px 8px; border: 1px dashed var(--color-line); border-radius: 6px; color: var(--color-ink-faint); font-size: 12px; cursor: help; }
 
 .toast { transition: opacity .25s, transform .25s; }
 @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }

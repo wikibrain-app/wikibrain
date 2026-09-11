@@ -229,6 +229,7 @@ const components: { 'zh-TW': Record<string, string>; en: Record<string, string> 
 
     // Markdown／Mermaid
     'markdown.missing': '尚未建立此頁：{target}',
+    'markdown.extImage': '［外部圖片已封鎖］',
     'mermaid.error': '（Mermaid 圖表無法渲染：{err}）',
 
     // NoteView
@@ -655,6 +656,7 @@ const components: { 'zh-TW': Record<string, string>; en: Record<string, string> 
 
     // Markdown／Mermaid
     'markdown.missing': 'Page not created yet: {target}',
+    'markdown.extImage': '[external image blocked]',
     'mermaid.error': '(Mermaid diagram could not be rendered: {err})',
 
     // NoteView

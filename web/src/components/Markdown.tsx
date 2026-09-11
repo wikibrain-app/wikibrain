@@ -38,6 +38,18 @@ export function Markdown({ source, notes, onOpen, hideTitle, compact }: { source
             }
             return <a href={href} target="_blank" rel="noreferrer">{children}</a>;
           },
+          /* Never request an image from somewhere else. The page may have been written by an agent that had just read
+             the whole workspace, and the URL is the agent's to choose, so fetching it would hand the contents to
+             whoever owns that host. Imported images live under /api/assets; anything else is shown, not loaded. */
+          img: ({ src, alt }) => {
+            const local = typeof src === 'string' && (src.startsWith('/') || src.startsWith('data:'));
+            if (local) return <img src={src} alt={alt ?? ''} />;
+            return (
+              <span className="ext-img" title={typeof src === 'string' ? src : ''}>
+                {t('markdown.extImage')}{alt ? `：${alt}` : ''}
+              </span>
+            );
+          },
           pre: ({ children, ...rest }) => {
             const child = Array.isArray(children) ? children[0] : children;
             const cls = (child as { props?: { className?: string } } | null)?.props?.className;

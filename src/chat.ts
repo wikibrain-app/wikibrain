@@ -1,5 +1,6 @@
 import { pool } from './db.js';
 import { langLine, type Lang } from './lang.js';
+import { TRUST } from './ingest.js';
 import { workspaceLang } from './workspaces.js';
 import { assertCanRun, noKeyError, trialRunConfig } from './plans.js';
 import { NoteError, createNote, type Actor } from './notes.js';
@@ -30,12 +31,14 @@ export const chatSystem = (lang: Lang) => lang === 'en' ? `You are the assistant
 - When the user asks to change or add content, use create_note/update_note following the rules and append an entry to wiki/log.md; report which pages you touched.
 - Choose the answer form by the question: Markdown tables for comparisons; \`\`\`mermaid diagrams for flows, relations, timelines; Marp slide pages (front-matter marp: true, --- between slides) when the user asks for a deck. Valuable answers can be filed into wiki/queries/ on request.
 - When a source page has a citation_key in its front-matter, cite it in wiki pages as [@citation_key] ([@a; @b] for several, [@a, p. 12] with a locator); the system renders (Author, Year) and builds the reference list.
+- ${TRUST.en}
 - ${langLine(lang)} Conclusion first, then reasons; be concise.` : `你是 WikiBrain 知識庫的助理，依 Karpathy LLM Wiki 模式工作。
 - 先呼叫 get_instructions 讀規則（含待編纂來源清單）。
 - 回答問題（Query）：先 read_note wiki/index.md 找相關頁，再 search_notes、read_note 讀完內容後回答；回答要附引用，格式為頁面 path（例如「見 wiki/concepts/xxx.md」）。知識庫裡沒有的事要明說，不要編。
 - 用戶要求修改或新增內容時，用 create_note／update_note 依規則動手，並在 wiki/log.md 追加一條；做完回報動到哪些頁。
 - 回答形式依問題選：比較用 Markdown 表格；流程、關係、時間軸用 \`\`\`mermaid 圖表；用戶要簡報時寫成 Marp 投影片頁（front-matter 加 marp: true，以 --- 分頁）。有價值的回答可依用戶要求存成 wiki/queries/ 頁。
 - 來源頁的 front-matter 有 citation_key 時，在 wiki 頁引用寫 [@citation_key]（多篇 [@a; @b]，頁碼 [@a, p. 12]），系統會渲染成（作者, 年份）並自動長參考文獻。
+- ${TRUST['zh-TW']}
 - ${langLine(lang)}先結論再理由、簡潔。`;
 /** @deprecated use chatSystem(lang) */
 export const CHAT_SYSTEM = chatSystem('zh-TW');

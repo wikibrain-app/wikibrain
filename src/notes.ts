@@ -62,6 +62,11 @@ export function normalizeFolder(raw: string | undefined): string {
   return p;
 }
 export const layerOf = (path: string): Layer => path.split('/')[0] as Layer;
+/** A note title rendered inside a prompt: single line, no structural markers, truncated. */
+export const safeTitle = (title: string): string => {
+  const flat = (title ?? '').replace(/[\r\n\t]+/g, ' ').replace(/[`<>#*_[\]|]/g, '').replace(/\s+/g, ' ').trim();
+  return flat.length > 80 ? `${flat.slice(0, 80)}…` : flat || '(untitled)';
+};
 
 /* ── Content parsing: title, [[wiki-link]], front-matter tags ── */
 function titleFrom(path: string, content: string): string {
@@ -291,7 +296,11 @@ export async function getInstructions(ws: string, lang: Lang = 'zh-TW'): Promise
   );
   // Karpathy: before starting, the agent sees which sources are in raw/ but not yet compiled into wiki/.
   const pending = await listPendingSources(ws);
-  const list = pending.map(p => `- ${p.path}（${p.title}）`).join('\n');
+  /* A pending source's title comes from the page that was imported, so it is attacker-controlled text being placed
+     inside the document the agent treats as its rules — the shortest path in, reached before the agent has even read
+     the page. Keep it to one harmless line: no newlines to open a new section, no markers that could pass for
+     structure, and short enough that it cannot carry a paragraph of instructions. */
+  const list = pending.map(p => `- ${p.path}（${safeTitle(p.title)}）`).join('\n');
   const head = !pending.length ? '' : lang === 'en'
     ? `<!-- pending sources -->\n## Pending sources (${pending.length})\n\nThese raw/ sources have no wiki/ page linking back to them yet. Ingest each one following the schema rules, and append a log.md entry after each:\n${list}\n\n---\n\n`
     : `<!-- 待編纂來源 -->\n## 待編纂的來源（${pending.length}）\n\n以下 raw/ 來源還沒有任何 wiki/ 頁連回它，請依規則的 Ingest 步驟處理，做完每一則都要在 wiki/log.md 追加紀錄：\n${list}\n\n---\n\n`;
