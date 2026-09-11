@@ -80,6 +80,11 @@ export interface Capacity {
   observed: { bytes_per_ws: number; notes_per_ws: number; runs_per_active_ws: number; emails_per_signup: number; largest_ws_notes: number };
   resources: CapacityResource[]; alerts: CapacityResource[]; generated_at: string;
 }
+export interface RuleUpdate {
+  templateId: string; templateName: Record<Lang, string>; lang: Lang;
+  appliedVersion: number; currentVersion: number;
+  pages: { path: string; state: 'untouched' | 'edited' | 'missing'; current: string; next: string }[];
+}
 export interface ShareInfo { token: string; url: string; created_at: string }
 export interface SharedNote { path: string; title: string; content: string; updated_at: string; layer: 'raw' | 'wiki' | 'schema' }
 export interface BibEntry { key: string; path: string; title: string; authors: string[]; year: number | null; venue: string | null; doi: string | null; url: string | null }
@@ -176,7 +181,8 @@ export const api = {
   billingPortal: () => request<{ overview: string; cancel?: string; update_payment_method?: string }>('POST', '/api/billing/portal'),
   deleteAccount: (password: string) => request<unknown>('POST', '/api/auth/delete-user', { password }),
   setLang: (lang: Lang) => request<{ lang: Lang }>('PUT', '/api/me/lang', { lang }),
-  templates: () => request<{ templates: Template[]; langs: Lang[]; custom: CustomTemplate[] }>('GET', '/api/templates'),
+  templates: () => request<{ templates: Template[]; langs: Lang[]; custom: CustomTemplate[]; ruleUpdates: RuleUpdate[] }>('GET', '/api/templates'),
+  updateRules: (id: string) => request<{ updated: string[]; kept: string[] }>('POST', '/api/templates/update-rules', { id }),
   customTemplate: (id: number) => request<{ template: CustomTemplate }>('GET', `/api/templates/custom/${id}`),
   duplicateTemplate: (from: string, lang: Lang) => request<{ template: CustomTemplate }>('POST', '/api/templates/custom', { from, lang }),
   snapshotTemplate: (name: string) => request<{ template: CustomTemplate }>('POST', '/api/templates/custom', { fromSchema: true, name }),

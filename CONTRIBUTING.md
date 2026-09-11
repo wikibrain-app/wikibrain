@@ -21,6 +21,15 @@ npm run dev                      # API on 3000, Vite on 5173 - open http://local
 
 Running it in Docker instead is described in [DEPLOY.md](DEPLOY.md).
 
+## Changing the shipped rules
+
+The pages under `templates/<id>/<lang>/schema/` are what the agent reads before it writes. Workspaces keep the copy
+they were given, so improving them needs one extra step: **bump `version` in that template's `template.json`**.
+
+Existing workspaces then see an offer in Settings. Pages they never edited are replaced on one click; pages they
+edited are never touched, only shown as a difference. Without the version bump nothing is offered and the improvement
+reaches new workspaces only.
+
 ## Workflow
 
 1. Open an issue describing the problem and the smallest change that fixes it.

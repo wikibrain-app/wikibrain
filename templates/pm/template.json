@@ -1,5 +1,6 @@
 {
   "id": "pm",
+  "version": 1,
   "name": {
     "zh-TW": "專案管理者",
     "en": "Project manager"

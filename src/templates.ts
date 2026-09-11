@@ -1,26 +1,29 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createNote, NoteError, type Actor } from './notes.js';
+import { createNote, NoteError, readNote, updateNote, type Actor } from './notes.js';
 
 // Scenario templates (PRD R9, Q7): a template = schema/ rule pages + starter folders + onboarding prompt; it affects content only, never the UI.
 // Applying is "add without overwriting": existing paths are always skipped, so a template can be re-applied or stacked with a second one.
-const root = fileURLToPath(new URL('../templates/', import.meta.url));
+// TEMPLATES_DIR lets a test point this at a fixture directory; read on each call so no module reload is needed.
+const root = () => process.env.TEMPLATES_DIR ?? fileURLToPath(new URL('../templates/', import.meta.url));
 export type Lang = 'zh-TW' | 'en';
 export const LANGS: Lang[] = ['zh-TW', 'en'];
 
 export interface TemplateInfo {
   id: string;
+  version?: number;                 // bumped whenever the shipped rule pages change
   name: Record<Lang, string>;
   description: Record<Lang, string>;
   prompt: Record<Lang, string>;
 }
 
 export async function listTemplates(): Promise<TemplateInfo[]> {
-  const ids = (await readdir(root)).filter(d => !d.startsWith('.'));
+  const ids = (await readdir(root())).filter(d => !d.startsWith('.'));
   const out: TemplateInfo[] = [];
   for (const id of ids.sort()) {
-    try { out.push(JSON.parse(await readFile(join(root, id, 'template.json'), 'utf8')) as TemplateInfo); }
+    try { out.push(JSON.parse(await readFile(join(root(), id, 'template.json'), 'utf8')) as TemplateInfo); }
     catch { /* not a template directory */ }
   }
   // general goes first
@@ -42,7 +45,7 @@ export async function applyTemplate(workspaceId: string, id: string, lang: Lang,
   const templates = await listTemplates();
   const info = templates.find(t => t.id === id);
   if (!info) throw new NoteError('NOT_FOUND', { 'zh-TW': `找不到模版：${id}`, en: `Template not found: ${id}` });
-  const dir = join(root, id, lang);
+  const dir = join(root(), id, lang);
   const files = await walk(dir);
   const created: string[] = [];
   const skipped: string[] = [];
@@ -56,14 +59,92 @@ export async function applyTemplate(workspaceId: string, id: string, lang: Lang,
       else throw e;
     }
   }
+  await recordApplied(workspaceId, info, lang, dir, files);
   return { id, lang, created, skipped, prompt: info.prompt[lang] };
+}
+
+const sha = (s: string) => createHash('sha256').update(s).digest('hex');
+
+/* Remember the template version and the exact bytes of every schema page as delivered. Only schema/ is recorded:
+   those are the rules the agent reads, and the only pages we would ever offer to update. */
+async function recordApplied(ws: string, info: TemplateInfo, lang: Lang, dir: string, files: string[]): Promise<void> {
+  const hashes: Record<string, string> = {};
+  for (const path of files.filter(f => f.startsWith('schema/'))) {
+    hashes[path] = sha(await readFile(join(dir, path), 'utf8'));
+  }
+  if (Object.keys(hashes).length === 0) return;
+  await pool.query(
+    `INSERT INTO template_applied (workspace_id, template_id, lang, version, files)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (workspace_id, template_id) DO UPDATE
+       SET lang = EXCLUDED.lang, version = EXCLUDED.version, files = EXCLUDED.files, applied_at = now()`,
+    [ws, info.id, lang, info.version ?? 1, JSON.stringify(hashes)]);
+}
+
+/* ── Rule-page updates ──
+   A workspace keeps the rules it was given; improvements to the shipped rules never reach it on their own. This tells
+   the operator page what is out of date and, crucially, whether it is safe to act:
+
+     untouched  the page is byte-identical to what we delivered, so replacing it loses nothing
+     edited     the user has changed it — we only ever show what is different, never overwrite
+
+   Pages the user wrote themselves (no record of us delivering them) are not reported at all. */
+export type RuleState = 'untouched' | 'edited' | 'missing';
+export interface RuleUpdate {
+  templateId: string; templateName: Record<Lang, string>; lang: Lang;
+  appliedVersion: number; currentVersion: number;
+  pages: { path: string; state: RuleState; current: string; next: string }[];
+}
+
+export async function pendingRuleUpdates(ws: string): Promise<RuleUpdate[]> {
+  const { rows } = await pool.query<{ template_id: string; lang: Lang; version: number; files: Record<string, string> }>(
+    `SELECT template_id, lang, version, files FROM template_applied WHERE workspace_id = $1`, [ws]);
+  if (rows.length === 0) return [];
+  const templates = await listTemplates();
+  const out: RuleUpdate[] = [];
+
+  for (const r of rows) {
+    const info = templates.find(t => t.id === r.template_id);
+    if (!info) continue;                                   // custom or removed template
+    const currentVersion = info.version ?? 1;
+    if (currentVersion <= r.version) continue;             // nothing new shipped
+    const pages: RuleUpdate['pages'] = [];
+    for (const [path, deliveredHash] of Object.entries(r.files)) {
+      const next = await readFile(join(root(), r.template_id, r.lang, path), 'utf8').catch(() => null);
+      if (next === null) continue;                         // page no longer part of the template
+      const note = await readNote(ws, path).catch(() => null);
+      if (!note) { pages.push({ path, state: 'missing', current: '', next }); continue; }
+      if (sha(note.content_md) === sha(next)) continue;    // already identical to the new version
+      pages.push({ path, state: sha(note.content_md) === deliveredHash ? 'untouched' : 'edited', current: note.content_md, next });
+    }
+    if (pages.length) out.push({ templateId: r.template_id, templateName: info.name, lang: r.lang, appliedVersion: r.version, currentVersion, pages });
+  }
+  return out;
+}
+
+/* Apply the new rules for one template. Only pages we can prove the user never edited are written; edited pages are
+   left exactly as they are and reported back, so the caller can show the difference instead. */
+export async function updateRules(ws: string, templateId: string, actor: Actor): Promise<{ updated: string[]; kept: string[] }> {
+  const updates = (await pendingRuleUpdates(ws)).find(u => u.templateId === templateId);
+  if (!updates) return { updated: [], kept: [] };
+  const updated: string[] = [], kept: string[] = [];
+  for (const page of updates.pages) {
+    if (page.state === 'edited') { kept.push(page.path); continue; }
+    if (page.state === 'missing') { await createNote(ws, page.path, page.next, actor); updated.push(page.path); continue; }
+    const note = await readNote(ws, page.path);
+    await updateNote(ws, page.path, page.next, note.version, actor);
+    updated.push(page.path);
+  }
+  await pool.query(`UPDATE template_applied SET version = $3, files = $4, applied_at = now() WHERE workspace_id = $1 AND template_id = $2`,
+    [ws, templateId, updates.currentVersion, JSON.stringify(Object.fromEntries(updates.pages.filter(p => p.state !== 'edited').map(p => [p.path, sha(p.next)])))]);
+  return { updated, kept };
 }
 
 // Preview: return all files of a template (path + content) to inspect before applying.
 export async function templateFiles(id: string, lang: Lang): Promise<{ path: string; content: string }[]> {
   const templates = await listTemplates();
   if (!templates.find(t => t.id === id)) throw new NoteError('NOT_FOUND', { 'zh-TW': `找不到模版：${id}`, en: `Template not found: ${id}` });
-  const dir = join(root, id, lang);
+  const dir = join(root(), id, lang);
   const files = await walk(dir);
   return Promise.all(files.map(async path => ({ path, content: await readFile(join(dir, path), 'utf8') })));
 }

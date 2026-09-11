@@ -10,6 +10,7 @@ import { Field, btnGhost, btnPrimary, input } from '../components/ui';
 import { PageShell } from '../components/PageShell';
 import { ACCENT_PRESETS, THEMES, getAccent, getTheme, setAccent, setTheme, type Theme } from '../theme';
 import { AppliedResult, TemplatePicker } from '../components/TemplatePicker';
+import { RuleUpdates } from '../components/RuleUpdates';
 import { ConnectCursorModal } from '../components/ConnectCursorModal';
 
 const NAV = ['account', 'plan', 'connect', 'ai', 'data', 'templates', 'danger'] as const;
@@ -310,6 +311,7 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
 
           <section id="templates" className="rounded-[12px] border border-line bg-paper p-5 sb:p-6 scroll-mt-6" data-testid="template-settings">
             <h2 className="text-[15px] font-semibold mb-1">{t('settings.templates.title')}</h2>
+            <div className="mb-3"><RuleUpdates /></div>
             <p className="text-[12.5px] text-ink-soft mb-4 leading-relaxed">{t('settings.templates.intro1')}<b>{t('settings.templates.bold')}</b>{t('settings.templates.intro2')}</p>
             {applied ? <AppliedResult r={applied} onClose={() => { setApplied(null); api.usage().then(setUsage).catch(() => {}); }} /> : <TemplatePicker compact onApplied={r => { setApplied(r); api.usage().then(setUsage).catch(() => {}); }} />}
           </section>

@@ -21,7 +21,7 @@ interface RegistryEntry { service: string; plan: string; price: string; renews_o
 import { track } from './events.js';
 import { clientToken, ensureCatalog, paddleEnabled, paddleEnv, portalSession, PaddleError } from './paddle.js';
 import { deleteLink as deleteZotero, getLink as getZotero, inspectKey as inspectZoteroKey, listCollections as zoteroCollections, loadKey as loadZoteroKey, setLink as setZotero, syncZotero } from './zotero.js';
-import { applyTemplate, applyCustomTemplate, createCustomTemplate, deleteCustomTemplate, duplicateBuiltin, getCustomTemplate, listCustomTemplates, listTemplates, snapshotSchemaAsTemplate, templateFiles, updateCustomTemplate, LANGS, type Lang } from './templates.js';
+import { applyTemplate, applyCustomTemplate, createCustomTemplate, deleteCustomTemplate, duplicateBuiltin, getCustomTemplate, listCustomTemplates, listTemplates, pendingRuleUpdates, updateRules, snapshotSchemaAsTemplate, templateFiles, updateCustomTemplate, LANGS, type Lang } from './templates.js';
 import { NoteError } from './notes.js';
 import { PROVIDERS, type Provider } from './ai/providers.js';
 import { deleteAiConfig, getAiConfig, getIngestStats, getJob, listJobs, modelsFor, setAiConfig, startIngest, startLint } from './ingest.js';
@@ -93,7 +93,20 @@ api.put('/me/lang', async (req, res) => {
 });
 
 api.get('/templates', async (_req, res) => {
-  res.json({ templates: await listTemplates(), langs: LANGS, custom: await listCustomTemplates(res.locals.workspace.id) });
+  res.json({
+    templates: await listTemplates(), langs: LANGS,
+    custom: await listCustomTemplates(res.locals.workspace.id),
+    ruleUpdates: await pendingRuleUpdates(res.locals.workspace.id),
+  });
+});
+
+/* Take the newer rule pages for one template. Pages the user edited are never touched; they come back in `kept` so the
+   UI can show the difference instead. */
+api.post('/templates/update-rules', async (req, res) => {
+  const id = req.body?.id;
+  if (typeof id !== 'string') { res.status(400).json({ error: 'BAD_REQUEST', message: msg(res, '需要 id', 'id is required') }); return; }
+  try { res.json(await updateRules(res.locals.workspace.id, id, { kind: 'system', name: `template:${id}` })); }
+  catch (e) { handle(res, e); }
 });
 
 /* ── Custom templates ── */
