@@ -84,9 +84,11 @@ test('a secret Cloudflare rejects is our bug: registration stays open and it is 
   assert.equal((await signUp('a-token')).status, 200, '打錯 secret 不該把所有人擋在門外');
   globalThis.fetch = realFetch;
 
-  const after_ = Number((await pool.query<{ n: string }>(
+  // track() 不 await，所以要等那一列真的寫進去
+  const count = async () => Number((await pool.query<{ n: string }>(
     `SELECT count(*)::text AS n FROM events WHERE kind = 'turnstile_misconfigured'`)).rows[0].n);
-  assert.equal(after_ - before_, 1, '記一筆，營運頁才看得到「註冊目前沒有防護」');
+  for (let i = 0; i < 100 && await count() <= before_; i++) await new Promise(r => setTimeout(r, 50));
+  assert.equal(await count() - before_, 1, '記一筆，營運頁才看得到「註冊目前沒有防護」');
   await pool.query(`DELETE FROM events WHERE kind = 'turnstile_misconfigured'`);
 });
 

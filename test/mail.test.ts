@@ -12,6 +12,12 @@ const marker = randomBytes(4).toString('hex');
 const realFetch = globalThis.fetch;
 const failures = async () => Number((await pool.query<{ n: string }>(
   `SELECT count(*)::text AS n FROM events WHERE kind = 'email_failed' AND meta->>'subject' = $1`, [marker])).rows[0].n);
+/* track() inserts without being awaited, so the row can land just after the call returns. Poll instead of assuming:
+   a fixed sleep is either too short on a slow runner or wasted time on a fast one. */
+const failuresReach = async (n: number) => {
+  for (let i = 0; i < 100 && await failures() < n; i++) await new Promise(r => setTimeout(r, 50));
+  return failures();
+};
 
 before(async () => { await migrate(); });
 after(async () => {
@@ -32,7 +38,7 @@ test('a rejected send is recorded as email_failed and shows up on the operator p
   globalThis.fetch = realFetch;
   config.resendApiKey = '';
 
-  assert.equal(await failures() - before_, 1, 'the failure is recorded');
+  assert.equal(await failuresReach(before_ + 1) - before_, 1, 'the failure is recorded');
   const { rows } = await pool.query<{ detail: string }>(
     `SELECT meta->>'detail' AS detail FROM events WHERE kind = 'email_failed' AND meta->>'subject' = $1`, [marker]);
   assert.match(rows[0].detail, /403 .*not verified/, 'the provider reason is kept, so the cause is diagnosable');
@@ -55,5 +61,6 @@ test('a send that succeeds is not reported as a failure', async () => {
   await sendMail({ to: 'somebody@example.com', subject: marker, text: 'x' });
   globalThis.fetch = realFetch;
   config.resendApiKey = '';
+  await new Promise(r => setTimeout(r, 300));   // 給背景寫入機會出現，才證明得了它沒有出現
   assert.equal(await failures() - before_, 0);
 });
