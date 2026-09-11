@@ -9,7 +9,7 @@ import { pool } from './db.js';
    page_view         one public page view by a signed-out, non-bot visitor (see src/analytics.ts)
    email_failed      the mail provider rejected a message; the user is waiting for something that never arrived
    "Once" kinds are enforced by a partial unique index; duplicates are ignored, so callers just fire and forget. */
-export type EventKind = 'signup' | 'verified' | 'mcp_connected' | 'first_ai_write' | 'upgrade' | 'churn' | 'email' | 'email_failed' | 'page_view';
+export type EventKind = 'signup' | 'verified' | 'mcp_connected' | 'first_ai_write' | 'upgrade' | 'churn' | 'email' | 'email_failed' | 'turnstile_misconfigured' | 'page_view';
 const seen = new Set<string>(); // process-local cache so hot paths (/api/me, token auth) do not hit the DB every time
 
 export function track(kind: EventKind, ids: { userId?: string | null; workspaceId?: string | null }, meta?: Record<string, unknown>): void {

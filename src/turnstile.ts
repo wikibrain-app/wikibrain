@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { track } from './events.js';
 
 /* ── Bot protection on registration (Cloudflare Turnstile) ──
    Off unless both keys are set, so development and self-hosted installs are unaffected and need no Cloudflare account.
@@ -26,7 +27,15 @@ async function verify(token: string, ip: string | undefined): Promise<{ ok: bool
     if (!res.ok) return { ok: true, detail: `siteverify ${res.status}, allowed` };   // fail open, see below
     const data = await res.json() as { success?: boolean; 'error-codes'?: string[] };
     if (data.success) return { ok: true, detail: 'ok' };
-    return { ok: false, detail: (data['error-codes'] ?? []).join(',') || 'rejected' };
+    const codes = data['error-codes'] ?? [];
+    /* A secret Cloudflare does not recognise is our mistake, not the visitor's, and rejecting on it would close
+       registration for everyone while looking exactly like a wave of bots. Allow it through and make it loud: a wrong
+       secret protects nobody either way, so the only question is whether the front door also stops working. */
+    if (codes.some(c => c === 'invalid-input-secret' || c === 'missing-input-secret')) {
+      track('turnstile_misconfigured', {}, { codes: codes.join(',') });
+      return { ok: true, detail: `TURNSTILE_SECRET_KEY rejected by Cloudflare (${codes.join(',')}), allowed` };
+    }
+    return { ok: false, detail: codes.join(',') || 'rejected' };
   } catch (e) {
     /* Failing open is deliberate. A token we cannot check is a maybe-bot; a verifier we cannot reach turns every
        real person away. The first costs a junk account, the second costs every signup for the duration. */

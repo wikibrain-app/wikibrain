@@ -75,6 +75,21 @@ test('once configured, a sign-up without a valid token creates no account', asyn
   assert.equal(await accounts(), before_ + 1);
 });
 
+test('a secret Cloudflare rejects is our bug: registration stays open and it is recorded', async () => {
+  process.env.TURNSTILE_SITE_KEY = '0x-site'; process.env.TURNSTILE_SECRET_KEY = 'wrong-secret';
+  const before_ = Number((await pool.query<{ n: string }>(
+    `SELECT count(*)::text AS n FROM events WHERE kind = 'turnstile_misconfigured'`)).rows[0].n);
+
+  stub(() => Response.json({ success: false, 'error-codes': ['invalid-input-secret'] }));
+  assert.equal((await signUp('a-token')).status, 200, '打錯 secret 不該把所有人擋在門外');
+  globalThis.fetch = realFetch;
+
+  const after_ = Number((await pool.query<{ n: string }>(
+    `SELECT count(*)::text AS n FROM events WHERE kind = 'turnstile_misconfigured'`)).rows[0].n);
+  assert.equal(after_ - before_, 1, '記一筆，營運頁才看得到「註冊目前沒有防護」');
+  await pool.query(`DELETE FROM events WHERE kind = 'turnstile_misconfigured'`);
+});
+
 test('an unreachable Cloudflare lets people register rather than closing the door', async () => {
   process.env.TURNSTILE_SITE_KEY = '0x-site'; process.env.TURNSTILE_SECRET_KEY = '0x-secret';
   stub(() => { throw new Error('network down'); });
