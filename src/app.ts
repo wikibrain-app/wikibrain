@@ -64,7 +64,11 @@ export function createApp(opts: { webDist?: string; mcpRatePerMin?: number; ipRa
   });
   // OAuth 2.1 authorization server (/.well-known/*, /authorize, /token, /register, /revoke): for Claude.ai / ChatGPT / Cursor connectors
   app.use(['/authorize', '/token', '/register', '/revoke', '/.well-known'], byIp);
-  app.use(mcpAuthRouter({ provider: oauthProvider, issuerUrl: new URL(config.appUrl), resourceServerUrl: new URL('/mcp', config.appUrl), scopesSupported: SCOPES, resourceName: 'WikiBrain', serviceDocumentationUrl: new URL('/help', config.appUrl) }));
+  const oauthRouter = mcpAuthRouter({ provider: oauthProvider, issuerUrl: new URL(config.appUrl), resourceServerUrl: new URL('/mcp', config.appUrl), scopesSupported: SCOPES, resourceName: 'WikiBrain', serviceDocumentationUrl: new URL('/help', config.appUrl) });
+  /* Dynamic client registration lives at POST /register, which collides with the sign-up page of the same name: a
+     person typing or bookmarking /register got the OAuth endpoint's "method not allowed" instead of the form. The
+     endpoint is POST-only, so a GET there is always a browser and belongs to the SPA. */
+  app.use((req, res, next) => (req.method === 'GET' && req.path === '/register' ? next() : oauthRouter(req, res, next)));
   // Billing webhook (scaffold until Q1 is decided): shared-secret header, generic event shape → workspaces.plan.
   app.post('/api/billing/webhook/:provider', byIp, async (req, res) => {
     if (!webhookSecretOk(req.header('x-wikibrain-billing-secret'))) { res.status(401).json({ error: 'UNAUTHORIZED', message: 'bad webhook secret' }); return; }

@@ -101,3 +101,18 @@ test('scope enforced: notes:read-only connection can read, write returns FORBIDD
   assert.equal((await fetch(base + '/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ client_name: 'x'.repeat(101), redirect_uris: ['https://a.example/cb'] }) })).status, 400, 'DCR client name too long');
 });
 
+
+test('GET /register is the sign-up page, not the client-registration endpoint', async () => {
+  // The two share a path. POST must still register an OAuth client; GET must reach the app.
+  const get = await fetch(base + '/register', { redirect: 'manual' });
+  assert.notEqual(get.status, 405, '瀏覽器打開註冊頁不該拿到 method_not_allowed');
+  assert.ok(get.status === 200 || get.status === 404, `SPA 或（未建置時）404，實際 ${get.status}`);
+  assert.ok(!(get.headers.get('content-type') ?? '').includes('application/json'), '不是 OAuth 的 JSON 錯誤');
+
+  const post = await fetch(base + '/register', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ client_name: 'path collision check', redirect_uris: ['https://example.com/cb'] }),
+  });
+  assert.equal(post.status, 201, 'DCR 照舊可用');
+  assert.ok((await post.json()).client_id);
+});
