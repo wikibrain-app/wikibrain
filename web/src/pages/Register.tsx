@@ -5,6 +5,7 @@ import { useToast } from '../lib/toast';
 import { useT } from '../i18n';
 import { AuthCard, Field, btnPrimary, input } from '../components/ui';
 import { Turnstile } from '../components/Turnstile';
+import { GoogleButton } from '../components/GoogleButton';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -12,11 +13,12 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [google, setGoogle] = useState(false);
   const [siteKey, setSiteKey] = useState<string | null>(null);
   const [token, setToken] = useState('');
   const { toast } = useToast();
   const { t, lang } = useT();
-  useEffect(() => { api.config().then(c => setSiteKey(c.turnstileSiteKey)).catch(() => {}); }, []);
+  useEffect(() => { api.config().then(c => { setSiteKey(c.turnstileSiteKey); setGoogle(c.googleEnabled); }).catch(() => {}); }, []);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -43,6 +45,14 @@ export default function Register() {
     <AuthCard>
       <h1 className="font-serif text-[22px] font-bold mb-1">{t('register.title')}</h1>
       <p className="text-[13px] text-ink-soft mb-5">{t('register.tagline')}</p>
+      {google && (
+        <>
+          <GoogleButton label={t('register.google')} />
+          <div className="my-4 flex items-center gap-3 text-[12px] text-ink-faint">
+            <span className="h-px flex-1 bg-line" />{t('register.or')}<span className="h-px flex-1 bg-line" />
+          </div>
+        </>
+      )}
       <form onSubmit={submit}>
         <Field label={t('register.name')} htmlFor="name"><input id="name" className={input} autoComplete="username" required minLength={2} maxLength={40} value={name} onChange={e => setName(e.target.value)} /></Field>
         <Field label="Email" htmlFor="email"><input id="email" className={input} type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} /></Field>

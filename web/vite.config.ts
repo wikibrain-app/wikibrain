@@ -16,7 +16,8 @@ export default defineConfig({
       // OAuth authorization server endpoints (so the full flow also works on 5173 in dev)
       '/authorize': 'http://localhost:3000',
       '/token': 'http://localhost:3000',
-      '/register': 'http://localhost:3000',
+      // Same path as the sign-up page. Client registration is POST-only, so a GET belongs to the app, not the API.
+      '/register': { target: 'http://localhost:3000', bypass: (req) => (req.method === 'GET' ? '/index.html' : undefined) },
       '/revoke': 'http://localhost:3000',
       '/.well-known': 'http://localhost:3000',
     },
