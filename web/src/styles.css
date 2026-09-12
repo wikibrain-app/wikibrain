@@ -128,6 +128,66 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   --breakpoint-rail: 901px;
 }
 
+/* Landing page (web/src/pages/Landing.tsx). Tokens only, so light, dark and the accent hue all apply; the page has to
+   read like the app it leads to. Type scale: display 34→52, section 24→30, body 15.5/1.8. */
+@layer components {
+  .landing { font-size: 15.5px; }
+  .ld-h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(34px, 2.2rem + 1.6vw, 52px); line-height: 1.18; letter-spacing: -0.005em; text-wrap: balance; }
+  .ld-h2 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(24px, 1.3rem + 0.7vw, 30px); line-height: 1.3; text-wrap: balance; }
+  .ld-body { font-size: 15.5px; line-height: 1.8; color: var(--color-ink-soft); max-width: 640px; }
+  .ld-section { margin-top: 56px; }
+  @media (min-width: 681px) { .ld-section { margin-top: 88px; } }
+  .ld-link { color: var(--color-celadon-deep); text-decoration: underline; text-decoration-color: var(--underline); text-underline-offset: 3px; }
+  .ld-link:hover { text-decoration-color: currentColor; }
+  /* Proof frames: a page or screenshot sits on paper, cut at the bottom like a page that continues */
+  .ld-frame { display: block; background: var(--color-paper); border: 1px solid var(--color-line); border-radius: 12px; overflow: hidden; box-shadow: 0 18px 44px -30px color-mix(in oklab, var(--color-ink) 55%, transparent); }
+  .ld-frame img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  /* Matches the capture's own 1352×760 so nothing is cropped and the byline keeps its share of the height. */
+  .ld-frame-hero { aspect-ratio: 932 / 600; }
+  @media (max-width: 680px) { .ld-frame-hero { aspect-ratio: 378 / 300; } }
+  .ld-frame picture { display: block; height: 100%; }
+  /* Each frame matches its own capture, so nothing is cropped — the citations one in particular has to keep the auto
+     reference list at its bottom edge, which the earlier one-size 66/46 cut off. */
+  .ld-frame-page { aspect-ratio: 1352 / 1120; }
+  .ld-frame-cite { aspect-ratio: 932 / 1120; }
+  .ld-frame-natural { width: min(100%, 852px); }
+  .ld-frame-graph { aspect-ratio: 1720 / 1040; }
+  @media (max-width: 680px) { .ld-frame-graph { aspect-ratio: 1720 / 1300; } }
+  .ld-chip { z-index: 1; display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; font-size: 12px; line-height: 1; background: var(--color-paper); border: 1px solid var(--color-line); border-radius: 8px; box-shadow: 0 4px 14px -8px color-mix(in oklab, var(--color-ink) 50%, transparent); }
+  .ld-chip { max-width: calc(100% - 24px); }
+  .ld-chip-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ld-dot { width: 8px; height: 8px; border-radius: 2px; background: var(--raw); flex: none; }
+  @keyframes ld-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: no-preference) {
+    .ld-art .ld-frame { animation: ld-in .7s cubic-bezier(.2, .7, .2, 1) both; }
+    .ld-art .ld-chip { animation: ld-in .6s cubic-bezier(.2, .7, .2, 1) .35s both; }
+  }
+  /* The log entry, set the way the product renders wiki/log.md (serif body, left-rule heading, code for paths) */
+  .ld-log { font-family: var(--font-serif); background: var(--color-paper); border: 1px solid var(--color-line); border-radius: 12px; padding: 20px 22px 16px; font-size: 15px; line-height: 1.9; }
+  .ld-log h3 { font-size: 16.5px; font-weight: 700; line-height: 1.4; padding-left: 10px; border-left: 3px solid var(--color-celadon); margin-bottom: 10px; overflow-wrap: anywhere; }
+  .ld-log ul { list-style: disc; margin-left: 1.4em; }
+  .ld-log li { overflow-wrap: anywhere; }
+  .ld-log code { font-family: var(--font-mono); font-size: .86em; background: var(--color-porcelain); padding: 1px 5px; border-radius: 4px; }
+  .ld-log-run { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--color-line); font-family: var(--font-sans); font-size: 13px; color: var(--color-ink-soft); }
+  .ld-ver { font-family: var(--font-mono); font-size: 12px; color: var(--color-ink); background: var(--color-celadon-mist); padding: 2px 7px; border-radius: 4px; }
+  .ld-ver-old { background: var(--color-amber-mist); }
+  /* The only numbered block on the page */
+  .ld-steps { counter-reset: none; }
+  .ld-steps li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; padding: 16px 0; border-top: 1px solid var(--color-line); }
+  .ld-steps li:first-child { border-top: 0; padding-top: 0; }
+  .ld-num { font-family: var(--font-serif); font-size: 34px; font-weight: 700; line-height: 1; color: var(--color-celadon-deep); }
+  .ld-steps h3 { font-size: 16px; font-weight: 600; line-height: 1.5; }
+  .ld-steps p { margin-top: 4px; font-size: 14.5px; line-height: 1.75; color: var(--color-ink-soft); }
+  .ld-code { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; background: var(--code-bg); color: var(--code-fg); border-radius: 12px; padding: 16px 18px; overflow-x: auto; }
+  .ld-banner { background: var(--color-celadon-mist); border-radius: 12px; padding: 14px 18px; font-size: 14.5px; line-height: 1.75; color: var(--color-ink); }
+  .ld-tick { padding-left: 1.3em; position: relative; }
+  .ld-tick::before { content: ""; position: absolute; left: 2px; top: .72em; width: 7px; height: 7px; border-radius: 50%; background: var(--color-celadon); }
+  .ld-faq > div { padding: 14px 0; border-top: 1px solid var(--color-line); }
+  .ld-faq > div:last-child { border-bottom: 1px solid var(--color-line); }
+  .ld-faq dt { font-size: 15.5px; font-weight: 600; line-height: 1.5; }
+  .ld-faq dd { margin-top: 4px; font-size: 14.5px; line-height: 1.75; color: var(--color-ink-soft); }
+}
+
 /* Help: collapsible FAQ and compact screenshot galleries */
 .help-faq details { border-top: 1px solid var(--color-line); }
 .help-faq details:last-child { border-bottom: 1px solid var(--color-line); }
@@ -136,3 +196,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .help-faq summary::before { content: "+"; color: var(--color-celadon); font-weight: 700; width: 1em; flex: none; }
 .help-faq details[open] summary::before { content: "–"; }
 .help-faq details > div { padding: 0 0 12px 1.6em; font-size: 14px; line-height: 1.8; color: var(--color-ink-soft); }
+
+/* Unlayered on purpose. The CTA's size is part of the page's type scale, but btnPrimary contributes its own
+   text/padding utilities, and @layer utilities beats @layer components regardless of specificity — only an unlayered
+   declaration wins. Everything else about the button (colour, radius, focus ring) still comes from btnPrimary. */
+.ld-cta { font-size: 15px; padding: 11px 22px; }
+@media (max-width: 680px) { .ld-cta { font-size: 14.5px; padding: 10px 18px; } }

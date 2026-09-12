@@ -9,6 +9,7 @@ import { Route, Routes, StaticRouter } from 'react-router';
 import { LangProvider, type Lang } from '../web/src/i18n/index';
 import Help from '../web/src/pages/Help';
 import Landing from '../web/src/pages/Landing';
+import { landingMeta } from '../web/src/pages/landing/copy';
 import Legal from '../web/src/pages/Legal';
 import { legalDocs } from '../web/src/pages/legal/content';
 import Compare from '../web/src/pages/Compare';
@@ -113,17 +114,18 @@ for (const lang of ['zh-TW', 'en'] as Lang[]) for (const doc of [null, ...compar
 for (const lang of ['zh-TW', 'en'] as Lang[]) {
   const markup = renderToStaticMarkup(createElement(StaticRouter, { location: '/' }, createElement(LangProvider, { initial: lang }, createElement(Routes, null, createElement(Route, { path: '/', element: createElement(Landing) })))));
   const other = lang === 'en' ? 'zh-TW' : 'en';
-  const title = lang === 'en' ? `${name} — an AI compiles your sources into a wiki` : `${name} — AI 替你把來源編成 wiki`;
+  // Title and description come from the landing module so the page and its metadata change together.
+  const { title, description } = landingMeta[lang];
   const head = [
     `<title>${title}</title>`,
-    `<meta name="description" content="${meta[lang].description.replace(/"/g, '&quot;')}">`,
+    `<meta name="description" content="${description.replace(/"/g, '&quot;')}">`,
     `<link rel="canonical" href="${appUrl}/${lang === 'en' ? '?lang=en' : ''}">`,
     `<link rel="alternate" hreflang="${meta[lang].htmlLang}" href="${appUrl}/${lang === 'en' ? '?lang=en' : ''}">`,
     `<link rel="alternate" hreflang="${meta[other].htmlLang}" href="${appUrl}/${other === 'en' ? '?lang=en' : ''}">`,
     `<link rel="alternate" hreflang="x-default" href="${appUrl}/">`,
-    `<meta property="og:type" content="website"><meta property="og:title" content="${title}"><meta property="og:description" content="${meta[lang].description.replace(/"/g, '&quot;')}"><meta property="og:url" content="${appUrl}/"><meta property="og:image" content="${appUrl}/help/${lang}/home.png">`,
+    `<meta property="og:type" content="website"><meta property="og:title" content="${title}"><meta property="og:description" content="${description.replace(/"/g, '&quot;')}"><meta property="og:url" content="${appUrl}/"><meta property="og:image" content="${appUrl}/help/${lang}/home.png">`,
     `<meta name="twitter:card" content="summary_large_image">`,
-    `<script type="application/ld+json">${jsonLd(lang)}</script>`,
+    `<script type="application/ld+json">${JSON.stringify({ ...JSON.parse(jsonLd(lang)), description })}</script>`,
   ].join('\n    ');
   let html = index.replace(/<title>[^<]*<\/title>/, head).replace('<html lang="zh-Hant">', `<html lang="${meta[lang].htmlLang}">`);
   html = html.replace('<div id="root"></div>', `<div id="root">${markup}</div>`);

@@ -29,7 +29,7 @@ test('pre-rendered /help serves full HTML with metadata (when web/dist exists)',
   const zh = await (await fetch(base + '/help')).text();
   assert.match(zh, /<html lang="zh-Hant-TW">/); assert.match(zh, /application\/ld\+json/); assert.match(zh, /hreflang="en"/); assert.match(zh, /data-help-page="start"/); assert.match(zh, /5 分鐘上手/);
   const plans = await (await fetch(base + '/help/plans')).text(); assert.match(plans, /id="plans"/); assert.match(plans, /方案與計價/); assert.match(plans, /"@type":"FAQPage"/);
-  const landing = await (await fetch(base + '/')).text(); assert.match(landing, /data-testid="landing"/); assert.match(landing, /AI 替你把來源編成 wiki/);
+  const landing = await (await fetch(base + '/')).text(); assert.match(landing, /data-testid="landing"/); assert.match(landing, /來源你丟，wiki 讓 AI 寫/);
   const spa = await (await fetch(base + '/', { headers: { cookie: 'better-auth.session_token=x' } })).text(); assert.doesNotMatch(spa, /data-testid="landing"/, 'signed-in visitors get the SPA shell');
   const en = await (await fetch(base + '/help?lang=en')).text();
   assert.match(en, /<html lang="en">/); assert.match(en, /Getting started/);
