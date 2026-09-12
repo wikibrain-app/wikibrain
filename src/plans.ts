@@ -36,10 +36,14 @@ export interface PlanStatus {
   retention_days: number;
 }
 
+/* A run that never reached the model — the provider refused the first call — is not an agent run for quota purposes,
+   for the same reason runJob() refunds its keyless credit: nothing was spent and nothing was delivered. Counting it
+   would let a Free user with a broken key lock themselves out for the month by clicking. */
 export async function planStatus(ws: string): Promise<PlanStatus> {
   const { rows } = await pool.query<{ plan: 'free' | 'pro'; trial_ends_at: Date | null; trial_runs_used: number; runs: string; notes: string; bytes: string }>(
     `SELECT w.plan, w.trial_ends_at, w.trial_runs_used,
-            (SELECT count(*) FROM ingest_jobs j WHERE j.workspace_id = w.id AND j.created_at >= date_trunc('month', now())) AS runs,
+            (SELECT count(*) FROM ingest_jobs j WHERE j.workspace_id = w.id AND j.created_at >= date_trunc('month', now())
+                AND NOT (j.status = 'failed' AND j.tokens_in + j.tokens_out = 0)) AS runs,
             (SELECT count(*) FROM notes n WHERE n.workspace_id = w.id AND n.deleted_at IS NULL) AS notes,
             (SELECT coalesce(sum(octet_length(n.content_md)), 0) FROM notes n WHERE n.workspace_id = w.id AND n.deleted_at IS NULL) AS bytes
        FROM workspaces w WHERE w.id = $1`, [ws]);

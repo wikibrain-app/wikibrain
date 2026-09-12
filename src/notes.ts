@@ -50,6 +50,9 @@ export function normalizePath(raw: string): string {
   if (segs.length < 2 || !p.endsWith('.md')) throw bad({ 'zh-TW': '須為層內檔案且以 .md 結尾', en: 'must be a file inside a layer and end with .md' });
   if (segs.some(s => s === '' || s === '.' || s === '..')) throw bad({ 'zh-TW': '不得含空段或 ..', en: 'must not contain empty segments or ..' });
   if (/[\\\x00-\x1f]/.test(p) || p.length > 512) throw bad({ 'zh-TW': '含不允許的字元或過長', en: 'contains disallowed characters or is too long' });
+  // These are URL delimiters: a path holding one can be stored but never opened, and % breaks decoding on the way back.
+  if (/[%?#]/.test(p)) throw bad({ 'zh-TW': '不得含 %、? 或 #', en: 'must not contain %, ? or #' });
+  if (segs[segs.length - 1] === '.md') throw bad({ 'zh-TW': '檔名不得為空', en: 'file name must not be empty' });
   return p;
 }
 export function normalizeFolder(raw: string | undefined): string {
@@ -182,7 +185,8 @@ async function tx<T>(fn: (c: pg.PoolClient) => Promise<T>): Promise<T> {
 /* ── Queries (every query filters by workspace_id and deleted_at IS NULL) ── */
 export async function searchNotes(ws: string, opts: { query: string; folder?: string; tag?: string; limit: number }) {
   const folder = normalizeFolder(opts.folder);
-  const params: unknown[] = [ws, `%${likeEscape(opts.query)}%`];
+  const query = opts.query.replace(/\x00/g, '');   // Postgres rejects NUL in a text parameter with a 500-shaped error
+  const params: unknown[] = [ws, `%${likeEscape(query)}%`];
   let where = `n.workspace_id = $1 AND n.deleted_at IS NULL AND (n.title ILIKE $2 OR n.content_md ILIKE $2)`;
   if (folder) { params.push(`${folder}/%`); where += ` AND n.path LIKE $${params.length}`; }
   if (opts.tag) { params.push(opts.tag.replace(/^#/, '').toLowerCase()); where += ` AND EXISTS (SELECT 1 FROM tags t WHERE t.note_id = n.id AND t.tag = $${params.length})`; }
@@ -209,6 +213,7 @@ export async function readNote(ws: string, rawPath: string): Promise<NoteRow> {
 export const MAX_CONTENT_BYTES = 1024 * 1024; // 1 MB per page
 function assertContentSize(content: string) {
   if (Buffer.byteLength(content, 'utf8') > MAX_CONTENT_BYTES) throw new NoteError('BAD_PATH', { 'zh-TW': '單頁內容超過 1 MB 上限，請拆頁或改為附件', en: 'Page content exceeds the 1 MB limit; split the page or use an attachment' });
+  if (content.includes('\x00')) throw new NoteError('BAD_PATH', { 'zh-TW': '內容含 NUL 字元', en: 'Content contains a NUL character' });   // text columns cannot hold it
 }
 export async function createNote(ws: string, rawPath: string, content: string, actor: Actor) {
   if (actor.kind === 'mcp' || actor.kind === 'agent') track('first_ai_write', { workspaceId: ws }, { actor: actor.kind, path: rawPath });
@@ -234,6 +239,8 @@ export async function createNote(ws: string, rawPath: string, content: string, a
 }
 
 export async function updateNote(ws: string, rawPath: string, content: string, ifVersion: number, actor: Actor) {
+  // Number.isInteger(1e308) is true; Postgres disagrees. Reject before the query does, with a message the caller can act on.
+  if (!Number.isSafeInteger(ifVersion) || ifVersion < 1) throw new NoteError('BAD_PATH', { 'zh-TW': `if_version 必須是正整數：${ifVersion}`, en: `if_version must be a positive integer: ${ifVersion}` });
   if (actor.kind === 'mcp' || actor.kind === 'agent') track('first_ai_write', { workspaceId: ws }, { actor: actor.kind, path: rawPath });
   assertContentSize(content);
   const path = normalizePath(rawPath);

@@ -6,6 +6,7 @@ import { useT } from '../i18n';
 import { btnGhost, btnPrimary } from '../components/ui';
 import { PageShell } from '../components/PageShell';
 import { IngestPanel } from '../components/IngestPanel';
+import { noteUrl } from '../lib/noteUrl';
 
 // Lint page (Karpathy's Lint): structural checks are computed live; the semantic audit is delegated to the agent or Cursor.
 export default function Lint({ me }: { me: Me }) {
@@ -22,7 +23,7 @@ export default function Lint({ me }: { me: Me }) {
   useEffect(() => { load(); Promise.all([api.ai(), api.plan().catch(() => null)])
     .then(([r, p]) => setAiReady(!!r.config || !!(p && p.trial_active && p.trial_runs_used < p.trial_runs_free)))
     .catch(() => {}); }, []);
-  const open = (p: string) => navigate(`/n/${p}`);
+  const open = (p: string) => navigate(noteUrl(p));
   const copy = () => data && navigator.clipboard.writeText(data.prompt).then(() => toast(t('lint.copied'))).catch(() => toast(t('common.clipboardFail'), { kind: 'error' }));
   async function run() {
     try { const { job } = await api.lintRun(); setJobId(job.id); toast(t('lint.started')); }

@@ -6,8 +6,11 @@ import type { Note, NoteSummary } from '../lib/api';
 import { Markdown } from './Markdown';
 import { btnGhost, btnPrimary } from './ui';
 
+/** Where the editor keeps its unsaved text for one note. */
+export const draftKeyFor = (path: string) => `wb-draft:${path}`;
+
 export function Editor({ note, initial, notes, onSave, onCancel, busy }: { note: Note; initial?: string; notes: NoteSummary[]; onSave: (content: string) => void; onCancel: () => void; busy: boolean }) {
-  const draftKey = `wb-draft:${note.path}`;
+  const draftKey = draftKeyFor(note.path);
   const [draft, setDraft] = useState(initial ?? note.content);
   const [stored, setStored] = useState<string | null>(() => { try { const v = localStorage.getItem(draftKey); return v !== null && v !== (initial ?? note.content) ? v : null; } catch { return null; } });
   // Keep the unsaved draft in localStorage (debounced) so a closed tab or a crash does not lose it; cleared on save/cancel
@@ -43,7 +46,8 @@ export function Editor({ note, initial, notes, onSave, onCancel, busy }: { note:
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml,image/avif" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) insertImage(f); e.target.value = ''; }} />
           <button className={btnGhost} onClick={() => fileRef.current?.click()} disabled={busy} title={t('editor.insertImageTitle')} data-testid="insert-image">{t('editor.insertImage')}</button>
           <button className={btnGhost} onClick={() => { clearDraft(); onCancel(); }} disabled={busy}>{t('common.cancel')}</button>
-          <button className={btnPrimary} onClick={() => { clearDraft(); onSave(draft); }} disabled={busy || draft === note.content}>{busy ? t('editor.saving') : t('common.save')}</button>
+          {/* The draft is cleared by the parent once the save has succeeded — clearing it here would lose the text on a 409, a 404, or a session that expired in another tab. */}
+          <button className={btnPrimary} onClick={() => onSave(draft)} disabled={busy || draft === note.content}>{busy ? t('editor.saving') : t('common.save')}</button>
         </div>
       </div>
       {stored !== null && (

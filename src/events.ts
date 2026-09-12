@@ -22,12 +22,15 @@ export function track(kind: EventKind, ids: { userId?: string | null; workspaceI
 export interface Funnel { totals: Record<EventKind, number>; weekly: { week: string; signup: number; verified: number; mcp_connected: number; first_ai_write: number; upgrade: number; churn: number }[] }
 export async function funnel(weeks = 8): Promise<Funnel> {
   const kinds: EventKind[] = ['page_view', 'signup', 'verified', 'mcp_connected', 'first_ai_write', 'upgrade', 'churn'];
-  const t = await pool.query<{ kind: EventKind; n: string }>(`SELECT kind, count(*) AS n FROM events GROUP BY kind`);
+  /* Signup events outlive the account (events.user_id has no foreign key, deliberately, so a deleted account leaves
+     no trail); counted raw they would include every deleted and test account. Only accounts that still exist count. */
+  const alive = `(kind <> 'signup' OR EXISTS (SELECT 1 FROM "user" u WHERE u.id = events.user_id))`;
+  const t = await pool.query<{ kind: EventKind; n: string }>(`SELECT kind, count(*) AS n FROM events WHERE ${alive} GROUP BY kind`);
   const totals = Object.fromEntries(kinds.map(k => [k, 0])) as Record<EventKind, number>;
   for (const r of t.rows) if (r.kind in totals) totals[r.kind] = Number(r.n);
   const w = await pool.query<{ week: string; kind: EventKind; n: string }>(
     `SELECT to_char(date_trunc('week', at), 'YYYY-MM-DD') AS week, kind, count(*) AS n FROM events
-     WHERE at >= date_trunc('week', now()) - ($1 || ' weeks')::interval GROUP BY 1, 2 ORDER BY 1`, [String(weeks - 1)]);
+     WHERE at >= date_trunc('week', now()) - ($1 || ' weeks')::interval AND ${alive} GROUP BY 1, 2 ORDER BY 1`, [String(weeks - 1)]);
   const byWeek = new Map<string, Funnel['weekly'][number]>();
   for (const r of w.rows) {
     const row = byWeek.get(r.week) ?? { week: r.week, signup: 0, verified: 0, mcp_connected: 0, first_ai_write: 0, upgrade: 0, churn: 0 };

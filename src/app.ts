@@ -128,13 +128,6 @@ export function createApp(opts: { webDist?: string; mcpRatePerMin?: number; ipRa
   app.get('/mcp', bearerAuth, methodNotAllowed);
   app.delete('/mcp', bearerAuth, methodNotAllowed);
 
-  // Unexpected errors (not caught by a route): log and return JSON instead of Express's default HTML stack page
-  app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
-    console.error(`Unhandled error ${req.method} ${req.path}:`, err);
-    if (res.headersSent) return;
-    const isMcp = req.path.startsWith('/mcp');
-    res.status(500).json(isMcp ? { jsonrpc: '2.0', error: { code: -32603, message: 'Internal server error' }, id: null } : { error: 'INTERNAL', message: process.env.NODE_ENV === 'production' ? 'Internal server error' : String((err as Error)?.message ?? err) });
-  });
 
   // Public-surface files for crawlers and AI search (SEO / AEO / GEO): robots, sitemap, llms.txt. Everything behind login is disallowed.
   app.get('/robots.txt', (_req, res) => {
@@ -223,6 +216,32 @@ export function createApp(opts: { webDist?: string; mcpRatePerMin?: number; ipRa
       res.sendFile(join(webDist, 'index.html'));
     });
   }
+
+  // Unexpected errors: log and return JSON instead of Express's default HTML stack page. Registered last on purpose —
+  // an error handler only sees errors from layers registered before it, and the SPA fallback is the last layer.
+  app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
+    if (res.headersSent) return;
+    /* A malformed percent-sequence in the URL fails inside the router, before any handler runs, so the SPA fallback
+       never sees it and Express would answer with its own HTML error page. Give the API a JSON 400 and everything else
+       the app shell, which knows how to say "bad path". */
+    if (err instanceof URIError) {
+      if (req.path.startsWith('/api') || req.path.startsWith('/mcp')) { res.status(400).json({ error: 'BAD_PATH', message: '網址編碼不合法 / Malformed URL encoding' }); return; }
+      const index = join(opts.webDist ?? defaultWebDist, 'index.html');
+      if (existsSync(index)) { res.status(400).sendFile(index); return; }
+      res.status(400).type('text/plain').send('Malformed URL'); return;
+    }
+    /* body-parser rejections (too large, malformed JSON) arrive here with their own status; they are the client's
+       mistake, not ours, and a 500 would send the operator looking for a bug that does not exist. */
+    const status = Number((err as { status?: number; statusCode?: number })?.status ?? (err as { statusCode?: number })?.statusCode);
+    if (status >= 400 && status < 500) {
+      const tooLarge = (err as { type?: string })?.type === 'entity.too.large' || status === 413;
+      res.status(status).json({ error: tooLarge ? 'TOO_LARGE' : 'BAD_REQUEST', message: tooLarge ? '內容太大（上限 2 MB）/ Request body too large (limit 2 MB)' : '請求格式不正確 / Malformed request' });
+      return;
+    }
+    console.error(`Unhandled error ${req.method} ${req.path}:`, err);
+    const isMcp = req.path.startsWith('/mcp');
+    res.status(500).json(isMcp ? { jsonrpc: '2.0', error: { code: -32603, message: 'Internal server error' }, id: null } : { error: 'INTERNAL', message: process.env.NODE_ENV === 'production' ? 'Internal server error' : String((err as Error)?.message ?? err) });
+  });
 
   return app;
 }

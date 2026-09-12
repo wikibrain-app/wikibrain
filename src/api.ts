@@ -40,7 +40,8 @@ const noteStatus: Record<NoteError['code'], number> = { BAD_PATH: 400, NOT_FOUND
 const langOf = (res: Response): Lang => (res.locals.workspace?.lang as Lang | undefined) ?? 'zh-TW';
 const msg = (res: Response, zh: string, en: string) => pick({ 'zh-TW': zh, en }, langOf(res));
 // Path params must be positive integers, otherwise 400 (keeps NaN from reaching pg and becoming a 500)
-const intParam = (v: string, res: Response): number | null => { const n = Number(v); if (!Number.isInteger(n) || n <= 0) { res.status(400).json({ error: 'BAD_REQUEST', message: msg(res, 'id 必須是正整數', 'id must be a positive integer') }); return null; } return n; };
+// isSafeInteger, not isInteger: 1e308 and 20-digit ids are integers to JS but not to Postgres.
+const intParam = (v: string, res: Response): number | null => { const n = Number(v); if (!Number.isSafeInteger(n) || n <= 0) { res.status(400).json({ error: 'BAD_REQUEST', message: msg(res, 'id 必須是正整數', 'id must be a positive integer') }); return null; } return n; };
 const handle = (res: Response, e: unknown) => { if (e instanceof NoteError) { res.status(noteStatus[e.code]).json({ error: e.code, message: e.localized((res.locals.workspace?.lang as Lang | undefined) ?? 'zh-TW') }); return; } throw e; };
 
 api.get('/config', (_req, res) => {

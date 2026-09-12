@@ -8,6 +8,7 @@ import { resolveLink, rewriteWikiLinks, stripFrontMatter, stripLeadingH1 } from 
 import { Mermaid } from './Mermaid';
 import { useT } from '../i18n';
 import { rewriteCitations, useBib } from '../lib/cite';
+import { noteUrl } from '../lib/noteUrl';
 
 // Renders Markdown; [[wiki-link]] resolves to in-app navigation, unresolved targets are dimmed with a "not created yet" hint.
 const NOTE_PATH = /^(raw|wiki|schema)\/[^\s`]+\.md$/;
@@ -29,7 +30,7 @@ export function Markdown({ source, notes, onOpen, hideTitle, compact }: { source
               try { target = decodeURIComponent(target); } catch { /* malformed percent-encoding: use as-is */ }
               const hit = resolveLink(target, notes);
               return hit
-                ? <a href={`/n/${hit.path}`} className="wl" onClick={e => { e.preventDefault(); onOpen(hit.path); }}>{children}</a>
+                ? <a href={noteUrl(hit.path)} className="wl" onClick={e => { e.preventDefault(); onOpen(hit.path); }}>{children}</a>
                 : <span className="wl-missing" title={t('markdown.missing', { target })} data-missing-link={target}>{children}</span>;
             }
             if (href?.startsWith('cite-missing:')) {
@@ -60,7 +61,7 @@ export function Markdown({ source, notes, onOpen, hideTitle, compact }: { source
             const text = String(children);
             if (className === 'language-mermaid') return <Mermaid code={text.replace(/\n$/, '')} />;
             if (!className && NOTE_PATH.test(text.trim()) && notes.some(n => n.path === text.trim())) {
-              return <a href={`/n/${text.trim()}`} className="wl font-mono text-[0.88em]" onClick={e => { e.preventDefault(); onOpen(text.trim()); }}>{text.trim()}</a>;
+              return <a href={noteUrl(text.trim())} className="wl font-mono text-[0.88em]" onClick={e => { e.preventDefault(); onOpen(text.trim()); }}>{text.trim()}</a>;
             }
             return <code className={className} {...rest}>{children}</code>;
           },

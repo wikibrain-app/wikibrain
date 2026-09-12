@@ -16,6 +16,7 @@ import OAuthConsent from './pages/OAuthConsent';
 import Landing from './pages/Landing';
 import Share from './pages/Share';
 import Compare from './pages/Compare';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 /* The operator console (/admin) ships only with the hosted deployment. A glob resolves to an empty object when the page
    is not part of the build, so the route simply does not exist there. */
@@ -59,10 +60,12 @@ export default function App() {
       <Route path="/stats" element={guard(<Stats me={me!} />)} />
       {adminPage && <Route path="/admin" element={guard(createElement(adminPage, { me: me! }))} />}
       <Route path="/oauth/consent" element={guard(<OAuthConsent me={me!} />)} />
-      <Route path="/n/*" element={guard(<Workspace me={me!} onSignedOut={() => setMe(null)} />)} />
-      <Route path="/graph" element={guard(<Workspace me={me!} onSignedOut={() => setMe(null)} />)} />
-      <Route path="/table" element={guard(<Workspace me={me!} onSignedOut={() => setMe(null)} />)} />
-      <Route path="/" element={me ? <Workspace me={me} onSignedOut={() => setMe(null)} /> : <Landing />} />
+      <Route path="/n/*" element={guard(<ErrorBoundary><Workspace me={me!} onSignedOut={() => setMe(null)} /></ErrorBoundary>)} />
+      <Route path="/graph" element={guard(<ErrorBoundary><Workspace me={me!} onSignedOut={() => setMe(null)} /></ErrorBoundary>)} />
+      <Route path="/table" element={guard(<ErrorBoundary><Workspace me={me!} onSignedOut={() => setMe(null)} /></ErrorBoundary>)} />
+      {/* Same element type as the /n/*, /graph and /table routes on purpose: React then keeps the Workspace instance
+          across those navigations instead of unmounting it, which would drop search state and refire every load. */}
+      <Route path="/" element={me ? <ErrorBoundary><Workspace me={me} onSignedOut={() => setMe(null)} /></ErrorBoundary> : <Landing />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

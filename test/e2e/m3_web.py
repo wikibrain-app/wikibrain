@@ -278,6 +278,7 @@ with sync_playwright() as p:
       page.goto(BASE + '/'); page.wait_for_selector('[data-testid=sidebar] >> text=匯入'); page.click('[data-testid=sidebar] >> button:has-text("匯入")')
       page.click('[role=dialog] button[role=tab]:has-text("上傳檔案")'); page.set_input_files('#im-file', bib_path)
       page.click('[role=dialog] button:has-text("匯入")'); page.wait_for_url(f'**/n/raw/sources/e2e{TS}a.md'); page.wait_for_selector('text=已匯入 2 筆書目')
+      page.wait_for_selector(f'[data-testid=sidebar] >> text=E2E Bib B {TS}')   # the tree reloads after the toast; don't count before it lands
       bib_ok = page.locator(f'[data-testid=sidebar] >> text=E2E Bib B {TS}').count() == 1
       bib_txt = page.evaluate("fetch('/api/export/bibtex').then(r => r.text())")
       ac('BIB upload .bib: two pages in raw/sources and exportable', bib_ok and f'@book{{e2e{TS}b,' in bib_txt and f'author = {{Jane Roe}}' in bib_txt, f'sidebar={bib_ok}')
@@ -314,7 +315,7 @@ with sync_playwright() as p:
       mp.wait_for_selector('[data-testid=sidebar]', state='visible')
       shot(mp, '10-mobile-sidebar')
       mp.click(f'[data-testid=sidebar] >> text={TITLE_A}')
-      mp.wait_for_url(f'**/n/{A}')
+      mp.wait_for_url(f'**/n/{A}'); mp.wait_for_selector(f'main h1:has-text("{TITLE_A}")')   # URL changes before React commits the route; wait for the page itself
       mp.fill('input[aria-label="搜尋"]', TITLE_A); mp.press('input[aria-label="搜尋"]', 'Enter'); mp.wait_for_selector('text=筆結果')
       shot(mp, '10b-mobile-search')
       mp.click(f'main button:has-text("{TITLE_A}")'); mp.wait_for_url(f'**/n/{A}')

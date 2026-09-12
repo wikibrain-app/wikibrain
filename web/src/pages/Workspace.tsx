@@ -11,7 +11,7 @@ import { useT } from '../i18n';
 import { Topbar } from '../components/Topbar';
 import { Sidebar } from '../components/Sidebar';
 import { NoteView } from '../components/NoteView';
-import { Editor } from '../components/Editor';
+import { Editor, draftKeyFor } from '../components/Editor';
 import { Rail } from '../components/Rail';
 import { SearchResults } from '../components/SearchResults';
 import { GraphView } from '../components/GraphView';
@@ -21,6 +21,7 @@ import { AddModal, type AddTab } from '../components/AddModal';
 import { IngestPanel } from '../components/IngestPanel';
 import { ChatPanel } from '../components/ChatPanel';
 import { Footer } from '../components/Footer';
+import { noteUrl, safeDecode } from '../lib/noteUrl';
 
 type Mode = 'read' | 'edit' | 'search';
 
@@ -31,7 +32,7 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
   const { toast } = useToast();
   const confirmDialog = useConfirm();
   const { t } = useT();
-  const path = params['*'] ? decodeURIComponent(params['*']) : null;
+  const path = params['*'] ? safeDecode(params['*']) : null;
   const view: 'note' | 'graph' | 'table' = location.pathname === '/graph' ? 'graph' : location.pathname === '/table' ? 'table' : 'note';
 
   const [notes, setNotes] = useState<NoteSummary[]>([]);
@@ -101,8 +102,8 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
     return () => clearInterval(timer);
   }, [ingesting, ingestJobId, path, reloadTree, reloadNote, toast, t]);
 
-  const openNote = useCallback((p: string) => { setMode('read'); setSearch(null); setHistorical(null); navigate(`/n/${p}`); }, [navigate]);
-  const setView = (v: 'note' | 'graph' | 'table') => navigate(v === 'graph' ? '/graph' : v === 'table' ? '/table' : path ? `/n/${path}` : '/');
+  const openNote = useCallback((p: string) => { setMode('read'); setSearch(null); setHistorical(null); navigate(noteUrl(p)); }, [navigate]);
+  const setView = (v: 'note' | 'graph' | 'table') => navigate(v === 'graph' ? '/graph' : v === 'table' ? '/table' : path ? noteUrl(path) : '/');
 
   const [keepDraft, setKeepDraft] = useState<string | null>(null); // draft kept after a 409
   const [palette, setPalette] = useState(false);
@@ -134,6 +135,7 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
     setBusy(true);
     try {
       await api.update(note.path, content, note.version);
+      try { localStorage.removeItem(draftKeyFor(note.path)); } catch { /* storage unavailable */ }   // only now is the draft safe to drop
       await Promise.all([reloadNote(note.path), reloadTree()]);
       setKeepDraft(null);
       setMode('read');
@@ -151,7 +153,7 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
   }
   async function archive(undo: boolean) {
     if (!note) return;
-    try { const r = await api.archive(note.path, undo); toast(undo ? t('workspace.unarchived') : t('workspace.archived')); await reloadTree(); navigate(`/n/${r.path}`); }
+    try { const r = await api.archive(note.path, undo); toast(undo ? t('workspace.unarchived') : t('workspace.archived')); await reloadTree(); navigate(noteUrl(r.path)); }
     catch (e) { fail(e); }
   }
   async function remove() {
@@ -196,8 +198,8 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
     const EmptyView = ({ text }: { text: string }) => <div className="mx-auto max-w-[520px] px-6 pt-20 text-center text-ink-soft"><p className="text-[14px] leading-relaxed">{text}</p><button className={`${btnPrimary} mt-4`} onClick={() => setAdd({ tab: 'url', layer: 'raw' })}>{t('empty.cta')}</button></div>;
     if (view === 'table' && notes.length === 0) return <EmptyView text={t('empty.table')} />;
     if (view === 'graph' && graph && graph.nodes.length === 0) return <EmptyView text={t('empty.graph')} />;
-    if (view === 'table') return <TableView onOpen={p => navigate(`/n/${p}`)} folders={[...new Set(notes.map(n => n.path.split('/').slice(0, -1).join('/')).filter(f => f.includes('/')))].sort()} />;
-    if (view === 'graph') return graph ? <GraphView graph={graph} focusPath={path || null} onOpen={p => { navigate(`/n/${p}`); }} /> : <div className="p-10 text-ink-soft">{t('workspace.loadingGraph')}</div>;
+    if (view === 'table') return <TableView onOpen={p => navigate(noteUrl(p))} folders={[...new Set(notes.map(n => n.path.split('/').slice(0, -1).join('/')).filter(f => f.includes('/')))].sort()} />;
+    if (view === 'graph') return graph ? <GraphView graph={graph} focusPath={path || null} onOpen={p => { navigate(noteUrl(p)); }} /> : <div className="p-10 text-ink-soft">{t('workspace.loadingGraph')}</div>;
     if (mode === 'search' && search) return <SearchResults query={search.query} hits={search.hits} onOpen={openNote} />;
     if (notFound) return <div className="mx-auto max-w-[660px] px-10 pt-16 text-center"><h1 className="font-serif text-[22px] font-bold mb-2">{t('workspace.notFound')}</h1><p className="text-[13px] text-ink-soft font-mono">{path}</p></div>;
     if (!note && path && !notFound) return <NoteSkeleton />;
@@ -234,7 +236,7 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
         {chatOpen && (
           <div className="relative fixed inset-y-0 right-0 z-30 w-full max-w-[420px] border-l border-line shadow-2xl sb:static sb:z-auto sb:max-w-none sb:flex-none sb:shadow-none" style={window.innerWidth >= 680 ? { width: chatWidth } : undefined} data-testid="chat-drawer">
             <div className="absolute inset-y-0 left-0 hidden w-1.5 cursor-col-resize hover:bg-celadon/40 sb:block" onPointerDown={startDrag} title="⇔" aria-hidden />
-            <ChatPanel aiReady={aiReady} notes={notes} draft={chatDraft} onDraftUsed={() => setChatDraft(null)} onOpen={p => { openNote(p); }} onClose={() => setChatOpen(false)} onChanged={() => { reloadTree(); if (path) reloadNote(path); }} pending={pending} ingesting={ingesting} onIngestFromChat={(src, guidance) => { navigate(`/n/${src}`); autoIngest([src], guidance); }} />
+            <ChatPanel aiReady={aiReady} notes={notes} draft={chatDraft} onDraftUsed={() => setChatDraft(null)} onOpen={p => { openNote(p); }} onClose={() => setChatOpen(false)} onChanged={() => { reloadTree(); if (path) reloadNote(path); }} pending={pending} ingesting={ingesting} onIngestFromChat={(src, guidance) => { navigate(noteUrl(src)); autoIngest([src], guidance); }} />
           </div>
         )}
         {note && view === 'note' && mode !== 'search' && !chatOpen && (
