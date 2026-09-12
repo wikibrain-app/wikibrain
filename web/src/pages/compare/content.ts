@@ -33,7 +33,7 @@ export const compareDocs: CompareDoc[] = [
       r(['機制', 'Mechanism'], ['檢索式：每次提問重新從來源檢索，引用到段落', 'Retrieval: each question re-reads the sources and cites passages'], ['編纂式：AI 把來源編成持久的 wiki 頁、目錄與紀錄（Karpathy LLM Wiki）', 'Compilation: the AI writes persistent wiki pages, an index and a log (Karpathy’s LLM Wiki)']),
       r(['問完留下什麼', 'What remains'], ['對話與筆記；來源本身不變', 'The chat and notes; the sources stay as they were'], ['互相連結的 Markdown 頁，可編輯、有版本、可匯出', 'Interlinked Markdown pages you can edit, version and export']),
       r(['agent 存取', 'Agent access'], ['消費版沒有公開 API 或官方 MCP', 'No public API or official MCP for the consumer version'], ['內建 MCP server：token 或 OAuth，Cursor／Claude Code／Claude.ai／ChatGPT 皆可', 'Built-in MCP server: token or OAuth, for Cursor, Claude Code, Claude.ai and ChatGPT']),
-      r(['模型', 'Model'], ['Gemini，費用含在方案內', 'Gemini, included in the plan'], ['自帶 key（Anthropic／OpenAI／OpenRouter），模型費另計；體驗期前 10 次免 key', 'Bring your own key (Anthropic, OpenAI, OpenRouter); model cost is separate; the first 10 trial runs need no key']),
+      r(['模型', 'Model'], ['Gemini，費用含在方案內', 'Gemini, included in the plan'], ['自帶 key（Anthropic／OpenAI／OpenRouter），模型費另計；體驗期前 50 次免 key', 'Bring your own key (Anthropic, OpenAI, OpenRouter); model cost is separate; the first 50 trial runs need no key']),
       r(['書目與引用', 'Bibliography'], ['引用到來源段落', 'Citations point to source passages'], ['DOI／Crossref 書目、BibTeX／CSL 匯入匯出、[@citekey] 引用、Zotero 同步', 'DOI/Crossref metadata, BibTeX/CSL import and export, [@citekey] citations, Zotero sync']),
       r(['匯出', 'Export'], ['整本 Markdown 匯出：未查到', 'Whole-notebook Markdown export: not found'], ['一鍵 zip，Obsidian 相容', 'One-click zip, Obsidian-compatible']),
       r(['價格（個人）', 'Price (personal)'], ['免費 50 來源／本；Plus 約 US$4.99；Pro 約 US$19.99', 'Free 50 sources per notebook; Plus about US$4.99; Pro about US$19.99'], ['Free 永久（200 則、每月 20 次 agent 工作）；Pro US$6／月或 60／年', 'Free forever (200 notes, 20 agent runs a month); Pro US$6/month or 60/year']),
@@ -81,8 +81,8 @@ export const compareDocs: CompareDoc[] = [
       r(['匯出與開源', 'Export and source'], ['可匯出 Markdown bundle；非開源', 'Markdown bundle export; not open source'], ['Markdown zip；AGPL-3.0 開源可自架', 'Markdown zip; AGPL-3.0, self-hostable']),
     ],
     caveats: {
-      'zh-TW': ['Hjarni 上線較早，connector 目錄曝光、email 進筆記與原生 app 是我們還沒有的。', 'WikiBrain 的自動編纂要自帶模型 key（或體驗期前 10 次免 key）；Hjarni 不跑模型所以沒這筆費用。', '對方功能與價格以其官網為準；「未查到」表示查證當日沒找到，不代表沒有。'],
-      en: ['Hjarni launched earlier; directory listings, email-to-note and native apps are things we do not have yet.', 'WikiBrain’s auto-ingest needs your own model key (or the first 10 trial runs); Hjarni runs no model, so it has no such cost.', 'The other product’s features and prices are as published on its site; “not found” means not found on the check date, not necessarily absent.'],
+      'zh-TW': ['Hjarni 上線較早，connector 目錄曝光、email 進筆記與原生 app 是我們還沒有的。', 'WikiBrain 的自動編纂要自帶模型 key（或體驗期前 50 次免 key）；Hjarni 不跑模型所以沒這筆費用。', '對方功能與價格以其官網為準；「未查到」表示查證當日沒找到，不代表沒有。'],
+      en: ['Hjarni launched earlier; directory listings, email-to-note and native apps are things we do not have yet.', 'WikiBrain’s auto-ingest needs your own model key (or the first 50 trial runs); Hjarni runs no model, so it has no such cost.', 'The other product’s features and prices are as published on its site; “not found” means not found on the check date, not necessarily absent.'],
     },
   },
 ];

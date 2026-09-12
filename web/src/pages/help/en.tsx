@@ -78,7 +78,7 @@ export const faq: { q: string; a: string; href?: string; label?: string }[] = [
   { q: "Which language does the agent write in?", a: "It follows the workspace language (changeable in Settings); schema rules can override it, e.g. \"summaries in English, my comments in Chinese\". Content can be in any language." },
   { q: "Will Cursor and the web fight?", a: "No. When the same page is edited from both sides, the later writer receives the current version and is asked to edit again; the agent knows this rule too." },
   { q: "The agent got it wrong?", a: "See Rules and templates: fix or roll back the page, correct it in chat, or write the rule into schema/.", href: "/help/guide#rules", label: "Rules and templates" },
-  { q: "No Cursor and no API key?", a: "The first 10 trial runs are on us; afterwards create an OpenRouter key (a few minutes) or connect through Claude.ai's or ChatGPT's connectors." },
+  { q: "No Cursor and no API key?", a: "The first 50 trial runs are on us; afterwards create an OpenRouter key (a few minutes) or connect through Claude.ai's or ChatGPT's connectors." },
 ];
 
 export const pages: HelpPage[] = [
@@ -111,7 +111,7 @@ function PageStart() {
         <Shot src="home.png" alt="Three-pane main screen" caption="After ingesting: the three-layer tree, the wiki page, backlinks and versions." />
       </Gallery>
       <h2 id="ways">Who ingests: three ways, pick one or combine</h2>
-      <p>The agent needs a model to run on. All three ways produce identical pages; the Settings section "Connect an agent" is about exactly this. Neither yet? The first 10 trial runs are on us; decide afterwards.</p>
+      <p>The agent needs a model to run on. All three ways produce identical pages; the Settings section "Connect an agent" is about exactly this. Neither yet? The first 50 trial runs are on us; decide afterwards.</p>
       <div className="not-prose my-4 grid gap-3 font-sans text-[13px] sb:grid-cols-3">
         <div className="rounded-[10px] border border-line bg-paper p-4"><div className="mb-1 font-semibold text-celadon-deep">Cursor, Claude Code</div><div className="text-ink-soft">Settings → Connect Cursor (3 steps) creates an MCP token for mcp.json. No API key; the cost is part of your tool’s plan. On a source page press Copy prompt for Cursor and paste it into the chat.</div></div>
         <div className="rounded-[10px] border border-line bg-paper p-4"><div className="mb-1 font-semibold text-celadon-deep">Claude.ai, ChatGPT</div><div className="text-ink-soft">No token: paste the MCP URL <code>https://wikibrain.app/mcp</code> into its connector settings, sign in and press Allow. Steps below.</div></div>

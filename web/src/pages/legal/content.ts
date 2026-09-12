@@ -45,7 +45,7 @@ export const privacy: LegalDoc = {
 只在你觸發對應功能時，而且只送完成那件事需要的部分：
 
 1. **AI 模型供應商**：如上，用你的 key，送你相關的筆記、規則頁與對話文字。
-2. **平台 OpenRouter 帳號（試用）**：體驗期前 10 次 agent 工作若你還沒填 key，會經由我們的 OpenRouter 帳號送到我們選的便宜模型；適用 [OpenRouter 的隱私政策](https://openrouter.ai/privacy)。
+2. **平台 OpenRouter 帳號（試用）**：體驗期前 50 次 agent 工作若你還沒填 key，會經由我們的 OpenRouter 帳號送到我們選的便宜模型；適用 [OpenRouter 的隱私政策](https://openrouter.ai/privacy)。
 3. **書目查詢**：匯入含 DOI／arXiv／PubMed 識別碼的來源時，向 Crossref、arXiv、PubMed（NCBI）的公開 API 查書目，送出的只有識別碼與你貼的網址。
 4. **貼網址匯入**：由我們的伺服器代你抓那個網頁，對方看到的是我們的伺服器。
 5. **Zotero**：你主動連結後，我們用你的 Zotero API key 讀你指定的文獻庫，依你的設定每小時同步。
@@ -124,7 +124,7 @@ Singapore. Servers and PostgreSQL run in Railway's Singapore region; daily backu
 
 ## When does content leave your servers?
 
-Only when you trigger a feature, and only what that feature needs: the AI provider you configured (your key); during the trial, the first 10 runs without a key go through our OpenRouter account ([OpenRouter privacy](https://openrouter.ai/privacy)); Crossref, arXiv and PubMed public APIs receive only an identifier when you import a source with a DOI; URL imports are fetched by our server; Zotero is read with your key once you link it; Resend delivers transactional e-mails; Paddle handles checkout and card data, sending us only subscription status and ids; lawful requests, with notice to you where the law allows. Nothing else is sold, rented or shared.
+Only when you trigger a feature, and only what that feature needs: the AI provider you configured (your key); during the trial, the first 50 runs without a key go through our OpenRouter account ([OpenRouter privacy](https://openrouter.ai/privacy)); Crossref, arXiv and PubMed public APIs receive only an identifier when you import a source with a DOI; URL imports are fetched by our server; Zotero is read with your key once you link it; Resend delivers transactional e-mails; Paddle handles checkout and card data, sending us only subscription status and ids; lawful requests, with notice to you where the law allows. Nothing else is sold, rented or shared.
 
 ## What exactly do you store?
 
@@ -188,7 +188,7 @@ export const terms: LegalDoc = {
 1. AI 功能需您在設定頁提供自己的 API key 並選擇供應商與模型；**模型費用由該供應商直接向您收取，不含在本服務訂閱費內**。統計頁的費用是依公開價目的估算，實際帳單以供應商為準。
 2. agent 產出可能有錯誤或遺漏；由 agent 寫入的頁面請自行審核。我們不對模型輸出的正確性負責。
 3. 您的 key 加密儲存，但您應自行在供應商端設定用量上限並在懷疑洩露時撤銷。若我們的系統發生事故導致 key 外洩，我們將依隱私權政策通知並協助您撤銷。
-4. 試用期前 10 次免 key 的工作使用我們的 OpenRouter 帳號與我們選定的模型，不保證模型品質。
+4. 試用期前 50 次免 key 的工作使用我們的 OpenRouter 帳號與我們選定的模型，不保證模型品質。
 
 ## 6. 方案、費用與試用
 
@@ -248,7 +248,7 @@ You keep all rights to your notes, attachments and chats and grant us only the l
 
 ## 5. AI features and bring-your-own-key
 
-AI features run on a provider you configure with your own API key; **model fees are billed to you by that provider and are not part of our subscription**. Cost figures in the app are estimates. Agent output may contain errors; review what it writes. Keys are stored encrypted, but set spending limits at your provider and revoke a key you suspect is exposed; if an incident on our side exposes keys we will notify you and help you revoke them. The first 10 trial runs without a key use our OpenRouter account and a model of our choosing, with no quality guarantee.
+AI features run on a provider you configure with your own API key; **model fees are billed to you by that provider and are not part of our subscription**. Cost figures in the app are estimates. Agent output may contain errors; review what it writes. Keys are stored encrypted, but set spending limits at your provider and revoke a key you suspect is exposed; if an incident on our side exposes keys we will notify you and help you revoke them. The first 50 trial runs without a key use our OpenRouter account and a model of our choosing, with no quality guarantee.
 
 ## 6. Plans, fees and trial
 
