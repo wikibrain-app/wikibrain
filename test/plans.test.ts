@@ -7,7 +7,7 @@ import { migrate } from '../src/migrate.js';
 import { pool } from '../src/db.js';
 import { config } from '../src/config.js';
 import { auth } from '../src/auth-web.js';
-import { FREE_RUNS, TRIAL_FREE_RUNS, planStatus, trialRunConfig } from '../src/plans.js';
+import { FREE_RUNS, TRIAL_FREE_RUNS, claimTrialRun, planStatus, trialRunConfig } from '../src/plans.js';
 import { purgeOldVersions } from '../src/retention.js';
 process.env.FREE_NOTES_LIMIT = '3'; process.env.FREE_STORAGE_BYTES = '600'; process.env.FREE_TOKENS_LIMIT = '1'; process.env.BILLING_WEBHOOK_SECRET = 'whsec-test';
 
@@ -41,16 +41,17 @@ test('new workspace: 14-day Pro trial, unlimited runs; key-free quota is 0 witho
   assert.equal(r.status, 403); assert.match(r.data.message, /尚未設定 AI 供應商/);
 });
 
-test('with platform key: first N trial runs get the platform config and are counted, then null', async () => {
+test('with platform key: N trial runs on the platform config, counted when claimed, then null', async () => {
   process.env.PLATFORM_OPENROUTER_KEY = 'sk-or-platform-test';
   for (let i = 1; i <= TRIAL_FREE_RUNS; i++) {
     const c = await trialRunConfig(wsId);
     assert.ok(c && c.trial && c.provider === 'openrouter' && c.apiKey === 'sk-or-platform-test', `run ${i} should get the platform config`);
+    assert.equal(await claimTrialRun(wsId), true, `run ${i} should be claimable`);   // offering and charging are separate
     assert.equal((await planStatus(wsId)).trial_runs_used, i);
   }
   assert.equal(await trialRunConfig(wsId), null);
   const p = (await api('GET', '/api/plan')).data; assert.equal(p.trial_runs_free, TRIAL_FREE_RUNS); assert.equal(p.trial_runs_used, TRIAL_FREE_RUNS);
-  const r = await api('POST', '/api/ingest', {}); assert.equal(r.status, 403); assert.match(r.data.message, /試用額度已用完/);
+  const r = await api('POST', '/api/ingest', {}); assert.equal(r.status, 403); assert.match(r.data.message, /次數已用完/);
 });
 
 test('trial over -> Free monthly cap; 403 with explanation when full; Pro unlimited', async () => {

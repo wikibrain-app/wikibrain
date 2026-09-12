@@ -79,7 +79,7 @@ export const faq: { q: string; a: string; href?: string; label?: string }[] = [
   { q: "agent 會用哪種語言寫？", a: "跟工作區的語言設定走（設定頁可改），schema 規則可以覆寫，例如「摘要用英文、我的評論用中文」。內容語言不限。" },
   { q: "Cursor 和網頁會打架嗎？", a: "不會。同一頁同時被改時，後寫入的一方會拿到目前版本並被要求重新編輯，agent 也懂這個規則。" },
   { q: "agent 寫錯了怎麼辦？", a: "見使用指南的「規則與模版」：改頁或復原舊版、在對話裡糾正、把規則寫進 schema/。", href: "/help/guide#rules", label: "使用指南的「規則與模版」" },
-  { q: "沒有 Cursor、也不想申請 API key？", a: "體驗期前 10 次由我們代跑；之後到 OpenRouter 建一把 key（幾分鐘），或用 Claude.ai／ChatGPT 的 connector 連進來。" },
+  { q: "沒有 Cursor、也不想申請 API key？", a: "體驗期前 50 次由我們代跑；之後到 OpenRouter 建一把 key（幾分鐘），或用 Claude.ai／ChatGPT 的 connector 連進來。" },
 ];
 
 export const pages: HelpPage[] = [
@@ -102,17 +102,17 @@ function PageStart() {
       <ol>
         <li>註冊後選一個模版（不確定就選「通用」）。它會建好 schema/ 的規則、wiki/index.md 與 wiki/log.md。</li>
         <li>頂欄「＋ 新增」→「貼網址」貼一個網址，或「上傳檔案」丟一份 PDF。它會進 raw/，頁面上方出現「這個來源還沒編進 wiki（待編纂 Ingest）」的橫幅。</li>
-        <li>在橫幅上按「自動編纂（Ingest）這則」。體驗期的前 10 次不用填任何 key。</li>
+        <li>在橫幅上按「自動編纂（Ingest）這則」。體驗期的前 50 次不用填任何 key。</li>
         <li>等進度面板跑完（通常 30 到 90 秒），左欄 wiki/ 會多出摘要頁，index.md 與 log.md 也更新了。點進去讀，看看它抓的重點對不對。</li>
         <li>頂欄「對話（Query）」問一個問題，例如「這篇的主要論點是什麼」。答案會附頁面引用。</li>
-        <li>第 10 次之後，決定誰來編纂：見下方「誰來編纂」。</li>
+        <li>第 50 次之後，決定誰來編纂：見下方「誰來編纂」。</li>
       </ol>
       <Gallery>
         <Shot src="pending.png" alt="待編纂橫幅" caption="來源進 raw/ 後的橫幅：自動編纂這則、全部 N 則、先討論再編纂、複製提示詞。" />
         <Shot src="home.png" alt="三欄主畫面" caption="編纂後：左欄三層檔案樹，中欄 wiki 頁，右欄反向連結與版本。" />
       </Gallery>
       <h2 id="ways">誰來編纂：三種方式擇一或並用</h2>
-      <p>agent 需要一個模型來跑。三種方式寫出來的頁一模一樣，設定頁「連接 agent」區塊就是在說這件事。兩邊都沒有？體驗期前 10 次由我們代跑，之後再選。</p>
+      <p>agent 需要一個模型來跑。三種方式寫出來的頁一模一樣，設定頁「連接 agent」區塊就是在說這件事。兩邊都沒有？體驗期前 50 次由我們代跑，之後再選。</p>
       <div className="not-prose my-4 grid gap-3 font-sans text-[13px] sb:grid-cols-3">
         <div className="rounded-[10px] border border-line bg-paper p-4"><div className="mb-1 font-semibold text-celadon-deep">Cursor、Claude Code</div><div className="text-ink-soft">設定頁「連接 Cursor（三步驟）」產生一把 MCP token 貼進 mcp.json。不用 API key，費用含在工具方案裡。在來源頁按「複製提示詞給 Cursor」貼到對話送出即可。</div></div>
         <div className="rounded-[10px] border border-line bg-paper p-4"><div className="mb-1 font-semibold text-celadon-deep">Claude.ai、ChatGPT</div><div className="text-ink-soft">不用 token：在它的 connector 設定貼 MCP 網址 <code>https://wikibrain.app/mcp</code>，登入按「允許」。步驟見下方。</div></div>
@@ -212,7 +212,7 @@ function PageData() {
       <h2 id="data">你的資料與安全</h2>
       <ul>
         <li><b>工作區。</b>你的帳號有一座知識庫，我們叫它工作區；raw/、wiki/、schema/ 都在裡面，別人看不到，agent 也碰不到別的工作區。</li>
-        <li><b>什麼會離開伺服器。</b>你按自動編纂、送出對話或深度健檢時，agent 讀到的筆記全文會送到你選的模型供應商（用 OpenRouter 時會再轉給模型提供者）；體驗期的 10 次免 key 則經平台帳號送出。貼網址時由伺服器代抓（對方看到的是伺服器）；有 DOI 時會向 Crossref 查書目。Zotero 同步用你的 key 讀 Zotero。除此之外不會把內容送到任何第三方，也沒有遙測。</li>
+        <li><b>什麼會離開伺服器。</b>你按自動編纂、送出對話或深度健檢時，agent 讀到的筆記全文會送到你選的模型供應商（用 OpenRouter 時會再轉給模型提供者）；體驗期的 50 次免 key 則經平台帳號送出。貼網址時由伺服器代抓（對方看到的是伺服器）；有 DOI 時會向 Crossref 查書目。Zotero 同步用你的 key 讀 Zotero。除此之外不會把內容送到任何第三方，也沒有遙測。</li>
         <li><b>agent 能做什麼、不能做什麼。</b>只有六個工具：讀規則、搜尋、讀頁、建頁、更新頁、列資料夾。不能更新或刪除 raw/、不能刪任何頁、不能上網、看不到你的 API key。每次寫入都留版本，作者標 agent 與模型名稱，隨時可復原。要注意的是 agent 可以改 schema/ 規則，而來源內容會進到它的提示裡；版本歷史是你的復原手段。</li>
         <li><b>API key。</b>用與登入密鑰分開的金鑰加密保存，畫面只顯示末四碼，只在啟動工作或測試連線時解密，隨時可刪。</li>
         <li><b>匯出。</b>設定頁隨時可下載整座庫的 Markdown zip（含圖片附件，Obsidian 直接開）、.bib 與 CSL-JSON。zip 不含版本歷史、已封存來源以外的已刪除頁、對話紀錄與 agent 工作紀錄。</li>
@@ -239,7 +239,7 @@ function PagePlans() {
         <table className="w-full border-collapse">
           <thead><tr className="bg-porcelain text-left text-[12px] text-ink-soft"><th className="px-3 py-2 font-medium">方案</th><th className="px-3 py-2 font-medium">期限與價格</th><th className="px-3 py-2 font-medium">內容</th></tr></thead>
           <tbody>
-            <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Pro 體驗</td><td className="px-3 py-2">註冊起 14 天，免費，不用信用卡</td><td className="px-3 py-2">Pro 全功能；agent 工作不限次；前 10 次由我們代跑（較便宜的模型，內容會經平台帳號送到 OpenRouter），不必先申請 API key</td></tr>
+            <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Pro 體驗</td><td className="px-3 py-2">註冊起 14 天，免費，不用信用卡</td><td className="px-3 py-2">Pro 全功能；agent 工作不限次；前 50 次由我們代跑（較便宜的模型，內容會經平台帳號送到 OpenRouter），不必先申請 API key</td></tr>
             <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Free</td><td className="px-3 py-2">永久免費</td><td className="px-3 py-2">每月 20 次 agent 工作；200 則筆記、20 MB、1 把 token、版本保留 7 天；自帶 key</td></tr>
             <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Pro</td><td className="px-3 py-2">每月 6 美元，或每年 60 美元</td><td className="px-3 py-2">agent 工作不限；10,000 則、1 GB、版本保留 90 天；多 token</td></tr>
             <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">自架</td><td className="px-3 py-2">免費（AGPL-3.0）</td><td className="px-3 py-2">docker compose 起 Postgres 與服務，同一份程式碼（含內建瀏覽器）；要自備加密金鑰，Google 登入、寄信、免 key 試用可不設；方案上限可用環境變數調整</td></tr>

@@ -2,7 +2,7 @@ import { pool } from './db.js';
 import { langLine, type Lang } from './lang.js';
 import { TRUST } from './ingest.js';
 import { workspaceLang } from './workspaces.js';
-import { assertCanRun, noKeyError, trialRunConfig } from './plans.js';
+import { assertCanRun, claimTrialRun, noKeyError, trialExhausted, trialRunConfig, type RunConfig } from './plans.js';
 import { NoteError, createNote, type Actor } from './notes.js';
 import { slugify } from './import.js';
 import { loadKey, running, runJob, type IngestJob } from './ingest.js';
@@ -66,14 +66,17 @@ export async function sendMessage(ws: string, userId: string, sessionId: number,
   if (!session) throw new NoteError('NOT_FOUND', { 'zh-TW': '找不到對話', en: 'Conversation not found' });
   await assertCanRun(ws);
   const cfg = (await loadKey(userId)) ?? (await trialRunConfig(ws));
-  if (!cfg) throw noKeyError(!!process.env.PLATFORM_OPENROUTER_KEY);
+  if (!cfg) throw await noKeyError(ws);
   if (running.has(ws)) throw new NoteError('CONFLICT', { 'zh-TW': '這個工作區已有 agent 在執行（編纂或對話），請等它完成。', en: 'An agent (ingest or chat) is already running in this workspace. Please wait for it to finish.' });
   running.add(ws);
-  try { return await sendMessageLocked(ws, userId, session, cfg, text); }
+  try {
+    if (cfg.trial && !(await claimTrialRun(ws))) throw trialExhausted;   // charge last: everything above can still refuse
+    return await sendMessageLocked(ws, userId, session, cfg, text);
+  }
   catch (e) { running.delete(ws); throw e; }
 }
 
-async function sendMessageLocked(ws: string, userId: string, session: ChatSession, cfg: { provider: Provider; model: string; apiKey: string }, text: string): Promise<{ session: ChatSession; job: IngestJob }> {
+async function sendMessageLocked(ws: string, userId: string, session: ChatSession, cfg: RunConfig, text: string): Promise<{ session: ChatSession; job: IngestJob }> {
   const sessionId = session.id;
   const userMsg: ChatMessage = { role: 'user', content: text.trim(), at: new Date().toISOString() };
   const history = session.messages.map(m => ({ role: m.role, content: m.content }));

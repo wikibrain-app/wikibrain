@@ -360,6 +360,16 @@ api.get('/admin/status', async (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.json(await ops()!.status());
 });
+api.get('/admin/drill', async (req, res) => {
+  if (res.locals.viaToken || !ops()?.isAdmin((res.locals.session as Session).user.email)) { res.status(404).json({ error: 'NOT_FOUND', message: 'not found' }); return; }
+  const metric = String(req.query.metric ?? '');
+  if (!/^[a-z_:]{1,40}$/.test(metric)) { res.status(400).json({ error: 'BAD_REQUEST', message: 'metric' }); return; }
+  const params = Object.fromEntries(Object.entries(req.query)
+    .filter(([k, v]) => k !== 'metric' && typeof v === 'string').map(([k, v]) => [k, String(v).slice(0, 120)]));
+  res.setHeader('Cache-Control', 'no-store');
+  try { res.json(await ops()!.drill(metric, params)); }
+  catch (e) { res.status(400).json({ error: 'BAD_REQUEST', message: String((e as Error).message).slice(0, 120) }); }
+});
 api.put('/admin/capacity', async (req, res) => {
   if (res.locals.viaToken || !ops()?.isAdmin((res.locals.session as Session).user.email)) { res.status(404).json({ error: 'NOT_FOUND', message: 'not found' }); return; }
   const cfg = await ops()!.capacity.setConfig(req.body && typeof req.body === 'object' ? req.body : {});

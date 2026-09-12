@@ -1,7 +1,7 @@
 import { pool } from './db.js';
 import { langLine, pick, type Lang } from './lang.js';
 import { workspaceLang } from './workspaces.js';
-import { assertCanRun, assertCanWrite, noKeyError, trialRunConfig } from './plans.js';
+import { assertCanRun, assertCanWrite, claimTrialRun, noKeyError, refundTrialRun, trialExhausted, trialRunConfig, type RunConfig } from './plans.js';
 import { decrypt, encrypt } from './crypto.js';
 import { PROVIDERS, estimateCost, listModels, priceFor, runAgent, type AgentEvent, type ModelInfo, type Provider, type ToolDef } from './ai/providers.js';
 import {
@@ -55,7 +55,7 @@ export async function setAiConfig(userId: string, provider: Provider, model: str
 export async function deleteAiConfig(userId: string): Promise<void> {
   await pool.query(`DELETE FROM ai_providers WHERE user_id = $1`, [userId]);
 }
-async function loadKey(userId: string): Promise<{ provider: Provider; model: string; apiKey: string } | null> {
+async function loadKey(userId: string): Promise<RunConfig | null> {
   const { rows } = await pool.query<{ provider: Provider; model: string; key_cipher: string }>(`SELECT provider, model, key_cipher FROM ai_providers WHERE user_id = $1`, [userId]);
   return rows[0] ? { provider: rows[0].provider, model: rows[0].model, apiKey: decrypt(rows[0].key_cipher) } : null;
 }
@@ -118,12 +118,13 @@ export async function startLint(ws: string, userId: string): Promise<IngestJob> 
   const { lintWorkspace, lintPrompt } = await import('./lint.js');
   await assertCanRun(ws);
   const cfg = (await loadKey(userId)) ?? (await trialRunConfig(ws));
-  if (!cfg) throw noKeyError(!!process.env.PLATFORM_OPENROUTER_KEY);
+  if (!cfg) throw await noKeyError(ws);
   if (running.has(ws)) throw new NoteError('CONFLICT', { 'zh-TW': '這個工作區已有 agent 在執行，請等它完成。', en: 'An agent is already running in this workspace. Please wait for it to finish.' });
   running.add(ws);
   let job: IngestJob, report: Awaited<ReturnType<typeof lintWorkspace>>;
   try {
     report = await lintWorkspace(ws);
+    if (cfg.trial && !(await claimTrialRun(ws))) throw trialExhausted;   // charge last: everything above can still refuse
     const { rows } = await pool.query<IngestJob>(
       `INSERT INTO ingest_jobs (workspace_id, user_id, paths, provider, model, kind) VALUES ($1, $2, '{}', $3, $4, 'lint') RETURNING *`,
       [ws, userId, cfg.provider, cfg.model],
@@ -141,7 +142,7 @@ export async function startIngest(ws: string, userId: string, paths?: string[], 
   const lang = await workspaceLang(ws);
   await assertCanRun(ws);
   const cfg = (await loadKey(userId)) ?? (await trialRunConfig(ws));
-  if (!cfg) throw noKeyError(!!process.env.PLATFORM_OPENROUTER_KEY);
+  if (!cfg) throw await noKeyError(ws);
   if (running.has(ws)) throw new NoteError('CONFLICT', { 'zh-TW': '這個工作區已有編纂工作在進行中，請等它完成。', en: 'An ingest job is already running in this workspace. Please wait for it to finish.' });
   running.add(ws); // lock before the awaits below to avoid a race
   let job: IngestJob;
@@ -149,6 +150,7 @@ export async function startIngest(ws: string, userId: string, paths?: string[], 
     const targets = paths?.length ? paths : (await listPendingSources(ws)).map(p => p.path);
     if (!targets.length) throw new NoteError('NOT_FOUND', { 'zh-TW': '沒有待編纂的來源。', en: 'No sources are pending ingest.' });
     for (const p of targets) await readNote(ws, p); // verify each exists and belongs to this workspace
+    if (cfg.trial && !(await claimTrialRun(ws))) throw trialExhausted;   // charge last: everything above can still refuse
     const { rows } = await pool.query<IngestJob>(
       `INSERT INTO ingest_jobs (workspace_id, user_id, paths, provider, model) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [ws, userId, targets, cfg.provider, cfg.model],
@@ -184,12 +186,19 @@ export async function failStaleJobs(): Promise<number> {
   return rowCount ?? 0;
 }
 
-export async function runJob(job: IngestJob, ws: string, cfg: { provider: Provider; model: string; apiKey: string }, spec: RunSpec) {
+export async function runJob(job: IngestJob, ws: string, cfg: RunConfig, spec: RunSpec) {
   try { await runJobInner(job, ws, cfg, spec); }
   catch (e) { console.error('Job run failed (outer):', e); await pool.query(`UPDATE ingest_jobs SET status = 'failed', finished_at = now(), error = $2 WHERE id = $1 AND status <> 'done'`, [job.id, String((e as Error).message).slice(0, 500)]).catch(() => {}); }
+  /* A keyless run that never reached the model — the provider refused the very first call — cost the platform nothing
+     and gave the user nothing, so it should not have cost them one of their ten. Anything that did reach the model
+     keeps its charge, whatever it produced. */
+  if (cfg.trial) {
+    const { rows } = await pool.query<{ used: number }>(`SELECT tokens_in + tokens_out AS used FROM ingest_jobs WHERE id = $1`, [job.id]).catch(() => ({ rows: [] as { used: number }[] }));
+    if (rows[0] && Number(rows[0].used) === 0) { await refundTrialRun(ws); console.log(`trial run refunded (job ${job.id} used no tokens)`); }
+  }
 }
 
-async function runJobInner(job: IngestJob, ws: string, cfg: { provider: Provider; model: string; apiKey: string }, spec: RunSpec) {
+async function runJobInner(job: IngestJob, ws: string, cfg: RunConfig, spec: RunSpec) {
   const log: AgentEvent[] = [];
   let tin = 0, tout = 0, steps = 0, flushTimer: NodeJS.Timeout | null = null;
   let flushCost = async () => {};

@@ -17,6 +17,8 @@ export interface OpsConsole {
   isAdmin(email: string | undefined | null): boolean;
   status(): Promise<unknown>;
   setRegistry(items: unknown[]): Promise<void>;
+  /** The rows behind one of the numbers on the status page. */
+  drill(metric: string, params: Record<string, string>): Promise<unknown>;
   degraded(): Promise<string[]>;
   /** Paddle webhook observability: recent signature failures and the last delivery. */
   counters: { paddleSigFail: number[]; paddleLastWebhook: null | { at: string; type: string } };

@@ -14,7 +14,7 @@ export interface PlanLimits { notes: number; bytes: number; tokens: number | nul
 export const limitsFor = (plan: 'free' | 'pro'): PlanLimits => plan === 'pro'
   ? { notes: num('PRO_NOTES_LIMIT', 10_000), bytes: num('PRO_STORAGE_BYTES', 1024 ** 3), tokens: null, retentionDays: num('PRO_RETENTION_DAYS', 90) }
   : { notes: num('FREE_NOTES_LIMIT', 200), bytes: num('FREE_STORAGE_BYTES', 20 * 1024 ** 2), tokens: num('FREE_TOKENS_LIMIT', 1), retentionDays: num('FREE_RETENTION_DAYS', 7) };
-export const TRIAL_FREE_RUNS = Number(process.env.TRIAL_FREE_RUNS ?? 10);
+export const TRIAL_FREE_RUNS = Number(process.env.TRIAL_FREE_RUNS ?? 50);
 const platformKey = () => process.env.PLATFORM_OPENROUTER_KEY?.trim() || null;
 const platformModel = () => process.env.PLATFORM_TRIAL_MODEL?.trim() || 'google/gemini-2.5-flash-lite';
 
@@ -100,18 +100,57 @@ export async function assertCanCreateToken(ws: string): Promise<void> {
 }
 
 export interface RunConfig { provider: Provider; model: string; apiKey: string; trial?: boolean }
-// Without the user's own key: within trial, platform has a key, key-free quota left → run a cheap model on the platform key and count one run
+
+/* ── The trial's keyless runs ──
+   A workspace in its trial gets TRIAL_FREE_RUNS runs on the platform's own key, so someone can see what the product
+   does before going to fetch an API key. There are only ten of them, so when one is spent matters:
+
+   - Offering and charging are separate calls. Deciding which key a run will use happens early, but the count only
+     moves once the job row exists — otherwise clicking Lint while an ingest is running, or asking to compile when
+     nothing is pending, would cost a run for work that never started.
+   - A run that finishes without having consumed a single token cost the platform nothing and gave the user nothing
+     (an upstream 401 or 429 on the first call), so it is given back. Anything that reached the model is kept: the
+     tokens were really spent, and refunding on failure would be an invitation. */
+
+/** Which key a run would use, without charging for it. Null when the user must bring their own. */
 export async function trialRunConfig(ws: string): Promise<RunConfig | null> {
   const key = platformKey(); if (!key) return null;
   const s = await planStatus(ws);
   if (!s.trial_active || s.trial_runs_used >= TRIAL_FREE_RUNS) return null;
-  const { rowCount } = await pool.query(`UPDATE workspaces SET trial_runs_used = trial_runs_used + 1 WHERE id = $1 AND trial_runs_used < $2`, [ws, TRIAL_FREE_RUNS]);
-  if (!rowCount) return null;
   return { provider: 'openrouter', model: platformModel(), apiKey: key, trial: true };
 }
-export const noKeyError = (trialAvailable: boolean) => new NoteError('FORBIDDEN', trialAvailable
-  ? { 'zh-TW': '尚未設定 API key。試用額度已用完，請到設定頁填寫自己的 key。', en: 'No API key configured and the trial runs are used up. Add your own key on the Settings page.' }
-  : { 'zh-TW': '尚未設定 AI 供應商與 API key，請先到設定頁填寫。', en: 'No AI provider or API key configured yet. Please fill them in on the Settings page.' });
+
+/** Spend one keyless run. False when they ran out between the offer and here (two clicks at once). */
+export async function claimTrialRun(ws: string): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    `UPDATE workspaces SET trial_runs_used = trial_runs_used + 1 WHERE id = $1 AND trial_runs_used < $2`, [ws, TRIAL_FREE_RUNS]);
+  return !!rowCount;
+}
+
+/** Give one back, for a run that never reached the model. Never goes below zero. */
+export async function refundTrialRun(ws: string): Promise<void> {
+  await pool.query(`UPDATE workspaces SET trial_runs_used = greatest(trial_runs_used - 1, 0) WHERE id = $1`, [ws])
+    .catch(e => console.error('trial refund failed:', e));
+}
+
+export const trialExhausted = new NoteError('FORBIDDEN', {
+  'zh-TW': '免 key 的試用次數剛好被用完了，請到設定頁填自己的 API key。',
+  en: 'The keyless trial runs just ran out. Add your own API key on the Settings page.',
+});
+
+/** Why this run cannot start without the user's own key — the three reasons read very differently to the person. */
+export async function noKeyError(ws: string): Promise<NoteError> {
+  if (!platformKey()) return new NoteError('FORBIDDEN', { 'zh-TW': '尚未設定 AI 供應商與 API key，請先到設定頁填寫。', en: 'No AI provider or API key configured yet. Please fill them in on the Settings page.' });
+  const s = await planStatus(ws).catch(() => null);
+  if (s && !s.trial_active) return new NoteError('FORBIDDEN', {
+    'zh-TW': '體驗期已結束，之後要用自己的 API key。請到設定頁填寫（一般用戶每月約 1–3 美元）。',
+    en: 'Your trial has ended, so runs now use your own API key. Add one on the Settings page (typically US$1–3 a month).',
+  });
+  return new NoteError('FORBIDDEN', {
+    'zh-TW': `免 key 的試用次數已用完（共 ${TRIAL_FREE_RUNS} 次）。請到設定頁填自己的 API key，體驗期的其他功能不受影響。`,
+    en: `The ${TRIAL_FREE_RUNS} keyless trial runs are used up. Add your own API key on the Settings page; the rest of the trial is unaffected.`,
+  });
+}
 
 export async function setPlan(ws: string, plan: 'free' | 'pro'): Promise<void> {
   await pool.query(`UPDATE workspaces SET plan = $2 WHERE id = $1`, [ws, plan]);
