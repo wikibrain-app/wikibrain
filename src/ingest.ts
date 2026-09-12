@@ -106,7 +106,7 @@ export function makeExec(ws: string, actor: Actor) {
 }
 
 /* ── Job queue: one job at a time per workspace ── */
-export interface IngestJob { id: number; kind?: string; session_id?: number | null; result?: string | null; workspace_id: string; paths: string[]; provider: string; model: string; status: string; log: AgentEvent[]; tokens_in: number; tokens_out: number; steps: number; error: string | null; created_at: Date; started_at: Date | null; finished_at: Date | null; price_in: number | null; price_out: number | null; cost_usd: number | null }
+export interface IngestJob { id: number; kind?: string; paid_by?: 'user' | 'platform'; session_id?: number | null; result?: string | null; workspace_id: string; paths: string[]; provider: string; model: string; status: string; log: AgentEvent[]; tokens_in: number; tokens_out: number; steps: number; error: string | null; created_at: Date; started_at: Date | null; finished_at: Date | null; price_in: number | null; price_out: number | null; cost_usd: number | null }
 export const running = new Set<string>();
 export const MAX_STEPS = Number(process.env.INGEST_MAX_STEPS ?? 60);
 
@@ -126,8 +126,8 @@ export async function startLint(ws: string, userId: string): Promise<IngestJob> 
     report = await lintWorkspace(ws);
     if (cfg.trial && !(await claimTrialRun(ws))) throw trialExhausted;   // charge last: everything above can still refuse
     const { rows } = await pool.query<IngestJob>(
-      `INSERT INTO ingest_jobs (workspace_id, user_id, paths, provider, model, kind) VALUES ($1, $2, '{}', $3, $4, 'lint') RETURNING *`,
-      [ws, userId, cfg.provider, cfg.model],
+      `INSERT INTO ingest_jobs (workspace_id, user_id, paths, provider, model, kind, paid_by) VALUES ($1, $2, '{}', $3, $4, 'lint', $5) RETURNING *`,
+      [ws, userId, cfg.provider, cfg.model, cfg.trial ? 'platform' : 'user'],
     );
     job = rows[0];
   } catch (e) { running.delete(ws); throw e; }
@@ -152,8 +152,8 @@ export async function startIngest(ws: string, userId: string, paths?: string[], 
     for (const p of targets) await readNote(ws, p); // verify each exists and belongs to this workspace
     if (cfg.trial && !(await claimTrialRun(ws))) throw trialExhausted;   // charge last: everything above can still refuse
     const { rows } = await pool.query<IngestJob>(
-      `INSERT INTO ingest_jobs (workspace_id, user_id, paths, provider, model) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [ws, userId, targets, cfg.provider, cfg.model],
+      `INSERT INTO ingest_jobs (workspace_id, user_id, paths, provider, model, paid_by) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [ws, userId, targets, cfg.provider, cfg.model, cfg.trial ? 'platform' : 'user'],
     );
     job = rows[0];
     var targetsForPrompt = targets;

@@ -45,7 +45,7 @@ const copy: Record<Lang, {
     ],
     plansNote: '模型費用不包含在內：你用自己的 key，一般用法每月約幾十美分到幾美元；用 Cursor 的人不需要 key。結帳由 Paddle 處理，隨時可取消。',
     agentsTitle: '你已經在用的 agent，直接讀寫這座 wiki', agentsBody: 'Cursor 與 Claude Code 貼一把 token；Claude.ai 與 ChatGPT 用 OAuth 登入即可。同一組六個工具：讀規則、搜尋、閱讀、建立、更新、列資料夾。', agentsCaptions: ['Cursor：agent 透過 MCP 讀三層、寫回 wiki', 'Claude.ai：對話裡直接交代，工具自己呼叫'],
-    graphTitle: '知識會長成一張圖', graphBody: '每一頁的 [[連結]] 與 [@引用] 都是圖譜上的一條邊。來源越多，樞紐頁越明顯；時間軸可以回放這座 wiki 是怎麼長出來的。', heroCaption: '20 秒：貼一個網址，wiki 頁出現，再問它一個問題。',
+    graphTitle: '知識會長成一張圖', graphBody: '每一頁的 [[連結]] 與 [@引用] 都是圖譜上的一條邊。來源越多，樞紐頁越明顯；時間軸可以回放這座 wiki 是怎麼長出來的。', heroCaption: '15 秒：貼一份來源，wiki 頁出現，再問它一個問題。',
     openTitle: '開源核心，資料在你手上', openBody: '程式碼以 AGPL-3.0 開源，可以用 docker compose 自架；託管版由我們維運。整座 wiki 隨時匯出成 Obsidian 相容的 Markdown zip，書目匯出 .bib。介面繁中與英文，內容語言不限。',
     footer: 'WikiBrain · personal knowledge base · 靈感來自 Andrej Karpathy 的 LLM Wiki 筆記',
   },
@@ -76,7 +76,7 @@ const copy: Record<Lang, {
     ],
     plansNote: 'Model costs are not included: you use your own key, typically a few cents to a few dollars a month; Cursor users need no key. Checkout by Paddle; cancel any time.',
     agentsTitle: 'The agents you already use read and write this wiki', agentsBody: 'Cursor and Claude Code paste a token; Claude.ai and ChatGPT sign in with OAuth. The same six tools everywhere: read rules, search, read, create, update, list.', agentsCaptions: ['Cursor: the agent reads the layers over MCP and writes back', 'Claude.ai: just ask in the chat; the tools are called for you'],
-    graphTitle: 'Knowledge grows into a graph', graphBody: 'Every [[link]] and [@citation] on a page is an edge. The more sources, the clearer the hub pages; the timeline replays how the wiki grew.', heroCaption: '20 seconds: paste a URL, a wiki page appears, then ask it a question.',
+    graphTitle: 'Knowledge grows into a graph', graphBody: 'Every [[link]] and [@citation] on a page is an edge. The more sources, the clearer the hub pages; the timeline replays how the wiki grew.', heroCaption: '15 s: paste a source, a wiki page appears, then ask it a question.',
     openTitle: 'Open-source core, your data in your hands', openBody: 'The code is released under AGPL-3.0 and self-hosts with docker compose; the hosted version is run by us. Export the whole wiki any time as an Obsidian-compatible Markdown zip, and the bibliography as .bib. Interface in Traditional Chinese and English; write in any language.',
     footer: "WikiBrain · personal knowledge base · inspired by Andrej Karpathy's LLM Wiki note",
   },
@@ -107,7 +107,7 @@ export default function Landing() {
           </div>
           </div>
           <figure className="min-w-0">
-            <video autoPlay muted loop playsInline preload="metadata" poster={helpAsset(lang, 'home.png')} src={helpAsset(lang, 'tour.webm')} className="w-full rounded-[12px] border border-line bg-ink shadow-[0_12px_40px_-16px_rgba(34,49,58,.35)]" aria-label={c.heroCaption} />
+            <video autoPlay muted loop playsInline preload="metadata" poster={helpAsset(lang, 'tour-poster.png')} src={helpAsset(lang, 'tour.webm')} className="w-full rounded-[12px] border border-line bg-ink shadow-[0_12px_40px_-16px_rgba(34,49,58,.35)]" aria-label={c.heroCaption} />
             <figcaption className="mt-2 text-[12px] text-ink-faint">{c.heroCaption}</figcaption>
           </figure>
         </section>

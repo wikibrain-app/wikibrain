@@ -94,8 +94,8 @@ function PageStart() {
     <>
       <p className="font-sans text-[13.5px] text-ink-soft">WikiBrain is a personal knowledge base in the cloud: you drop in articles, papers and PDFs, and an AI reads them, writes interlinked wiki pages, and keeps the index and the log up to date. You find sources, ask questions and judge; the bookkeeping is the AI's job. The approach comes from Andrej Karpathy's "LLM Wiki" (<a className="text-celadon-deep underline" href={GIST} target="_blank" rel="noreferrer">original</a>), condensed on the <a className="text-celadon-deep underline" href="/help/karpathy">LLM Wiki pattern</a> page.</p>
       <figure className="my-5 font-sans">
-        <video controls preload="metadata" playsInline poster={helpAsset('en', 'home.png')} className="w-full rounded-[10px] border border-line bg-ink shadow-sm" src={helpAsset('en', 'tour.webm')} aria-label="WikiBrain 20-second tour" data-testid="help-video" />
-        <figcaption className="mt-1.5 text-[12px] text-ink-soft">A 20-second tour: from pasting a URL to a wiki page appearing, then asking it a question.</figcaption>
+        <video controls preload="metadata" playsInline poster={helpAsset('en', 'tour-poster.png')} className="w-full rounded-[10px] border border-line bg-ink shadow-sm" src={helpAsset('en', 'tour.webm')} aria-label="WikiBrain 15-second tour" data-testid="help-video" />
+        <figcaption className="mt-1.5 text-[12px] text-ink-soft">A 15-second tour: from pasting a source to a wiki page appearing, then asking it a question.</figcaption>
       </figure>
       <h2 id="start">Five-minute start</h2>
       <ol>

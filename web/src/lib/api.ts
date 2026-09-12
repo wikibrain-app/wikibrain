@@ -52,7 +52,7 @@ export interface BillingInfo {
 export type ProbeState = 'ok' | 'slow' | 'fail' | 'not_configured';
 export interface AdminStatus {
   probes: { name: string; state: ProbeState; ms?: number; detail?: string; at?: string }[];
-  business: { users: number; verified: number; signups_today: number; signups_7d: number; workspaces: { free: number; trial: number; pro: number }; tokens_used: number; oauth_clients: number; jobs_month: number; jobs_failed_month: number; cost_month_usd: number; trial_runs_used: number; notes: number; shares: number };
+  business: { users: number; verified: number; signups_today: number; signups_7d: number; workspaces: { free: number; trial: number; pro: number }; tokens_used: number; oauth_clients: number; jobs_month: number; jobs_failed_month: number; cost_month_usd: number; jobs_platform_month: number; platform_cost_month_usd: number; trial_runs_used: number; notes: number; shares: number };
   funnel: { totals: Record<string, number>; weekly: { week: string; signup: number; verified: number; mcp_connected: number; first_ai_write: number; upgrade: number; churn: number }[] };
   issues: { at: string; kind: string; detail: string }[];
   registry: { service: string; plan: string; price: string; renews_on?: string | null; billing?: string; limits?: string; account?: string; manage_url?: string; notes?: string; days_left: number | null }[];

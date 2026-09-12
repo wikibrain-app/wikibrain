@@ -82,8 +82,8 @@ async function sendMessageLocked(ws: string, userId: string, session: ChatSessio
   const history = session.messages.map(m => ({ role: m.role, content: m.content }));
   const title = session.messages.length ? session.title : text.trim().slice(0, 40);
   const { rows } = await pool.query<IngestJob>(
-    `INSERT INTO ingest_jobs (workspace_id, user_id, paths, provider, model, kind, session_id) VALUES ($1, $2, '{}', $3, $4, 'chat', $5) RETURNING *`,
-    [ws, userId, cfg.provider, cfg.model, sessionId],
+    `INSERT INTO ingest_jobs (workspace_id, user_id, paths, provider, model, kind, session_id, paid_by) VALUES ($1, $2, '{}', $3, $4, 'chat', $5, $6) RETURNING *`,
+      [ws, userId, cfg.provider, cfg.model, sessionId, cfg.trial ? 'platform' : 'user'],
   );
   const job = rows[0];
   const messages = [...session.messages, { ...userMsg, jobId: job.id }];
