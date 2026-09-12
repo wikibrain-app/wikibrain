@@ -103,7 +103,10 @@ export function ChatPanel({ aiReady, notes, draft, onDraftUsed, onOpen, onClose,
         )}
         {aiReady && !session && (
           <div className="text-[12.5px] leading-relaxed text-ink-soft">
-            {t('chat.hint1')}<br />{t('chat.hint2')}<br />{t('chat.hint3')}
+            {t('chat.hint1')}<br />
+            {(() => { const ex = notes.find(n => n.path.startsWith('wiki/') && !/\/(index|log)\.md$/.test(n.path) && !n.path.startsWith('wiki/lint/')); return ex ? <>{t('chat.hintExample', { title: ex.title })}<br /></> : <>{t('chat.hint2')}<br /></>; })()}
+            {pending.length > 0 && <span className="text-amber">{t('chat.hintPending', { n: pending.length })}<br /></span>}
+            {t('chat.hint3')}
           </div>
         )}
         {session?.messages.map((m, i) => <Message key={i} m={m} i={i} notes={notes} onOpen={onOpen} onFile={file} toolLabel={toolLabel} />)}

@@ -206,13 +206,15 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
     if (!note) return (
       <div className="mx-auto max-w-[660px] px-6 sb:px-10 pt-12 sb:pt-16 text-center text-ink-soft">
         <h1 className="font-serif text-[24px] font-bold text-ink mb-3">{t('workspace.welcome')}</h1>
-        <StartChecklist notes={notes} pending={pending} onPasteUrl={() => setAdd({ tab: 'url', layer: 'raw' })} onWrite={() => setAdd({ tab: 'write', layer: 'wiki' })} />
+        <StartChecklist notes={notes} pending={pending} onPasteUrl={() => setAdd({ tab: 'url', layer: 'raw' })} onWrite={() => setAdd({ tab: 'write', layer: 'wiki' })}
+          onIngest={p => { navigate(noteUrl(p)); autoIngest([p]); }} onAsk={() => setChatOpen(true)} aiReady={aiReady} ingesting={ingesting} />
         <p className="text-[13.5px] leading-relaxed">{notes.length === 0 ? <>{t('workspace.empty1')}<a className="text-celadon-deep underline" href="/settings">{t('workspace.emptyLink')}</a>{t('workspace.empty2')}</> : <>{t('workspace.pickHint')}</>}<br />{t('workspace.helpBefore')}<a className="text-celadon-deep underline" href="/help">{t('workspace.helpLink')}</a>{t('workspace.helpAfter')}</p>
       </div>
     );
     if (mode === 'edit') return <Editor key={note.path + note.version} note={note} initial={keepDraft ?? undefined} notes={notes} onSave={save} onCancel={() => { setKeepDraft(null); setMode('read'); }} busy={busy} />;
     return (
       <>
+      <StartStrip notes={notes} pending={pending} a={{ onPasteUrl: () => setAdd({ tab: 'url', layer: 'raw' }), onWrite: () => setAdd({ tab: 'write', layer: 'wiki' }), onIngest: p => { navigate(noteUrl(p)); autoIngest([p]); }, onAsk: () => setChatOpen(true), aiReady, ingesting }} />
       {ingestJobId !== null && <div className="mx-auto max-w-[660px] px-5 sb:px-10 pt-6"><IngestPanel jobId={ingestJobId} onDone={() => { setIngesting(false); reloadTree(); if (path) reloadNote(path); }} onClose={() => setIngestJobId(null)} /></div>}
       <NoteView note={note} notes={notes} historical={historical} onOpen={openNote} onEdit={() => setMode('edit')} onDelete={remove}
         onArchive={archive} onBackToCurrent={() => setHistorical(null)} onRollback={rollback} pending={pending.includes(note.path)} pendingCount={pending.length} ingestPromptAll={ingestPromptAll} aiReady={aiReady} onAutoIngest={autoIngest} ingesting={ingesting}
@@ -253,7 +255,7 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
           onImported={async r => { setAdd(null); await reloadTree(); openNote(r.path); if (r.warning) toast(r.warning, { kind: 'error', sticky: true }); else if (r.imported) toast(t('workspace.importedBib', { n: r.imported.length, skipped: r.skipped?.length ?? 0 })); else toast(t('workspace.imported', { title: r.title }) + (r.meta.doi ? t('workspace.importedDoi') : '')); }} />
       )}
       {treeLoaded && notes.length === 0 && !onboardingSkipped && !add && (
-        <OnboardingModal
+        <OnboardingModal onPasteUrl={() => setAdd({ tab: 'url', layer: 'raw' })}
           onDone={() => { reloadTree(); }}
           onSkip={() => { setOnboardingSkipped(true); try { localStorage.setItem(`wb-onboarding-skipped:${me.workspace.id}`, '1'); } catch { /* fine without storage */ } }}
         />
@@ -273,13 +275,42 @@ export default function Workspace({ me, onSignedOut }: { me: Me; onSignedOut: ()
 }
 
 // First-run checklist on the welcome screen (PRD §8 funnel: source → ingest → query). Hidden once all three are done.
-function StartChecklist({ notes, pending, onPasteUrl, onWrite }: { notes: NoteSummary[]; pending: string[]; onPasteUrl: () => void; onWrite: () => void }) {
-  const { t } = useT();
+/* The three steps a new workspace needs, and where a person actually is on them. Shared by the welcome card and the
+   one-line strip above a note, so the next step keeps a button wherever they are — the checklist vanishing the moment
+   they open a page is how a template's nine pages became the last thing one user ever saw. */
+function startProgress(notes: NoteSummary[], pending: string[]) {
   const sources = notes.filter(n => n.path.startsWith('raw/') && !n.path.startsWith('raw/archive/') && !/README/i.test(n.path));
   const hasSource = sources.length > 0;
   const ingested = hasSource && sources.some(n => !pending.includes(n.path));
   let asked = false; try { asked = localStorage.getItem('wb-first-query') === '1'; } catch { /* ignore */ }
-  if (hasSource && ingested && asked) return null;
+  const firstPending = sources.find(n => pending.includes(n.path)) ?? null;
+  return { hasSource, ingested, asked, firstPending, done: hasSource && ingested && asked };
+}
+
+type StartActions = { onPasteUrl: () => void; onWrite: () => void; onIngest: (path: string) => void; onAsk: () => void; aiReady: boolean; ingesting: boolean };
+
+/** One line above an open note: the next step, with its button. Nothing once all three are done. */
+function StartStrip({ notes, pending, a }: { notes: NoteSummary[]; pending: string[]; a: StartActions }) {
+  const { t } = useT();
+  const s = startProgress(notes, pending);
+  if (s.done) return null;
+  const step = !s.hasSource ? 1 : !s.ingested ? 2 : 3;
+  return (
+    <div className="mx-auto flex max-w-[660px] flex-wrap items-center gap-2 px-5 sb:px-10 pt-4 text-[12.5px]" data-testid="start-strip">
+      <span className="rounded-full border border-line px-2 py-[1px] text-[11px] text-ink-faint">{t('start.stepOf', { n: step })}</span>
+      {step === 1 && <><span className="text-ink-soft">{t('start.addSource')}</span><button className={`${btnPrimary} px-3 py-1`} onClick={a.onPasteUrl}>{t('start.pasteUrl')}</button></>}
+      {step === 2 && s.firstPending && (a.aiReady
+        ? <><span className="text-ink-soft">{t('start.ingest')}</span><button className={`${btnPrimary} px-3 py-1`} disabled={a.ingesting} onClick={() => a.onIngest(s.firstPending!.path)} data-testid="start-ingest">{t('start.ingestNow', { title: s.firstPending.title })}</button></>
+        : <><span className="text-ink-soft">{t('start.ingestHint')}</span><a className={`${btnGhost} px-3 py-1`} href="/settings">{t('note.setupKey')}</a></>)}
+      {step === 3 && <><span className="text-ink-soft">{t('start.ask')}</span><button className={`${btnPrimary} px-3 py-1`} onClick={a.onAsk} data-testid="start-ask">{t('start.askNow')}</button></>}
+    </div>
+  );
+}
+
+function StartChecklist({ notes, pending, onPasteUrl, onWrite, onIngest, onAsk, aiReady, ingesting }: { notes: NoteSummary[]; pending: string[] } & StartActions) {
+  const { t } = useT();
+  const { hasSource, ingested, asked, firstPending, done } = startProgress(notes, pending);
+  if (done) return null;
   const steps: [string, string, boolean][] = [[t('start.addSource'), t('start.addSourceHint'), hasSource], [t('start.ingest'), t('start.ingestHint'), ingested], [t('start.ask'), t('start.askHint'), asked]];
   return (
     <div className="mx-auto mt-6 max-w-[480px] rounded-[12px] border border-line bg-paper p-5 text-left" data-testid="start-checklist">
@@ -293,6 +324,10 @@ function StartChecklist({ notes, pending, onPasteUrl, onWrite }: { notes: NoteSu
         ))}
       </ol>
       {!hasSource && <div className="mt-4 flex flex-wrap gap-2"><button className={btnPrimary} onClick={onPasteUrl} data-testid="start-paste-url">{t('start.pasteUrl')}</button><button className={btnGhost} onClick={onWrite}>{t('start.write')}</button></div>}
+      {hasSource && !ingested && firstPending && (aiReady
+        ? <div className="mt-4 flex flex-wrap gap-2"><button className={btnPrimary} disabled={ingesting} onClick={() => onIngest(firstPending.path)} data-testid="start-ingest">{t('start.ingestNow', { title: firstPending.title })}</button></div>
+        : <div className="mt-4 flex flex-wrap gap-2"><a className={`${btnGhost} inline-block`} href="/settings">{t('note.setupKey')}</a></div>)}
+      {hasSource && ingested && !asked && <div className="mt-4 flex flex-wrap gap-2"><button className={btnPrimary} onClick={onAsk} data-testid="start-ask">{t('start.askNow')}</button></div>}
     </div>
   );
 }

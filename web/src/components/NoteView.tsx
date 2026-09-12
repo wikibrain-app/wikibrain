@@ -56,18 +56,18 @@ export function NoteView({ note, notes, historical, onOpen, onEdit, onDelete, on
       {share && <ShareModal path={note.path} onClose={() => setShare(false)} />}
       {pending && !historical && (
         <div className="mb-4 rounded-[10px] border border-amber/40 bg-amber-mist px-4 py-3 text-[12.5px] leading-relaxed" role="status" data-testid="pending-banner">
-          <b>{t('note.pendingTitle')}</b>{t('note.pendingBody')}{aiReady ? t('note.pendingAi') : t('note.pendingNoAi')}
+          <b>{t('note.pendingTitle')}</b>{t('note.pendingBody', { title: note.title })}{aiReady ? t('note.pendingAi') : t('note.pendingNoAi')}
           <div className="mt-2 flex flex-wrap items-center gap-2">
+            {/* Without a key the primary action is getting one; a "copy prompt for Cursor" button is a dead end for most people and lives under More. */}
             {aiReady && onAutoIngest
               ? <button className={btnPrimary} data-testid="auto-ingest" disabled={ingesting} onClick={() => onAutoIngest([note.path])}>{ingesting ? t('note.ingesting') : t('note.autoOne')}</button>
-              : <button className={btnPrimary} onClick={() => copyPrompt(promptOne)}>{t('note.copyPrompt')}</button>}
+              : <a className={`${btnPrimary} inline-block`} href="/settings#ai" data-testid="setup-key">{t('note.setupKey')}</a>}
             {aiReady && onDiscuss && <button className={btnGhost} disabled={ingesting} onClick={onDiscuss} title={t('note.discussTitle')} data-testid="discuss-ingest">{t('note.discuss')}</button>}
-            {!aiReady && <a className={`${btnGhost} inline-block`} href="/settings">{t('note.setupKey')}</a>}
             <details className="relative">
               <summary className={`${btnGhost} list-none cursor-pointer`} data-testid="pending-more">{t('note.more')} ▾</summary>
               <div className="absolute left-0 z-20 mt-1 w-56 rounded-lg border border-line bg-paper py-1 shadow-lg">
                 {aiReady && onAutoIngest && pendingCount > 1 && <button className="block w-full px-3 py-2 text-left text-[12.5px] hover:bg-celadon-mist" disabled={ingesting} onClick={() => onAutoIngest()}>{t('note.autoAll', { n: pendingCount })}</button>}
-                {aiReady && <button className="block w-full px-3 py-2 text-left text-[12.5px] hover:bg-celadon-mist" onClick={() => copyPrompt(promptOne)}>{t('note.copyPrompt')}</button>}
+                <button className="block w-full px-3 py-2 text-left text-[12.5px] hover:bg-celadon-mist" onClick={() => copyPrompt(promptOne)}>{t('note.copyPrompt')}</button>
                 {pendingCount > 1 && ingestPromptAll && <button className="block w-full px-3 py-2 text-left text-[12.5px] hover:bg-celadon-mist" onClick={() => copyPrompt(ingestPromptAll)}>{t('note.copyAll', { n: pendingCount })}</button>}
               </div>
             </details>

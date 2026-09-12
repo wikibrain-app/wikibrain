@@ -13,6 +13,7 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [resent, setResent] = useState(false);
   const [google, setGoogle] = useState(false);
   const [siteKey, setSiteKey] = useState<string | null>(null);
   const [token, setToken] = useState('');
@@ -37,6 +38,14 @@ export default function Register() {
       <AuthCard>
         <h1 className="font-serif text-[22px] font-bold mb-2">{t('register.sentTitle')}</h1>
         <p className="text-[13px] text-ink-soft leading-relaxed">{t('register.sentBefore')}<b className="text-ink">{email}</b>{t('register.sentAfter')}</p>
+        {/* The first drop in the funnel is here; a person who cannot find the mail must be able to act without guessing to try the login page. */}
+        <p className="mt-3 rounded-[10px] border border-line bg-amber-mist px-3 py-2 text-[12.5px] leading-relaxed" role="status">
+          {t('register.sentSpam')}{' '}
+          <button type="button" className="text-celadon-deep underline disabled:no-underline disabled:text-ink-faint" disabled={resent} data-testid="register-resend"
+            onClick={() => fetch('/api/auth/send-verification-email', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, callbackURL: '/' }) }).then(() => setResent(true)).catch(() => {})}>
+            {resent ? t('register.resent') : t('register.resend')}
+          </button>
+        </p>
         <p className="text-[13px] text-ink-soft mt-5"><Link className="text-celadon-deep underline" to="/login">{t('auth.backToLogin')}</Link></p>
       </AuthCard>
     );

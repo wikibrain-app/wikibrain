@@ -212,7 +212,7 @@ with sync_playwright() as p:
       page.goto(BASE + '/settings'); page.wait_for_selector('[data-testid=lang-select]')
       page.select_option('[data-testid=lang-select]', 'en'); page.wait_for_selector('text=Interface language')
       en_ok = page.evaluate("document.documentElement.lang") == 'en' and page.evaluate("fetch('/api/me').then(r=>r.json()).then(m=>m.workspace.lang)") == 'en'
-      page.goto(BASE + '/'); page.wait_for_selector('[data-testid=sidebar]', state='attached')
+      page.goto(BASE + '/'); page.wait_for_selector('[data-testid=sidebar] >> text=Expand all')   # attached ≠ loaded: the tree arrives after the shell
       en_home = page.locator('[data-testid=sidebar]').inner_text()
       page.goto(BASE + '/help/guide'); page.wait_for_selector('[data-testid=help] >> h2:has-text("operations")')
       shot(page, '17-english')

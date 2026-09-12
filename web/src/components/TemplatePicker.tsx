@@ -99,7 +99,7 @@ export function TemplatePicker({ onApplied, compact, minimal }: { onApplied: (r:
 }
 
 // showPrompt=false (onboarding): hide the Cursor kickoff prompt so new users are not confused; the settings page keeps it.
-export function AppliedResult({ r, onClose, showPrompt = true }: { r: { created: string[]; skipped: string[]; prompt: string }; onClose: () => void; showPrompt?: boolean }) {
+export function AppliedResult({ r, onClose, showPrompt = true, hideDone = false }: { r: { created: string[]; skipped: string[]; prompt: string }; onClose: () => void; showPrompt?: boolean; hideDone?: boolean }) {
   const { toast } = useToast();
   const { t } = useT();
   const copy = () => navigator.clipboard.writeText(r.prompt).then(() => toast(t('tpl.promptCopied'))).catch(() => toast(t('common.clipboardFail'), { kind: 'error' }));
@@ -113,7 +113,7 @@ export function AppliedResult({ r, onClose, showPrompt = true }: { r: { created:
         {r.prompt}
       </div>
       </>) : <p className="mt-3 text-[12px] leading-relaxed text-ink-soft">{t('tpl.appliedHint')}</p>}
-      <div className="mt-4 flex justify-end"><button className={btnGhost} onClick={onClose}>{t('ui.done')}</button></div>
+      {!hideDone && <div className="mt-4 flex justify-end"><button className={btnGhost} onClick={onClose}>{t('ui.done')}</button></div>}
     </div>
   );
 }
