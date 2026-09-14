@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api, fmtTok, fmtUsd, type IngestJob } from '../lib/api';
 import { btnGhost } from './ui';
 import { useT } from '../i18n';
+import { agentSteps } from '../lib/agentLog';
 
 // Progress panel for server-side Ingest: polls every 1.5s, shows tool calls and results; calls onDone to reload the tree when finished.
 export function IngestPanel({ jobId, onDone, onClose }: { jobId: number; onDone: () => void; onClose: () => void }) {
@@ -32,9 +33,12 @@ export function IngestPanel({ jobId, onDone, onClose }: { jobId: number; onDone:
       </div>
       {job?.error && <div className="mt-2 text-danger">{job.error}</div>}
       <ol className="mt-2 max-h-56 space-y-1 overflow-y-auto font-mono text-[11.5px] text-ink-soft">
-        {job?.log.filter(e => e.type !== 'usage' && e.type !== 'result').map((e, i) => (
-          <li key={i} className={e.type === 'text' ? 'font-sans text-ink whitespace-pre-wrap' : ''}>
-            {e.type === 'tool' ? `▸ ${label(e.tool!)} ${typeof (e.input as any)?.path === 'string' ? (e.input as any).path : typeof (e.input as any)?.query === 'string' ? t('agent.quote', { q: (e.input as any).query }) : ''}` : e.type === 'error' ? `✖ ${e.text}` : e.text}
+        {agentSteps(job?.log ?? []).map((s, i) => (
+          <li key={i} className={s.type === 'text' ? 'font-sans text-ink whitespace-pre-wrap' : s.failed || s.type === 'error' ? 'text-danger' : ''}>
+            {s.type === 'tool'
+              ? <>{s.failed ? '✖' : '▸'} {label(s.tool!)} {s.path ?? (s.query ? t('agent.quote', { q: s.query }) : '')}
+                  {s.failed && <span className="ml-1">— {s.error}</span>}</>
+              : s.type === 'error' ? `✖ ${s.text}` : s.text}
           </li>
         ))}
       </ol>

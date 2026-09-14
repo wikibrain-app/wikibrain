@@ -80,7 +80,12 @@ export function makeExec(ws: string, actor: Actor) {
     try {
       switch (name) {
         case 'get_instructions': return await getInstructions(ws, await workspaceLang(ws));
-        case 'search_notes': return j({ hits: await searchNotes(ws, { query: String(input.query ?? ''), folder: input.folder as string | undefined, tag: input.tag as string | undefined, limit: Math.min(50, Number(input.limit) || 10) }) });
+        case 'search_notes': {
+          const hits = await searchNotes(ws, { query: String(input.query ?? ''), folder: input.folder as string | undefined, tag: input.tag as string | undefined, limit: Math.min(50, Number(input.limit) || 10) });
+          /* Search is a substring match, so an English query finds nothing in a Chinese-titled wiki — and a model
+             that reads "no hits" as "nothing related exists" opens a duplicate page. Say so at the moment it happens. */
+          return j({ hits, ...(hits.length ? {} : { hint: pick(SEARCH_MISS, await lang) }) });
+        }
         case 'read_note': {
           const n = await readNote(ws, String(input.path));
           const untrusted = layerOf(n.path) === 'raw' ? { untrusted_source: pick(UNTRUSTED, await lang) } : {};
@@ -103,6 +108,35 @@ export function makeExec(ws: string, actor: Actor) {
       throw e;
     }
   };
+}
+
+/* The loop records a `tool` event and then a `result` event carrying whatever the tool returned — including the
+   JSON error object makeExec produces for a refusal. Reading them as a pair is the only way to tell "wrote the page"
+   from "tried to write the page", which both look identical in the raw log. */
+export interface AgentStep { tool: string; input?: Record<string, unknown>; failed: boolean; error?: string }
+export function agentSteps(log: AgentEvent[]): AgentStep[] {
+  const steps: AgentStep[] = [];
+  for (const e of log) {
+    if (e.type === 'tool') { steps.push({ tool: e.tool ?? '', input: e.input as Record<string, unknown> | undefined, failed: false }); continue; }
+    if (e.type !== 'result') continue;
+    const last = steps[steps.length - 1];
+    if (!last || last.error) continue;
+    try {
+      const out = JSON.parse(e.output ?? '');
+      if (out && typeof out === 'object' && typeof out.error === 'string') { last.failed = true; last.error = String(out.message ?? out.error); }
+    } catch { /* not JSON, or truncated at 400 chars: treat as success, which is what it looks like */ }
+  }
+  return steps;
+}
+
+/** Pages the agent actually wrote, in the order it wrote them — the calls that failed are not among them. */
+export function writtenPaths(log: AgentEvent[]): string[] {
+  const seen = new Set<string>();
+  for (const s of agentSteps(log)) {
+    if (s.failed || (s.tool !== 'create_note' && s.tool !== 'update_note')) continue;
+    if (typeof s.input?.path === 'string') seen.add(s.input.path);
+  }
+  return [...seen];
 }
 
 /* ── Job queue: one job at a time per workspace ── */
@@ -163,6 +197,11 @@ export async function startIngest(ws: string, userId: string, paths?: string[], 
   void runJob(job, ws, cfg, { system: ingestSystem(lang), user, actor: { kind: 'agent', name: `${cfg.provider}/${cfg.model}` } }).finally(() => running.delete(ws));
   return job;
 }
+
+const SEARCH_MISS = {
+  'zh-TW': '沒有命中，但這不代表沒有相關頁：搜尋是子字串比對，來源與頁名語言不同時（例如英文來源、中文概念頁）一定搜不到。開新頁之前先讀 wiki/index.md 的目錄對照一次。',
+  en: 'No hits, which does not mean nothing related exists: search is a substring match and finds nothing when the query and the page titles are in different languages. Read the catalogue in wiki/index.md before opening a new page.',
+};
 
 /* Said once, up front: everything that arrives from raw/ was written by whoever controlled the source page. */
 export const TRUST = {

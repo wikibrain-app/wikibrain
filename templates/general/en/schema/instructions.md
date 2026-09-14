@@ -17,9 +17,9 @@ This page is the CLAUDE.md of the whole knowledge base, following Karpathy's LLM
 
 **Ingest (do the whole sequence every time a source arrives)**
 1. `read_note` the full source.
-2. `search_notes` for related pages so you do not duplicate.
+2. Read the catalog in `wiki/index.md`, then `search_notes` for related pages, so you do not duplicate. Search is a substring match and finds nothing when the source and the page titles are in different languages; only the catalog shows what is already there.
 3. Write a summary page `wiki/sources/<name>.md` linking back to the source with `[[raw/sources/<file>]]`.
-4. Update or create the related entity and concept pages (one source may touch 10–15 pages), citing the summary or source page.
+4. Update or create the related entity and concept pages (one source may touch 10–15 pages), citing the summary or source page. Use `create_note` for a page that does not exist yet and `update_note` only for one that does.
 5. Update `wiki/index.md` and append `## [date] ingest | title` to `wiki/log.md`.
 6. When a source contradicts an existing page, mark "⚠ conflict" on both and list both sides; never pick silently.
 
@@ -29,4 +29,5 @@ This page is the CLAUDE.md of the whole knowledge base, following Karpathy's LLM
 
 ## Writing rules
 
-- Update existing pages with `update_note` and the `version` from `read_note`; on 409, re-edit from the current content.
+- Update existing pages with `update_note` and the `version` from `read_note`; on 409, re-edit from the current content. A NOT_FOUND means the page was never created — call `create_note` instead of skipping the step.
+- Give every concept or entity page an `aliases:` front-matter line naming the concept in the other language and any common abbreviation. Search reads front-matter, and this is the only way a source in another language will find the page later.

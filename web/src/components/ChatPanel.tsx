@@ -142,7 +142,9 @@ function Message({ m, i, notes, onOpen, onFile, toolLabel }: { m: ChatMessage; i
         <span className="ml-auto" />
         {m.filedTo ? <button className="text-celadon-deep hover:underline" onClick={() => onOpen(m.filedTo!)}>{t('chat.filedTo', { path: m.filedTo })}</button> : m.jobId && !m.failed && <button className={`${btnGhost} px-2 py-0.5 text-[11.5px]`} onClick={() => onFile(i)} title={t('chat.fileTitle')}>{t('chat.file')}</button>}
       </div>
-      {showTools && <ol className="mt-1.5 font-mono text-[11px] text-ink-soft">{m.tools!.map((s, k) => <li key={k}>▸ {toolLabel(s.tool)} {s.path ?? (s.query ? t('agent.quote', { q: s.query }) : '')}</li>)}</ol>}
+      {showTools && <ol className="mt-1.5 font-mono text-[11px] text-ink-soft">{m.tools!.map((s, k) => (
+        <li key={k} className={s.failed ? 'text-danger' : ''}>{s.failed ? '✖' : '▸'} {toolLabel(s.tool)} {s.path ?? (s.query ? t('agent.quote', { q: s.query }) : '')}</li>
+      ))}</ol>}
     </div>
   );
 }

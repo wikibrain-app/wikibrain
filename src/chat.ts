@@ -1,12 +1,12 @@
 import { pool } from './db.js';
-import { langLine, type Lang } from './lang.js';
+import { langLine, pick, type Lang } from './lang.js';
 import { TRUST } from './ingest.js';
 import { workspaceLang } from './workspaces.js';
 import { assertCanRun, claimTrialRun, noKeyError, trialExhausted, trialRunConfig, type RunConfig } from './plans.js';
 import { NoteError, createNote, type Actor } from './notes.js';
 import { slugify } from './import.js';
-import { loadKey, running, runJob, type IngestJob } from './ingest.js';
-import type { Provider } from './ai/providers.js';
+import { agentSteps, loadKey, running, runJob, writtenPaths, type IngestJob } from './ingest.js';
+import type { AgentEvent, Provider } from './ai/providers.js';
 
 /* ── Chat (Karpathy's Query): ask the knowledge base or have the agent edit it; good answers can be filed as wiki pages ── */
 
@@ -20,7 +20,7 @@ export interface ChatMessage {
   tokens_in?: number;
   tokens_out?: number;
   cost_usd?: number | null;
-  tools?: { tool: string; path?: string; query?: string }[];
+  tools?: { tool: string; path?: string; query?: string; failed?: boolean }[];
   filedTo?: string;
 }
 export interface ChatSession { id: number; workspace_id: string; title: string; messages: ChatMessage[]; created_at: Date; updated_at: Date }
@@ -94,9 +94,18 @@ async function sendMessageLocked(ws: string, userId: string, session: ChatSessio
     onDone: async ({ finalText, job: done }) => {
       const cur = await getSession(ws, sessionId);
       if (!cur) return;
-      const logRow = await pool.query<{ log: any[] }>(`SELECT log FROM ingest_jobs WHERE id = $1`, [job.id]);
-      const tools = (logRow.rows[0]?.log ?? []).filter((e: any) => e.type === 'tool').map((e: any) => ({ tool: e.tool, path: e.input?.path, query: e.input?.query }));
-      const reply: ChatMessage = { role: 'assistant', content: finalText || '（agent 沒有回覆文字）', at: new Date().toISOString(), jobId: job.id, steps: done.steps, tokens_in: done.tokens_in, tokens_out: done.tokens_out, cost_usd: done.cost_usd, tools };
+      const logRow = await pool.query<{ log: AgentEvent[] }>(`SELECT log FROM ingest_jobs WHERE id = $1`, [job.id]);
+      const log = logRow.rows[0]?.log ?? [];
+      const tools = agentSteps(log).map(s => ({ tool: s.tool, path: s.input?.path as string | undefined, query: s.input?.query as string | undefined, failed: s.failed || undefined }));
+      /* An agent that answers by writing a page and then stops has done the work, but the person is looking at the
+         chat, where "no reply" reads as a failure. Tell them where the answer went. */
+      const wrote = writtenPaths(log);
+      const lang = await workspaceLang(ws);
+      const fallback = wrote.length
+        ? pick({ 'zh-TW': `（agent 沒有回覆文字，但把結果寫進了這些頁）\n${wrote.map(p => `- ${p}`).join('\n')}`,
+                 en: `(The agent wrote no reply, but it did write these pages.)\n${wrote.map(p => `- ${p}`).join('\n')}` }, lang)
+        : pick({ 'zh-TW': '（agent 沒有回覆文字，也沒有寫入任何頁）', en: '(The agent wrote no reply and changed nothing.)' }, lang);
+      const reply: ChatMessage = { role: 'assistant', content: finalText || fallback, at: new Date().toISOString(), jobId: job.id, steps: done.steps, tokens_in: done.tokens_in, tokens_out: done.tokens_out, cost_usd: done.cost_usd, tools };
       await pool.query(`UPDATE chat_sessions SET messages = $2, updated_at = now() WHERE id = $1`, [sessionId, JSON.stringify([...cur.messages, reply])]);
     },
   }).finally(() => running.delete(ws));

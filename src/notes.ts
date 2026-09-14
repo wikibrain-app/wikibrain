@@ -105,9 +105,21 @@ export function parseTags(content: string): string[] {
   return [...new Set(raw.map(t => t.trim().replace(/^["']|["']$/g, '').replace(/^#/, '').toLowerCase()).filter(Boolean))];
 }
 
-function snippet(raw: string, query: string, width = 160): string {
+/* Matching the whole query as one literal string means "Unconventional Water Resources" misses a page that says
+   "unconventional water" in one sentence and "resources" in the next — and an agent searching before it writes gets
+   nothing back and creates a duplicate page. Every term must appear somewhere in the page; quote a phrase to keep
+   it together. CJK has no spaces, so a Chinese query stays a single term and behaves exactly as before. */
+export function searchTerms(query: string): string[] {
+  return (query.match(/"[^"]+"|\S+/g) ?? [])
+    .map(t => t.replace(/^"|"$/g, '').trim())
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+function snippet(raw: string, terms: string[], width = 160): string {
   const content = stripFrontMatter(raw);
-  const i = content.toLowerCase().indexOf(query.toLowerCase());
+  const lower = content.toLowerCase();
+  const i = terms.map(t => lower.indexOf(t.toLowerCase())).filter(n => n >= 0).sort((a, b) => a - b)[0] ?? -1;
   const start = i < 0 ? 0 : Math.max(0, i - Math.floor(width / 3));
   return content.slice(start, start + width).replace(/\s+/g, ' ');
 }
@@ -186,8 +198,13 @@ async function tx<T>(fn: (c: pg.PoolClient) => Promise<T>): Promise<T> {
 export async function searchNotes(ws: string, opts: { query: string; folder?: string; tag?: string; limit: number }) {
   const folder = normalizeFolder(opts.folder);
   const query = opts.query.replace(/\x00/g, '');   // Postgres rejects NUL in a text parameter with a 500-shaped error
-  const params: unknown[] = [ws, `%${likeEscape(query)}%`];
-  let where = `n.workspace_id = $1 AND n.deleted_at IS NULL AND (n.title ILIKE $2 OR n.content_md ILIKE $2)`;
+  const terms = searchTerms(query);
+  const params: unknown[] = [ws];
+  const clauses = terms.map(term => {
+    params.push(`%${likeEscape(term)}%`);
+    return `(n.title ILIKE $${params.length} OR n.content_md ILIKE $${params.length})`;
+  });
+  let where = `n.workspace_id = $1 AND n.deleted_at IS NULL${clauses.length ? ` AND ${clauses.join(' AND ')}` : ''}`;
   if (folder) { params.push(`${folder}/%`); where += ` AND n.path LIKE $${params.length}`; }
   if (opts.tag) { params.push(opts.tag.replace(/^#/, '').toLowerCase()); where += ` AND EXISTS (SELECT 1 FROM tags t WHERE t.note_id = n.id AND t.tag = $${params.length})`; }
   params.push(opts.limit);
@@ -196,7 +213,7 @@ export async function searchNotes(ws: string, opts: { query: string; folder?: st
       WHERE ${where} ORDER BY n.updated_at DESC LIMIT $${params.length}`,
     params,
   );
-  return rows.map(r => ({ path: r.path, title: r.title, version: r.version, snippet: snippet(r.content_md, opts.query) }));
+  return rows.map(r => ({ path: r.path, title: r.title, version: r.version, snippet: snippet(r.content_md, terms) }));
 }
 
 export async function readNote(ws: string, rawPath: string): Promise<NoteRow> {
@@ -259,7 +276,12 @@ export async function updateNote(ws: string, rawPath: string, content: string, i
           WHERE workspace_id = $1 AND path = $2 AND deleted_at IS NULL`,
         [ws, path],
       );
-      if (!cur.rows[0]) throw new NoteError('NOT_FOUND', { 'zh-TW': `找不到筆記：${path}`, en: `Note not found: ${path}` });
+      /* An agent that decides to "update or create" a page reaches for update_note first; without the second
+         sentence it reads NOT_FOUND as "that page is off limits" and silently drops the step. */
+      if (!cur.rows[0]) throw new NoteError('NOT_FOUND', {
+        'zh-TW': `找不到筆記：${path}。這一頁還不存在——要新建請改用 create_note（網頁請用「＋ 新增」）。`,
+        en: `Note not found: ${path}. This page does not exist yet — use create_note to make it (in the web app, "+ New").`,
+      });
       const n = cur.rows[0];
       throw new ConflictError(
         { 'zh-TW': `版本衝突：${path} 目前為 v${n.version}，你帶的 if_version=${ifVersion}。請以目前內容為基礎重新編輯後再送。`,
@@ -450,8 +472,8 @@ export async function listPendingSources(ws: string): Promise<PendingSource[]> {
 // Ingest prompt for the agent (or for a person to paste to one); matches the six Ingest steps in schema/instructions.md.
 export function ingestPrompt(paths: string[], lang: Lang = 'zh-TW'): string {
   const list = paths.map(p => `- ${p}`).join('\n');
-  if (lang === 'en') return `Call get_instructions first to read the compilation rules. Then ingest the following sources following the rules' Ingest steps:\n${list}\nFor each source: read it in full, search_notes for related pages, create a wiki/sources/ summary page linking back to the source, update related entity and concept pages, update wiki/index.md, and append an ingest entry to wiki/log.md. Finish by reporting which pages you touched.`;
-  return `先呼叫 get_instructions 讀編纂規則。然後依規則的 Ingest 六步處理下列來源：\n${list}\n每個來源都要：讀完整篇、search_notes 找相關頁、建 wiki/sources/ 摘要頁並連回來源、更新相關實體與概念頁、更新 wiki/index.md、在 wiki/log.md 追加 ingest 條目。做完回報動到哪些頁。`;
+  if (lang === 'en') return `Call get_instructions first to read the compilation rules. Then ingest the following sources following the rules' Ingest steps:\n${list}\nFor each source: read it in full, read wiki/index.md to see what the catalogue already holds (search is a substring match, so it misses everything when the source and the page titles are in different languages), search_notes for related pages, create a wiki/sources/ summary page linking back to the source, update related entity and concept pages, update wiki/index.md, and append an ingest entry to wiki/log.md. Use create_note for a page that does not exist yet and update_note only for one that does; a NOT_FOUND from update_note means the page was never created, so create it. Finish by reporting which pages you touched.`;
+  return `先呼叫 get_instructions 讀編纂規則。然後依規則的 Ingest 六步處理下列來源：\n${list}\n每個來源都要：讀完整篇、讀 wiki/index.md 看目錄上已經有哪些頁（搜尋是子字串比對，來源和頁名語言不同時會整批漏掉）、search_notes 找相關頁、建 wiki/sources/ 摘要頁並連回來源、更新相關實體與概念頁、更新 wiki/index.md、在 wiki/log.md 追加 ingest 條目。新的一頁用 create_note，既有的頁才用 update_note；update_note 回 NOT_FOUND 就表示那一頁還沒建，改用 create_note 補上。做完回報動到哪些頁。`;
 }
 
 /* ── front-matter properties (for the Obsidian Bases / Dataview-style table) ── */

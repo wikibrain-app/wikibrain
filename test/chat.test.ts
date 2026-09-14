@@ -95,6 +95,25 @@ test('Q&A: agent answers via index and read_note; second turn carries history; a
   assert.equal((await api('GET', '/api/ingest')).data.jobs.length, 0, 'chat jobs do not appear in the ingest list');
 });
 
+/* An agent that answers by writing a page and then says nothing has done the work; the person is looking at the
+   chat, where an empty bubble reads as a failure. */
+test('an answer written to a page but never spoken is reported in the chat', async () => {
+  registerRunner('anthropic', async (o: RunOptions) => {
+    const call = async (n: string, i: Record<string, unknown>) => { o.onEvent({ type: 'tool', tool: n, input: i }); const out = await o.exec(n, i); o.onEvent({ type: 'result', tool: n, output: out }); return out; };
+    await call('create_note', { path: 'wiki/queries/靜默的答案.md', content: '# 靜默的答案\n\n兩篇的共通點是…\n' });
+    await call('update_note', { path: 'wiki/queries/不存在.md', content: 'x', if_version: 1 });   // refused
+    return { steps: 2, tokens_in: 10, tokens_out: 0, finalText: '' };
+  });
+  const s = (await api('POST', '/api/chat', {})).data.session;
+  const sent = await api('POST', `/api/chat/${s.id}/messages`, { text: '共通點是什麼？' });
+  assert.equal((await waitForJob(wsId, sent.data.job.id))!.status, 'done');
+  await new Promise(r => setTimeout(r, 300));
+  const a = (await api('GET', `/api/chat/${s.id}`)).data.session.messages[1];
+  assert.match(a.content, /wiki\/queries\/靜默的答案\.md/, '要說出答案寫到哪裡去了');
+  assert.doesNotMatch(a.content, /不存在/, '被拒絕的那一頁沒有寫成，不能列進去');
+  assert.deepEqual(a.tools.map((t: any) => t.failed), [undefined, true], '失敗的那一步要標出來');
+});
+
 test('agent failure is written back as a message', async () => {
   registerRunner('anthropic', async () => { throw new Error('model exploded'); });
   const s = (await api('POST', '/api/chat', {})).data.session;

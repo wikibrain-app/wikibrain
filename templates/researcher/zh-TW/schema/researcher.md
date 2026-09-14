@@ -16,6 +16,6 @@
 
 ## 引用格式
 
-- 在 wiki 頁引用時寫 `[@citation_key]`，例如「關鍵詞指派在醫學圖書館已有實證 [@chen2024keyword]」；多篇 `[@chen2024keyword; @wang2023llm]`，頁碼 `[@chen2024keyword, p. 12]`。系統會渲染成（作者, 年份）連到來源頁，並在頁尾自動列參考文獻；匯出的 Markdown 與 .bib 可直接給 pandoc。
+- 在 wiki 頁引用時寫 `[@citation_key]`，例如 `關鍵詞指派在醫學圖書館已有實證 [@chen2024keyword]`；多篇 `[@chen2024keyword; @wang2023llm]`，頁碼 `[@chen2024keyword, p. 12]`。系統會渲染成（作者, 年份）連到來源頁，並在頁尾自動列參考文獻；匯出的 Markdown 與 .bib 可直接給 pandoc。
 - 來源沒有 citation_key 時才退回 `[[raw/sources/檔名]]` 的一般連結。
 - 產出草稿段落時，agent 只能引用 raw/ 裡存在的來源，不可憑記憶補書目。
