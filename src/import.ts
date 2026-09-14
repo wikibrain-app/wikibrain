@@ -177,7 +177,7 @@ export async function lookupCrossref(doi: string, fetchImpl: Fetcher = fetch): P
    them a blocked paper still becomes a usable source page — bibliography plus abstract, honestly labelled as such. */
 
 /** Europe PMC by DOI, PMID or PMCID. Returns nothing rather than throwing: this is always a best-effort enrichment. */
-export async function europePmcMeta(query: string, fetchImpl: Fetcher = fetch): Promise<Partial<SourceMeta> & { abstract?: string }> {
+export async function europePmcMeta(query: string, fetchImpl: Fetcher = fetch): Promise<Partial<SourceMeta> & { abstract?: string; pmcid?: string; openAccess?: boolean }> {
   try {
     const res = await fetchImpl(
       `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}&resultType=core&format=json&pageSize=1`,
@@ -185,13 +185,15 @@ export async function europePmcMeta(query: string, fetchImpl: Fetcher = fetch): 
     if (!res.ok) return {};
     const r = (await res.json())?.resultList?.result?.[0];
     if (!r) return {};
-    const out: Partial<SourceMeta> & { abstract?: string } = {};
+    const out: Partial<SourceMeta> & { abstract?: string; pmcid?: string; openAccess?: boolean } = {};
     if (r.title) out.title = String(r.title).replace(/\.$/, '');
     if (r.authorString) out.authors = String(r.authorString).split(/,\s*/).map((a: string) => a.trim()).filter(Boolean);
     if (r.pubYear) out.year = Number(r.pubYear);
     const journal = r.journalInfo?.journal?.title;
     if (journal) out.venue = journal;
     if (r.doi) out.doi = String(r.doi);
+    if (r.pmcid) out.pmcid = String(r.pmcid);
+    if (r.isOpenAccess === 'Y') out.openAccess = true;
     // The abstract arrives with JATS markup (<h4>Background</h4>…); turn the headings into sentences rather than strip them.
     if (r.abstractText) out.abstract = String(r.abstractText)
       .replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, '\n\n**$1** ')
@@ -200,6 +202,32 @@ export async function europePmcMeta(query: string, fetchImpl: Fetcher = fetch): 
       .replace(/\n{3,}/g, '\n\n').trim();
     return out;
   } catch { return {}; }
+}
+
+/* An open-access paper has its full text in PubMed Central, and Europe PMC serves it as JATS. Settling for the
+   abstract when the whole article is free would be a worse page than the product can make — the difference between a
+   1 KB summary and the 30 KB the agent can actually compile from. Closed papers still fall back to the abstract. */
+export async function europePmcFullText(pmcid: string, fetchImpl: Fetcher = fetch): Promise<string | null> {
+  try {
+    const res = await fetchImpl(`https://www.ebi.ac.uk/europepmc/webservices/rest/${encodeURIComponent(pmcid)}/fullTextXML`,
+      { headers: FETCH_HEADERS, signal: AbortSignal.timeout(15_000) });
+    if (!res.ok) return null;
+    const xml = (await res.text()).slice(0, LIMITS.fetchBytes);
+    const body = xml.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1];
+    if (!body) return null;
+    // JATS is not HTML: <sec><title> is a heading, <list-item> a bullet, and everything else is prose to unwrap.
+    const md = body
+      .replace(/<(table-wrap|fig|xref|graphic|inline-formula|disp-formula)[\s\S]*?<\/\1>/gi, ' ')
+      .replace(/<title[^>]*>([\s\S]*?)<\/title>/gi, '\n\n## $1\n\n')
+      .replace(/<list-item[^>]*>([\s\S]*?)<\/list-item>/gi, '\n- $1')
+      .replace(/<\/(p|sec|list|abstract)>/gi, '\n\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    return md.replace(/\s/g, '').length >= LIMITS.minContentChars ? md : null;
+  } catch { return null; }
 }
 
 // ScienceDirect identifies articles by PII, not DOI; Crossref indexes the PII as an alternative id.
@@ -235,6 +263,8 @@ export async function fromIdentifiers(url: string, fetchImpl: Fetcher = fetch): 
     authors: cr.authors ?? ep.authors, year: cr.year ?? ep.year, venue: cr.venue ?? ep.venue, doi: doi ?? ep.doi,
   };
   meta.citation_key = citationKey(meta);
+  const fullText = ep.pmcid && ep.openAccess ? await europePmcFullText(ep.pmcid, fetchImpl) : null;
+  if (fullText) return { meta, markdown: `# ${title}\n\n${fullText}\n`, warning: 'fullTextViaPmc' };
   const abstract = ep.abstract ?? cr.abstract;
   const body = abstract ? `## 摘要 / Abstract\n\n${abstract}\n` : '';
   return { meta, markdown: `# ${title}\n\n${body}`, warning: abstract ? undefined : 'noAbstract' };
@@ -361,8 +391,9 @@ export async function convertUrl(rawUrl: string, opts: { fetchImpl?: Fetcher; al
        id — the bibliography and abstract are in Crossref and Europe PMC, which is enough for a source page the agent
        can compile. Better a labelled abstract than a dead end. */
     const open = await fromIdentifiers(res.url || url.href, fetchImpl).catch(() => null);
-    if (open) return { ...open, warning: open.warning === 'noAbstract'
-      ? '出版社擋下自動抓取，只取得書目（沒有摘要）。要全文請上傳 PDF 或用「貼上文字」。'
+    if (open) return { ...open, warning:
+      open.warning === 'fullTextViaPmc' ? '出版社擋下自動抓取，但這是開放取用論文，已從 PubMed Central 取得全文。'
+      : open.warning === 'noAbstract' ? '出版社擋下自動抓取，只取得書目（沒有摘要）。要全文請上傳 PDF 或用「貼上文字」。'
       : '出版社擋下自動抓取，已改用 Crossref 與 Europe PMC 取得書目與摘要；全文不在其中。' };
     throw new NoteError('BAD_PATH', { 'zh-TW': `抓取失敗：HTTP ${res.status}${res.status === 403 ? '（網站拒絕自動抓取，請改用貼上文字或上傳 PDF）' : ''}`, en: `Fetch failed: HTTP ${res.status}${res.status === 403 ? ' (the site refuses automated fetching; paste the text or upload a PDF instead)' : ''}` });
   }
@@ -458,6 +489,12 @@ async function finishHtml(
        page worth compiling at all. */
     if (hasBiblio) {
       const ep = await europePmcMeta(m.doi ? `DOI:"${m.doi}"` : `TITLE:"${(m.title ?? '').slice(0, 120)}"`, fetchImpl);
+      const full = ep.pmcid && ep.openAccess ? await europePmcFullText(ep.pmcid, fetchImpl) : null;
+      if (full) {
+        out.markdown = `# ${out.meta.title}\n\n${full}\n`;
+        out.warning = '出版社頁面沒有可擷取的正文，但這是開放取用論文，已從 PubMed Central 取得全文。';
+        return out;
+      }
       const abstract = ep.abstract ?? (m.doi ? (await lookupCrossref(m.doi, fetchImpl)).abstract : undefined);
       if (abstract && abstract.length > chars) {
         out.markdown = `# ${out.meta.title}\n\n## 摘要 / Abstract\n\n${abstract}\n`;
