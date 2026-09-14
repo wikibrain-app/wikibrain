@@ -180,6 +180,7 @@ export const api = {
   revokeShare: (path: string) => request<{ revoked: boolean }>('DELETE', `/api/share?path=${encodeURIComponent(path)}`),
   publicShare: (token: string) => request<SharedNote>('GET', `/api/public/share/${encodeURIComponent(token)}`),
   billingPortal: () => request<{ overview: string; cancel?: string; update_payment_method?: string }>('POST', '/api/billing/portal'),
+  resetWorkspace: (confirm: string) => request<{ notes: number; shares: number }>('POST', '/api/workspace/reset', { confirm }),
   deleteAccount: (password: string) => request<unknown>('POST', '/api/auth/delete-user', { password }),
   setLang: (lang: Lang) => request<{ lang: Lang }>('PUT', '/api/me/lang', { lang }),
   templates: () => request<{ templates: Template[]; langs: Lang[]; custom: CustomTemplate[]; ruleUpdates: RuleUpdate[] }>('GET', '/api/templates'),

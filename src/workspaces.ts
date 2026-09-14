@@ -38,3 +38,20 @@ export async function getWorkspaceFor(userId: string): Promise<Workspace | null>
 export async function ensureWorkspaceFor(userId: string, lang: Lang = 'zh-TW'): Promise<Workspace> {
   return (await getWorkspaceFor(userId)) ?? createWorkspaceFor(userId, lang);
 }
+
+/* ── Start over without losing the account ──
+   Between "delete one page" and "delete the whole account" there was nothing, so anyone who filled a workspace while
+   trying the product out had no way back to an empty one. This empties it the same way deleting a page does — the row
+   keeps its deleted_at and every version snapshot stays — so the knowledge base is gone from every view but the text
+   is still in the database, and creating a page at the same path revives it with its history intact. Anything that is
+   really destructive stays with account deletion.
+
+   Shares are revoked because a public link is a promise to someone outside: `readShared` would already 404 on a
+   deleted page, but leaving live tokens pointing at emptied pages is not a state worth keeping. Conversations, agent
+   job history and the stored API key are not the knowledge base and survive. */
+export async function resetWorkspace(ws: string): Promise<{ notes: number; shares: number }> {
+  const notes = await pool.query(`UPDATE notes SET deleted_at = now() WHERE workspace_id = $1 AND deleted_at IS NULL`, [ws]);
+  const shares = await pool.query(
+    `UPDATE shares SET revoked_at = now() WHERE revoked_at IS NULL AND note_id IN (SELECT id FROM notes WHERE workspace_id = $1)`, [ws]);
+  return { notes: notes.rowCount ?? 0, shares: shares.rowCount ?? 0 };
+}

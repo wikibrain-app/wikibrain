@@ -78,6 +78,23 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
     catch (err) { toast((err as Error).message, { kind: 'error' }); }
   }
   const copy = (s: string) => navigator.clipboard.writeText(s).then(() => toast(t('common.copied'))).catch(() => toast(t('common.clipboardFail'), { kind: 'error' }));
+  async function resetWorkspace() {
+    const name = me.workspace.name;
+    const typed = await confirmDialog({
+      title: t('settings.reset.confirmTitle'),
+      body: t('settings.reset.confirmBody', { name }),
+      confirmLabel: t('settings.reset.ok'), danger: true,
+      input: { label: name, type: 'text', required: true },
+    });
+    if (typed !== name) { if (typed) toast(t('settings.reset.failed'), { kind: 'error' }); return; }
+    try {
+      const r = await api.resetWorkspace(name);
+      try { localStorage.removeItem('wb-first-query'); } catch { /* storage unavailable */ }   // the start checklist begins again
+      toast(t('settings.reset.done', { n: r.notes }));
+      navigate('/');
+    } catch (e) { toast((e as Error).message || t('settings.reset.failed'), { kind: 'error' }); }
+  }
+
   async function deleteAccount() {
     const pw = await confirmDialog({ title: t('settings.danger.title2'), body: t('settings.danger.confirm1'), confirmLabel: t('settings.danger.ok'), danger: true, input: { label: t('settings.danger.password'), type: 'password' } });
     if (typeof pw !== 'string' || !pw) return;
@@ -317,6 +334,13 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
           </section>
 
           <section id="danger" className="rounded-[12px] border border-danger-line bg-danger-mist p-5 sb:p-6 scroll-mt-6" data-testid="danger-zone">
+            {/* Emptying comes before deleting: it is the thing most people actually want, and reaching for the
+                account-deletion button to get a clean workspace is how someone loses an account by accident. */}
+            <h2 className="text-[15px] font-semibold mb-1">{t('settings.reset.title')}</h2>
+            <p className="text-[12.5px] text-ink-soft mb-1 leading-relaxed">{t('settings.reset.body')}</p>
+            <p className="text-[12.5px] text-ink-faint mb-3 leading-relaxed">{t('settings.reset.safety')} {t('settings.reset.exportFirst')}</p>
+            <button className={`${btnGhost} hover:border-amber hover:text-amber`} onClick={resetWorkspace} data-testid="reset-workspace">{t('settings.reset.button')}</button>
+            <hr className="my-6 border-line" />
             <h2 className="text-[15px] font-semibold mb-1 text-danger">{t('settings.danger.title')}</h2>
             <p className="text-[12.5px] text-ink-soft mb-3 leading-relaxed">{t('settings.danger.body')}</p>
           <button className={`${btnGhost} hover:border-danger hover:text-danger`} onClick={deleteAccount} data-testid="delete-account">{t('settings.danger.button')}</button>

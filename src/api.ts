@@ -2,7 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth, type Session } from './auth-web.js';
 import { config } from './config.js';
-import { ensureWorkspaceFor, setWorkspaceLang } from './workspaces.js';
+import { resetWorkspace, ensureWorkspaceFor, setWorkspaceLang } from './workspaces.js';
 import { isLang, pick } from './lang.js';
 import { createToken, listTokens, revokeToken } from './tokens.js';
 import { authenticateToken } from './auth.js';
@@ -51,7 +51,7 @@ api.get('/config', (_req, res) => {
 /* REST API with an API key (P1): the same MCP token works as `Authorization: Bearer <token>` on the notes REST
    (tree, read, create, update, delete, search, backlinks, versions, assets, import, export, plan). Account-level
    endpoints stay session-only. Read-only tokens (scopes without notes:write) get 403 on mutations. */
-const SESSION_ONLY = /^\/(tokens|ai|zotero|billing|oauth|me\/lang|templates\/custom|chat|ingest|lint\/run)(\/|$)/;
+const SESSION_ONLY = /^\/(tokens|ai|zotero|billing|oauth|me\/lang|me\/workspace|templates\/custom|chat|ingest|lint\/run|workspace\/reset)(\/|$)/;
 async function requireSession(req: Request, res: Response, next: NextFunction) {
   const authz = req.header('authorization');
   if (authz?.startsWith('Bearer ')) {
@@ -351,6 +351,17 @@ api.delete('/zotero', async (_req, res) => { res.json({ deleted: await deleteZot
 api.post('/zotero/sync', async (_req, res) => {
   const s = res.locals.session as Session;
   try { res.json({ result: await syncZotero(res.locals.workspace.id, { kind: 'web', name: s.user.email }), link: await getZotero(res.locals.workspace.id) }); } catch (e) { handle(res, e); }
+});
+
+/* Emptying a workspace is close enough to deleting it that the confirmation is typing its name — the same bar the
+   rest of the product sets for irreversible-looking actions, and it makes an accidental POST impossible. */
+api.post('/workspace/reset', async (req, res) => {
+  const w = res.locals.workspace as { id: string; name: string };
+  if (String(req.body?.confirm ?? '').trim() !== w.name) {
+    res.status(400).json({ error: 'BAD_REQUEST', message: msg(res, `請輸入工作區名稱「${w.name}」以確認`, `Type the workspace name "${w.name}" to confirm`) });
+    return;
+  }
+  res.json(await resetWorkspace(w.id));
 });
 
 // Plan status (decision 17): trial days left, agent jobs this month, key-free quota
