@@ -240,8 +240,8 @@ function PagePlans() {
           <thead><tr className="bg-porcelain text-left text-[12px] text-ink-soft"><th className="px-3 py-2 font-medium">方案</th><th className="px-3 py-2 font-medium">期限與價格</th><th className="px-3 py-2 font-medium">內容</th></tr></thead>
           <tbody>
             <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Pro 體驗</td><td className="px-3 py-2">註冊起 14 天，免費，不用信用卡</td><td className="px-3 py-2">Pro 全功能；agent 工作不限次；前 50 次由我們代跑（較便宜的模型，內容會經平台帳號送到 OpenRouter），不必先申請 API key</td></tr>
-            <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Free</td><td className="px-3 py-2">永久免費</td><td className="px-3 py-2">每月 20 次 agent 工作；200 則筆記、20 MB、1 把 token、版本保留 7 天；自帶 key</td></tr>
-            <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Pro</td><td className="px-3 py-2">每月 6 美元，或每年 60 美元</td><td className="px-3 py-2">agent 工作不限；10,000 則、1 GB、版本保留 90 天；多 token</td></tr>
+            <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Free</td><td className="px-3 py-2">永久免費</td><td className="px-3 py-2">1 座知識庫；每月 20 次 agent 工作；200 則筆記、20 MB、1 把 token、版本保留 7 天；自帶 key</td></tr>
+            <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">Pro</td><td className="px-3 py-2">每月 6 美元，或每年 60 美元</td><td className="px-3 py-2">最多 10 座知識庫；agent 工作不限；10,000 則、1 GB、版本保留 90 天；多 token</td></tr>
             <tr className="border-t border-line"><td className="px-3 py-2 font-semibold">自架</td><td className="px-3 py-2">免費（AGPL-3.0）</td><td className="px-3 py-2">docker compose 起 Postgres 與服務，同一份程式碼（含內建瀏覽器）；要自備加密金鑰，Google 登入、寄信、免 key 試用可不設；方案上限可用環境變數調整</td></tr>
           </tbody>
         </table>

@@ -107,8 +107,8 @@ export const copy: Record<Lang, LandingCopy> = {
     plans: {
       title: '方案',
       trial: '註冊即開始 14 天 Pro 體驗：全部功能、agent 工作不限次、前 50 次不用 API key。不用信用卡，到期自動轉 Free，資料留著。',
-      free: { name: 'Free', price: '永久免費', lines: ['200 則筆記', '每月 20 次 agent 工作', '自帶 API key，或用 Cursor', '隨時匯出'] },
-      pro: { name: 'Pro', price: 'US$6／月，或 US$60／年', lines: ['agent 工作不限次', '10,000 則、1 GB', '多把 token、REST API', '版本保留 90 天', '隨時取消'], cta: '開始 14 天體驗' },
+      free: { name: 'Free', price: '永久免費', lines: ['1 座知識庫', '200 則筆記', '每月 20 次 agent 工作', '自帶 API key，或用 Cursor', '隨時匯出'] },
+      pro: { name: 'Pro', price: 'US$6／月，或 US$60／年', lines: ['最多 10 座知識庫', 'agent 工作不限次', '10,000 則、1 GB', '多把 token、REST API', '版本保留 90 天', '隨時取消'], cta: '開始 14 天體驗' },
       cost: '模型費用另計：你用自己的 API key，一般用量每月約 US$1–3，費用走你自己的供應商帳單；用 Cursor 的人不需要 key。結帳由 Paddle 處理。',
       selfHostBefore: '想自己架？程式碼開源，docker compose 一個指令。', selfHostLink: 'GitHub',
     },
@@ -180,8 +180,8 @@ export const copy: Record<Lang, LandingCopy> = {
     plans: {
       title: 'Plans',
       trial: 'Every account starts with a 14-day Pro trial: everything, unlimited agent runs, the first 50 without an API key. No card; it drops to Free when it ends and your data stays.',
-      free: { name: 'Free', price: 'Free forever', lines: ['200 notes', '20 agent runs a month', 'Bring your own key, or use Cursor', 'Export any time'] },
-      pro: { name: 'Pro', price: 'US$6 a month, or US$60 a year', lines: ['Unlimited agent runs', '10,000 notes, 1 GB', 'Multiple tokens, REST API', '90-day version history', 'Cancel any time'], cta: 'Start the 14-day trial' },
+      free: { name: 'Free', price: 'Free forever', lines: ['1 knowledge base', '200 notes', '20 agent runs a month', 'Bring your own key, or use Cursor', 'Export any time'] },
+      pro: { name: 'Pro', price: 'US$6 a month, or US$60 a year', lines: ['Up to 10 knowledge bases', 'Unlimited agent runs', '10,000 notes, 1 GB', 'Multiple tokens, REST API', '90-day version history', 'Cancel any time'], cta: 'Start the 14-day trial' },
       cost: 'Model usage is billed by your provider, not us: with your own API key, typical use is about US$1–3 a month. Cursor users need no key. Checkout is handled by Paddle.',
       selfHostBefore: 'Prefer to self-host? The code is open source; one docker compose command. ', selfHostLink: 'GitHub',
     },

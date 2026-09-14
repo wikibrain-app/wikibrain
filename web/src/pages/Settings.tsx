@@ -219,6 +219,9 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
             </div>
             <div className="mt-2 font-mono text-[12px] text-ink-soft" data-testid="oauth-intro">{t('settings.connect.mcpUrl')}: <code className="rounded bg-porcelain px-1">{me.mcpUrl}</code></div>
             <h3 className="mt-6 mb-2 text-[13px] font-semibold">{t('settings.connect.tokensTitle')}</h3>
+            {/* With more than one knowledge base, "which one does this token write to" is the first thing a person gets
+                wrong; the answer is whichever was current when it was made, and it never moves afterwards. */}
+            <p className="mb-2 text-[12.5px] leading-relaxed text-ink-faint">{t('settings.tokens.boundTo', { name: me.workspace.name })}</p>
             <form onSubmit={create} className="flex items-end gap-2 mb-5 max-w-[420px]">
             <div className="flex-1"><Field label={t('settings.tokens.label')} htmlFor="label"><input id="label" className={input} value={label} onChange={e => setLabel(e.target.value)} /></Field></div>
             <button className={`${btnPrimary} mb-3.5`}>{t('settings.tokens.create')}</button>
