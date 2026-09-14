@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { pool } from './db.js';
 
 import { isLang, type Lang } from './lang.js';
+import { NoteError } from './notes.js';
 
 export interface Workspace { id: string; owner_user_id: string; name: string; lang: Lang; created_at: Date }
 
@@ -54,4 +55,49 @@ export async function resetWorkspace(ws: string): Promise<{ notes: number; share
   const shares = await pool.query(
     `UPDATE shares SET revoked_at = now() WHERE revoked_at IS NULL AND note_id IN (SELECT id FROM notes WHERE workspace_id = $1)`, [ws]);
   return { notes: notes.rowCount ?? 0, shares: shares.rowCount ?? 0 };
+}
+
+/* ── Several knowledge bases per account ──
+   The isolation was always there — every query carries workspace_id and every token is bound to one — so what was
+   missing is only the ability to say which one. How many you may have is a plan question: one is enough to use the
+   product, and keeping separate bases is the kind of thing that comes with using it seriously. */
+
+export const workspaceLimitFor = (plan: 'free' | 'pro'): number =>
+  plan === 'pro' ? Number(process.env.PRO_WORKSPACES ?? 10) : Number(process.env.FREE_WORKSPACES ?? 1);
+
+export async function listWorkspacesFor(userId: string): Promise<Workspace[]> {
+  const { rows } = await pool.query<Workspace>(
+    `SELECT * FROM workspaces WHERE owner_user_id = $1 ORDER BY created_at`, [userId]);
+  return rows;
+}
+
+/** The workspace a request acts on: the one asked for if it is really theirs, otherwise their first. */
+export async function resolveWorkspace(userId: string, wanted?: string | null): Promise<Workspace> {
+  if (wanted) {
+    const { rows } = await pool.query<Workspace>(
+      `SELECT * FROM workspaces WHERE id = $1 AND owner_user_id = $2`, [wanted, userId]);
+    if (rows[0]) return rows[0];
+  }
+  return ensureWorkspaceFor(userId);
+}
+
+export async function renameWorkspace(ws: string, userId: string, name: string): Promise<Workspace | null> {
+  const clean = name.trim().slice(0, 60);
+  if (!clean) throw new NoteError('BAD_PATH', { 'zh-TW': '名稱不能是空的', en: 'The name cannot be empty' });
+  const { rows } = await pool.query<Workspace>(
+    `UPDATE workspaces SET name = $3 WHERE id = $1 AND owner_user_id = $2 RETURNING *`, [ws, userId, clean]);
+  return rows[0] ?? null;
+}
+
+/* Deleting a workspace is the one place where data really goes: its notes, versions, jobs, chats and tokens go with
+   it. The last one cannot be deleted — an account with no workspace has nowhere to land — and emptying is offered
+   instead, which keeps the history. */
+export async function deleteWorkspace(ws: string, userId: string): Promise<boolean> {
+  const mine = await listWorkspacesFor(userId);
+  if (mine.length <= 1) throw new NoteError('FORBIDDEN', {
+    'zh-TW': '這是你唯一的知識庫，不能刪除。想重新開始請用「清空知識庫」，歷史會留著。',
+    en: 'This is your only knowledge base, so it cannot be deleted. To start over, empty it instead — the history is kept.',
+  });
+  const { rowCount } = await pool.query(`DELETE FROM workspaces WHERE id = $1 AND owner_user_id = $2`, [ws, userId]);
+  return !!rowCount;
 }

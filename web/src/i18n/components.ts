@@ -230,6 +230,9 @@ const components: { 'zh-TW': Record<string, string>; en: Record<string, string> 
     'ingest.background': '背景執行',
 
     // Markdown／Mermaid
+    'ws.new': '＋ 新增知識庫',
+    'ws.limit': '你的方案最多 {n} 個知識庫',
+    'ws.manage': '管理知識庫…',
     'markdown.missing': '尚未建立此頁：{target}',
     'markdown.extImage': '［外部圖片已封鎖］',
     'mermaid.error': '（Mermaid 圖表無法渲染：{err}）',
@@ -661,6 +664,9 @@ const components: { 'zh-TW': Record<string, string>; en: Record<string, string> 
     'ingest.background': 'Run in background',
 
     // Markdown／Mermaid
+    'ws.new': '+ New knowledge base',
+    'ws.limit': 'Your plan allows {n} knowledge base(s)',
+    'ws.manage': 'Manage knowledge bases…',
     'markdown.missing': 'Page not created yet: {target}',
     'markdown.extImage': '[external image blocked]',
     'mermaid.error': '(Mermaid diagram could not be rendered: {err})',

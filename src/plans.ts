@@ -40,13 +40,18 @@ export interface PlanStatus {
    for the same reason runJob() refunds its keyless credit: nothing was spent and nothing was delivered. Counting it
    would let a Free user with a broken key lock themselves out for the month by clicking. */
 export async function planStatus(ws: string): Promise<PlanStatus> {
+  /* The plan is the account's; the usage is every workspace the account owns. Counting notes per workspace would make
+     "new workspace" the way around the Free limit. */
   const { rows } = await pool.query<{ plan: 'free' | 'pro'; trial_ends_at: Date | null; trial_runs_used: number; runs: string; notes: string; bytes: string }>(
-    `SELECT w.plan, w.trial_ends_at, w.trial_runs_used,
-            (SELECT count(*) FROM ingest_jobs j WHERE j.workspace_id = w.id AND j.created_at >= date_trunc('month', now())
+    `SELECT u.plan, u.trial_ends_at, u.trial_runs_used,
+            (SELECT count(*) FROM ingest_jobs j JOIN workspaces ww ON ww.id = j.workspace_id
+              WHERE ww.owner_user_id = u.id AND j.created_at >= date_trunc('month', now())
                 AND NOT (j.status = 'failed' AND j.tokens_in + j.tokens_out = 0)) AS runs,
-            (SELECT count(*) FROM notes n WHERE n.workspace_id = w.id AND n.deleted_at IS NULL) AS notes,
-            (SELECT coalesce(sum(octet_length(n.content_md)), 0) FROM notes n WHERE n.workspace_id = w.id AND n.deleted_at IS NULL) AS bytes
-       FROM workspaces w WHERE w.id = $1`, [ws]);
+            (SELECT count(*) FROM notes n JOIN workspaces ww ON ww.id = n.workspace_id
+              WHERE ww.owner_user_id = u.id AND n.deleted_at IS NULL) AS notes,
+            (SELECT coalesce(sum(octet_length(n.content_md)), 0) FROM notes n JOIN workspaces ww ON ww.id = n.workspace_id
+              WHERE ww.owner_user_id = u.id AND n.deleted_at IS NULL) AS bytes
+       FROM workspaces w JOIN "user" u ON u.id = w.owner_user_id WHERE w.id = $1`, [ws]);
   const w = rows[0];
   if (!w) throw new NoteError('NOT_FOUND', { 'zh-TW': '找不到工作區', en: 'Workspace not found' });
   const trialActive = !!w.trial_ends_at && w.trial_ends_at.getTime() > Date.now();
@@ -96,7 +101,9 @@ export async function assertCanWrite(ws: string, content: string, path?: string)
 export async function assertCanCreateToken(ws: string): Promise<void> {
   const s = await planStatus(ws);
   if (s.tokens_limit === null) return;
-  const { rows } = await pool.query<{ n: string }>(`SELECT count(*) AS n FROM mcp_tokens WHERE workspace_id = $1 AND kind = 'pat' AND revoked_at IS NULL`, [ws]);
+  const { rows } = await pool.query<{ n: string }>(
+    `SELECT count(*) AS n FROM mcp_tokens t JOIN workspaces w ON w.id = t.workspace_id
+      WHERE w.owner_user_id = (SELECT owner_user_id FROM workspaces WHERE id = $1) AND t.kind = 'pat' AND t.revoked_at IS NULL`, [ws]);
   if (Number(rows[0].n) >= s.tokens_limit) throw new NoteError('FORBIDDEN', {
     'zh-TW': `Free 方案只能有 ${s.tokens_limit} 把有效的 MCP token。撤銷舊的再產生，或升級 Pro。`,
     en: `The Free plan allows ${s.tokens_limit} active MCP token. Revoke the old one first, or upgrade to Pro.`,
@@ -127,13 +134,15 @@ export async function trialRunConfig(ws: string): Promise<RunConfig | null> {
 /** Spend one keyless run. False when they ran out between the offer and here (two clicks at once). */
 export async function claimTrialRun(ws: string): Promise<boolean> {
   const { rowCount } = await pool.query(
-    `UPDATE workspaces SET trial_runs_used = trial_runs_used + 1 WHERE id = $1 AND trial_runs_used < $2`, [ws, TRIAL_FREE_RUNS]);
+    `UPDATE "user" u SET trial_runs_used = u.trial_runs_used + 1
+       FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id AND u.trial_runs_used < $2`, [ws, TRIAL_FREE_RUNS]);
   return !!rowCount;
 }
 
 /** Give one back, for a run that never reached the model. Never goes below zero. */
 export async function refundTrialRun(ws: string): Promise<void> {
-  await pool.query(`UPDATE workspaces SET trial_runs_used = greatest(trial_runs_used - 1, 0) WHERE id = $1`, [ws])
+  await pool.query(`UPDATE "user" u SET trial_runs_used = greatest(u.trial_runs_used - 1, 0)
+                      FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [ws])
     .catch(e => console.error('trial refund failed:', e));
 }
 
@@ -157,5 +166,5 @@ export async function noKeyError(ws: string): Promise<NoteError> {
 }
 
 export async function setPlan(ws: string, plan: 'free' | 'pro'): Promise<void> {
-  await pool.query(`UPDATE workspaces SET plan = $2 WHERE id = $1`, [ws, plan]);
+  await pool.query(`UPDATE "user" u SET plan = $2 FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [ws, plan]);
 }

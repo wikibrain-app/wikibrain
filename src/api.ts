@@ -2,7 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth, type Session } from './auth-web.js';
 import { config } from './config.js';
-import { resetWorkspace, ensureWorkspaceFor, setWorkspaceLang } from './workspaces.js';
+import { createWorkspaceFor, deleteWorkspace, listWorkspacesFor, renameWorkspace, resetWorkspace, resolveWorkspace, setWorkspaceLang, workspaceLimitFor } from './workspaces.js';
 import { isLang, pick } from './lang.js';
 import { createToken, listTokens, revokeToken } from './tokens.js';
 import { authenticateToken } from './auth.js';
@@ -51,7 +51,11 @@ api.get('/config', (_req, res) => {
 /* REST API with an API key (P1): the same MCP token works as `Authorization: Bearer <token>` on the notes REST
    (tree, read, create, update, delete, search, backlinks, versions, assets, import, export, plan). Account-level
    endpoints stay session-only. Read-only tokens (scopes without notes:write) get 403 on mutations. */
-const SESSION_ONLY = /^\/(tokens|ai|zotero|billing|oauth|me\/lang|me\/workspace|templates\/custom|chat|ingest|lint\/run|workspace\/reset)(\/|$)/;
+export const WS_COOKIE = 'wb_ws';
+const cookieValue = (req: Request, name: string): string | null =>
+  (req.headers.cookie ?? '').split(';').map(c => c.trim()).find(c => c.startsWith(`${name}=`))?.slice(name.length + 1) ?? null;
+
+const SESSION_ONLY = /^\/(tokens|ai|zotero|billing|oauth|me\/lang|me\/workspace|templates\/custom|chat|ingest|lint\/run|workspace\/reset|workspaces)(\/|$)/;
 async function requireSession(req: Request, res: Response, next: NextFunction) {
   const authz = req.header('authorization');
   if (authz?.startsWith('Bearer ')) {
@@ -60,7 +64,7 @@ async function requireSession(req: Request, res: Response, next: NextFunction) {
     if (SESSION_ONLY.test(req.path)) { res.status(403).json({ error: 'FORBIDDEN', message: msg(res, '這個端點只能在網頁登入後使用', 'This endpoint needs a browser session') }); return; }
     if (!['GET', 'HEAD'].includes(req.method) && !ctx.scopes.includes('notes:write')) { res.status(403).json({ error: 'FORBIDDEN', message: msg(res, '這把 token 只有讀取權限', 'This token is read-only') }); return; }
     res.locals.session = { user: { id: ctx.userId, email: `token:${ctx.label}`, name: ctx.label } };
-    res.locals.workspace = await ensureWorkspaceFor(ctx.userId);
+    res.locals.workspace = await resolveWorkspace(ctx.userId, ctx.workspaceId);   // a token is bound to one workspace; honour it
     res.locals.actor = { kind: 'mcp', name: ctx.label };
     res.locals.viaToken = true;
     next();
@@ -72,7 +76,10 @@ async function requireSession(req: Request, res: Response, next: NextFunction) {
     return;
   }
   res.locals.session = session;
-  res.locals.workspace = await ensureWorkspaceFor(session.user.id);
+  /* Which workspace a browser is looking at lives in a cookie rather than the URL: the note routes already carry a
+     path, and a shared link should not disclose how someone's account is organised. resolveWorkspace checks the
+     ownership, so a forged cookie only ever falls back to their own first workspace. */
+  res.locals.workspace = await resolveWorkspace(session.user.id, cookieValue(req, WS_COOKIE));
   next();
 }
 api.use(requireSession);
@@ -351,6 +358,63 @@ api.delete('/zotero', async (_req, res) => { res.json({ deleted: await deleteZot
 api.post('/zotero/sync', async (_req, res) => {
   const s = res.locals.session as Session;
   try { res.json({ result: await syncZotero(res.locals.workspace.id, { kind: 'web', name: s.user.email }), link: await getZotero(res.locals.workspace.id) }); } catch (e) { handle(res, e); }
+});
+
+/* Several knowledge bases per account. Switching is a cookie, so the browser keeps its choice across reloads and the
+   server never has to trust it — resolveWorkspace re-checks ownership on every request. */
+api.get('/workspaces', async (_req, res) => {
+  const s = res.locals.session as Session;
+  const [list, plan] = await Promise.all([listWorkspacesFor(s.user.id), planStatus(res.locals.workspace.id)]);
+  res.json({ workspaces: list.map(w => ({ id: w.id, name: w.name, lang: w.lang, created_at: w.created_at })), current: res.locals.workspace.id, limit: workspaceLimitFor(plan.effective) });
+});
+
+api.post('/workspaces', async (req, res) => {
+  const s = res.locals.session as Session;
+  const plan = await planStatus(res.locals.workspace.id);
+  const limit = workspaceLimitFor(plan.effective);
+  const mine = await listWorkspacesFor(s.user.id);
+  if (mine.length >= limit) {
+    res.status(403).json({ error: 'FORBIDDEN', message: msg(res,
+      `你的方案最多 ${limit} 個知識庫。升級 Pro 可以開到 ${workspaceLimitFor('pro')} 個。`,
+      `Your plan allows ${limit} knowledge base(s). Pro allows up to ${workspaceLimitFor('pro')}.`) });
+    return;
+  }
+  const name = String(req.body?.name ?? '').trim().slice(0, 60);
+  const w = await createWorkspaceFor(s.user.id, (req.body?.lang ?? res.locals.workspace.lang) as Lang, name || undefined);
+  res.cookie(WS_COOKIE, w.id, { maxAge: 365 * 24 * 3600_000, httpOnly: true, sameSite: 'lax', path: '/' });   // land in the new one
+  res.status(201).json({ id: w.id, name: w.name, lang: w.lang, created_at: w.created_at });
+});
+
+api.put('/me/workspace', async (req, res) => {
+  const s = res.locals.session as Session;
+  const w = await resolveWorkspace(s.user.id, String(req.body?.id ?? ''));
+  if (w.id !== String(req.body?.id ?? '')) { res.status(404).json({ error: 'NOT_FOUND', message: msg(res, '找不到這個知識庫', 'No such knowledge base') }); return; }
+  res.cookie(WS_COOKIE, w.id, { maxAge: 365 * 24 * 3600_000, httpOnly: true, sameSite: 'lax', path: '/' });
+  res.json({ id: w.id, name: w.name, lang: w.lang });
+});
+
+api.patch('/workspaces/:id', async (req, res) => {
+  const s = res.locals.session as Session;
+  try {
+    const w = await renameWorkspace(req.params.id, s.user.id, String(req.body?.name ?? ''));
+    if (!w) { res.status(404).json({ error: 'NOT_FOUND', message: msg(res, '找不到這個知識庫', 'No such knowledge base') }); return; }
+    res.json({ id: w.id, name: w.name });
+  } catch (e) { handle(res, e); }
+});
+
+api.delete('/workspaces/:id', async (req, res) => {
+  const s = res.locals.session as Session;
+  const target = (await listWorkspacesFor(s.user.id)).find(w => w.id === req.params.id);
+  if (!target) { res.status(404).json({ error: 'NOT_FOUND', message: msg(res, '找不到這個知識庫', 'No such knowledge base') }); return; }
+  if (String(req.query.confirm ?? '') !== target.name) {
+    res.status(400).json({ error: 'BAD_REQUEST', message: msg(res, `請輸入名稱「${target.name}」以確認刪除`, `Type the name "${target.name}" to confirm`) });
+    return;
+  }
+  try {
+    await deleteWorkspace(target.id, s.user.id);
+    if (res.locals.workspace.id === target.id) res.clearCookie(WS_COOKIE, { path: '/' });
+    res.json({ ok: true });
+  } catch (e) { handle(res, e); }
 });
 
 /* Emptying a workspace is close enough to deleting it that the confirmation is typing its name — the same bar the

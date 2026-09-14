@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { Brand, btnGhost } from './ui';
 import { useT } from '../i18n';
+import { WorkspaceSwitch } from './WorkspaceSwitch';
 
 interface Props {
   email: string;
@@ -16,6 +17,8 @@ interface Props {
   onChat: () => void;
   chatOpen: boolean;
   isAdmin?: boolean;
+  workspaceName: string;
+  onSwitched: () => void;
 }
 
 export function Topbar(p: Props) {
@@ -27,6 +30,7 @@ export function Topbar(p: Props) {
     <header className="flex flex-wrap items-center gap-2 sb:gap-4 border-b border-line bg-paper px-3 sb:px-5 py-2.5">
       <button className={`${btnGhost} sb:hidden px-2.5`} aria-label={t('topbar.menu')} onClick={p.onToggleSidebar}>☰</button>
       <Link to="/"><Brand tag /></Link>
+      <WorkspaceSwitch name={p.workspaceName} onSwitched={p.onSwitched} />
       <form onSubmit={submit} className="order-last sb:order-none w-full sb:w-auto sb:flex-1 sb:max-w-[420px] flex items-center gap-2 rounded-lg border border-line bg-porcelain px-3 py-[7px] text-ink-soft">
         <span aria-hidden>🔍</span>
         <input type="search" aria-label={t('topbar.search')} placeholder={t('topbar.searchPh')} className="flex-1 bg-transparent text-[13px] text-ink outline-none" value={q} onChange={e => setQ(e.target.value)} />

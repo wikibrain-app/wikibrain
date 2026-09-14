@@ -10,10 +10,10 @@ export async function purgeOldVersions(): Promise<number> {
   const free = limitsFor('free').retentionDays, pro = limitsFor('pro').retentionDays;
   const { rowCount } = await pool.query(
     `DELETE FROM note_versions v
-      USING notes n, workspaces w
-      WHERE n.id = v.note_id AND w.id = n.workspace_id
+      USING notes n, workspaces w, "user" u
+      WHERE n.id = v.note_id AND w.id = n.workspace_id AND u.id = w.owner_user_id
         AND v.version <> n.version
-        AND v.created_at < now() - (CASE WHEN w.plan = 'pro' OR (w.trial_ends_at IS NOT NULL AND w.trial_ends_at > now()) THEN $2::int ELSE $1::int END * interval '1 day')`,
+        AND v.created_at < now() - (CASE WHEN u.plan = 'pro' OR (u.trial_ends_at IS NOT NULL AND u.trial_ends_at > now()) THEN $2::int ELSE $1::int END * interval '1 day')`,
     [free, pro],
   );
   return rowCount ?? 0;

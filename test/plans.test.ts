@@ -55,7 +55,7 @@ test('with platform key: N trial runs on the platform config, counted when claim
 });
 
 test('trial over -> Free monthly cap; 403 with explanation when full; Pro unlimited', async () => {
-  await pool.query(`UPDATE workspaces SET trial_ends_at = now() - interval '1 day' WHERE id = $1`, [wsId]);
+  await pool.query(`UPDATE "user" u SET trial_ends_at = now() - interval '1 day' FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [wsId]);
   let p = (await api('GET', '/api/plan')).data; assert.equal(p.trial_active, false); assert.equal(p.runs_limit, FREE_RUNS); assert.equal(p.can_run, true);
   const vals = Array.from({ length: FREE_RUNS }, (_, i) => `('${wsId}', '${userId}', '{}', 'openrouter', 'x', 'done', now() - interval '${i} minutes')`).join(',');
   await pool.query(`INSERT INTO ingest_jobs (workspace_id, user_id, paths, provider, model, status, created_at) VALUES ${vals}`);
@@ -63,12 +63,12 @@ test('trial over -> Free monthly cap; 403 with explanation when full; Pro unlimi
   const r = await api('POST', '/api/ingest', {}); assert.equal(r.status, 403); assert.match(r.data.message, new RegExp(`每月 ${FREE_RUNS} 次 agent 工作已用完`));
   const chat = await api('POST', '/api/chat', {}); const sid = chat.data?.session?.id ?? chat.data?.id;
   if (sid) { const m = await api('POST', `/api/chat/${sid}/messages`, { text: 'hi' }); assert.equal(m.status, 403); }
-  await pool.query(`UPDATE workspaces SET plan = 'pro' WHERE id = $1`, [wsId]);
+  await pool.query(`UPDATE "user" u SET plan = 'pro' FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [wsId]);
   p = (await api('GET', '/api/plan')).data; assert.equal(p.plan, 'pro'); assert.equal(p.runs_limit, null); assert.equal(p.can_run, true);
 });
 
 test('content limits: Free blocks the 4th note and growth past storage; shrinking edits, reads and archiving still work; Pro lifts limits', async () => {
-  await pool.query(`UPDATE workspaces SET plan = 'free', trial_ends_at = now() - interval '1 day' WHERE id = $1`, [wsId]);
+  await pool.query(`UPDATE "user" u SET plan = 'free', trial_ends_at = now() - interval '1 day' FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [wsId]);
   await pool.query(`DELETE FROM ingest_jobs WHERE workspace_id = $1`, [wsId]);
   const p0 = (await api('GET', '/api/plan')).data; assert.equal(p0.effective, 'free'); assert.equal(p0.notes_limit, 3); assert.equal(p0.bytes_limit, 600); assert.equal(p0.tokens_limit, 1); assert.equal(p0.retention_days, 7);
   for (let i = 1; i <= 3; i++) assert.equal((await api('POST', '/api/notes', { path: `wiki/n${i}.md`, content: `# n${i}\n\nx` })).status, 201);
@@ -81,14 +81,14 @@ test('content limits: Free blocks the 4th note and growth past storage; shrinkin
   // token limit: one active PAT on Free
   assert.equal((await api('POST', '/api/tokens', { label: 'a' })).status, 201);
   const second = await api('POST', '/api/tokens', { label: 'b' }); assert.equal(second.status, 403); assert.match(second.data.message, /1 把/);
-  await pool.query(`UPDATE workspaces SET plan = 'pro' WHERE id = $1`, [wsId]);
+  await pool.query(`UPDATE "user" u SET plan = 'pro' FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [wsId]);
   assert.equal((await api('POST', '/api/notes', { path: 'wiki/n4.md', content: '# n4' })).status, 201);
   assert.equal((await api('POST', '/api/tokens', { label: 'b' })).status, 201);
-  await pool.query(`UPDATE workspaces SET plan = 'free' WHERE id = $1`, [wsId]);
+  await pool.query(`UPDATE "user" u SET plan = 'free' FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [wsId]);
 });
 
 test('retention by plan: Free purges snapshots older than 7 days, Pro keeps 90', async () => {
-  await pool.query(`UPDATE workspaces SET plan = 'pro' WHERE id = $1`, [wsId]); // Pro first: the Free note limit from the previous test is already reached
+  await pool.query(`UPDATE "user" u SET plan = 'pro' FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [wsId]); // Pro first: the Free note limit from the previous test is already reached
   assert.equal((await api('POST', '/api/notes', { path: 'wiki/r.md', content: '# r v1' })).status, 201);
   const cur = (await api('GET', '/api/notes?path=wiki/r.md')).data;
   await api('PUT', '/api/notes', { path: 'wiki/r.md', content: '# r v2', if_version: cur.version });
@@ -96,7 +96,7 @@ test('retention by plan: Free purges snapshots older than 7 days, Pro keeps 90',
   await pool.query(`UPDATE note_versions SET created_at = now() - interval '30 days' WHERE note_id = $1 AND version = $2`, [rows[0].id, cur.version]);
   await purgeOldVersions();
   let n = await pool.query(`SELECT count(*) FROM note_versions WHERE note_id = $1`, [rows[0].id]); assert.equal(Number(n.rows[0].count), 2, 'Pro keeps a 30-day-old snapshot');
-  await pool.query(`UPDATE workspaces SET plan = 'free' WHERE id = $1`, [wsId]);
+  await pool.query(`UPDATE "user" u SET plan = 'free' FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [wsId]);
   await purgeOldVersions();
   n = await pool.query(`SELECT count(*) FROM note_versions WHERE note_id = $1`, [rows[0].id]); assert.equal(Number(n.rows[0].count), 1, 'Free drops it after 7 days; current version stays');
 });

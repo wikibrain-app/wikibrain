@@ -11,9 +11,9 @@ import { createNote } from '../src/notes.js';
    not when a click is refused, and that the three ways of running out read differently to the person. */
 let ws = '', userId = '';
 const used = async () => Number((await pool.query<{ n: number }>(
-  `SELECT trial_runs_used AS n FROM workspaces WHERE id = $1`, [ws])).rows[0].n);
+  `SELECT u.trial_runs_used AS n FROM workspaces w JOIN "user" u ON u.id = w.owner_user_id WHERE w.id = $1`, [ws])).rows[0].n);
 const setTrial = (days: number) => pool.query(
-  `UPDATE workspaces SET trial_ends_at = now() + ($2 || ' days')::interval WHERE id = $1`, [ws, String(days)]);
+  `UPDATE "user" u SET trial_ends_at = now() + ($2 || ' days')::interval FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [ws, String(days)]);
 
 before(async () => {
   await migrate();
@@ -22,7 +22,7 @@ before(async () => {
   ws = `tr-ws-${randomBytes(4).toString('hex')}`;
   await pool.query(`INSERT INTO "user" (id, name, email, "emailVerified", "createdAt", "updatedAt")
                     VALUES ($1, 'tr', $2, true, now(), now())`, [userId, `${userId}@example.com`]);
-  await pool.query(`INSERT INTO workspaces (id, owner_user_id, name, trial_ends_at) VALUES ($1, $2, 'tr', now() + interval '14 days')`, [ws, userId]);
+  await pool.query(`INSERT INTO workspaces (id, owner_user_id, name) VALUES ($1, $2, 'tr')`, [ws, userId]);
 });
 after(async () => {
   delete process.env.PLATFORM_OPENROUTER_KEY;
@@ -50,23 +50,23 @@ test('a run that is refused before it starts costs nothing', async () => {
 });
 
 test('running out stops at the limit and never goes negative', async () => {
-  await pool.query(`UPDATE workspaces SET trial_runs_used = $2 WHERE id = $1`, [ws, TRIAL_FREE_RUNS - 1]);
+  await pool.query(`UPDATE "user" u SET trial_runs_used = $2 FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [ws, TRIAL_FREE_RUNS - 1]);
   assert.equal(await claimTrialRun(ws), true, '最後一次可以用');
   assert.equal(await claimTrialRun(ws), false, '用完就不給了');
   assert.equal(await used(), TRIAL_FREE_RUNS, '不會超扣');
   assert.equal(await trialRunConfig(ws), null, '用完之後不再提供平台 key');
 
-  await pool.query(`UPDATE workspaces SET trial_runs_used = 0 WHERE id = $1`, [ws]);
+  await pool.query(`UPDATE "user" u SET trial_runs_used = 0 FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [ws]);
   await refundTrialRun(ws);
   assert.equal(await used(), 0, '退還不會退成負數');
 });
 
 test('the three ways of running out say different things', async () => {
-  await pool.query(`UPDATE workspaces SET trial_runs_used = $2 WHERE id = $1`, [ws, TRIAL_FREE_RUNS]);
+  await pool.query(`UPDATE "user" u SET trial_runs_used = $2 FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [ws, TRIAL_FREE_RUNS]);
   await setTrial(7);
   assert.match((await noKeyError(ws)).localized('zh-TW'), /次數已用完/, '體驗中但次數用完');
 
-  await pool.query(`UPDATE workspaces SET trial_runs_used = 0 WHERE id = $1`, [ws]);
+  await pool.query(`UPDATE "user" u SET trial_runs_used = 0 FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [ws]);
   await setTrial(-1);
   assert.match((await noKeyError(ws)).localized('zh-TW'), /體驗期已結束/, '次數還在但期限到了，不能說「次數用完」');
   assert.equal(await trialRunConfig(ws), null, '期限到了就不給平台 key');

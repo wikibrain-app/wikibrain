@@ -78,6 +78,30 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
     catch (err) { toast((err as Error).message, { kind: 'error' }); }
   }
   const copy = (s: string) => navigator.clipboard.writeText(s).then(() => toast(t('common.copied'))).catch(() => toast(t('common.clipboardFail'), { kind: 'error' }));
+  const [wsList, setWsList] = useState<{ id: string; name: string }[]>([]);
+  const [wsLimit, setWsLimit] = useState(1);
+  const reloadWs = () => api.workspaces().then(r => { setWsList(r.workspaces); setWsLimit(r.limit); }).catch(() => {});
+  useEffect(() => { void reloadWs(); }, []);
+
+  async function renameWs(id: string, current: string) {
+    const name = await confirmDialog({ title: t('ws.renameTitle'), confirmLabel: t('common.save'), input: { label: t('ws.renameTitle'), type: 'text', defaultValue: current, required: true } });
+    if (typeof name !== 'string' || !name.trim() || name === current) return;
+    try { await api.renameWorkspace(id, name.trim()); toast(t('ws.renamed')); await reloadWs(); if (id === me.workspace.id) window.location.reload(); }
+    catch (e) { toast((e as Error).message, { kind: 'error' }); }
+  }
+  async function deleteWs(id: string, name: string) {
+    const typed = await confirmDialog({ title: t('ws.deleteTitle'), body: t('ws.deleteBody', { name }), confirmLabel: t('ws.delete'), danger: true, input: { label: name, type: 'text', required: true } });
+    if (typed !== name) return;
+    try { await api.deleteWorkspace(id, name); toast(t('ws.deleted')); if (id === me.workspace.id) window.location.assign('/'); else await reloadWs(); }
+    catch (e) { toast((e as Error).message, { kind: 'error' }); }
+  }
+  async function newWs() {
+    const name = await confirmDialog({ title: t('ws.new'), confirmLabel: t('common.save'), input: { label: t('ws.newName'), type: 'text' } });
+    if (typeof name !== 'string') return;
+    try { await api.createWorkspace(name.trim() || undefined); window.location.assign('/'); }
+    catch (e) { toast((e as Error).message, { kind: 'error' }); }
+  }
+
   async function resetWorkspace() {
     const name = me.workspace.name;
     const typed = await confirmDialog({
@@ -336,6 +360,24 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
           <section id="danger" className="rounded-[12px] border border-danger-line bg-danger-mist p-5 sb:p-6 scroll-mt-6" data-testid="danger-zone">
             {/* Emptying comes before deleting: it is the thing most people actually want, and reaching for the
                 account-deletion button to get a clean workspace is how someone loses an account by accident. */}
+            {/* Listing them here, above emptying and deleting, keeps the three destructive-looking actions in one
+                place and in increasing order of consequence: rename, empty, delete. */}
+            <h2 className="text-[15px] font-semibold mb-1">{t('ws.title')}</h2>
+            <p className="text-[12.5px] text-ink-soft mb-3 leading-relaxed">{t('ws.body')}</p>
+            <ul className="mb-3 space-y-1.5" data-testid="ws-list">
+              {wsList.map(w => (
+                <li key={w.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[13px]">
+                  <span className={w.id === me.workspace.id ? 'font-semibold' : ''}>{w.name}</span>
+                  {w.id === me.workspace.id && <span className="text-[11px] text-ink-faint">（{t('ws.current')}）</span>}
+                  <button className="text-[12px] text-ink-soft hover:text-celadon-deep" onClick={() => renameWs(w.id, w.name)}>{t('ws.rename')}</button>
+                  {wsList.length > 1 && <button className="text-[12px] text-ink-soft hover:text-danger" onClick={() => deleteWs(w.id, w.name)}>{t('ws.delete')}</button>}
+                </li>
+              ))}
+            </ul>
+            {wsList.length < wsLimit
+              ? <button className={btnGhost} onClick={newWs} data-testid="ws-new-settings">{t('ws.new')}</button>
+              : <p className="text-[12px] text-ink-faint">{t('ws.limit', { n: wsLimit })}</p>}
+            <hr className="my-6 border-line" />
             <h2 className="text-[15px] font-semibold mb-1">{t('settings.reset.title')}</h2>
             <p className="text-[12.5px] text-ink-soft mb-1 leading-relaxed">{t('settings.reset.body')}</p>
             <p className="text-[12.5px] text-ink-faint mb-3 leading-relaxed">{t('settings.reset.safety')} {t('settings.reset.exportFirst')}</p>

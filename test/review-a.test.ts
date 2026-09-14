@@ -26,7 +26,7 @@ before(async () => {
   cookie = login.headers.getSetCookie().find(c => c.includes('session_token'))!.split(';')[0];
   const row = (await pool.query<{ id: string; ws: string }>(`SELECT u.id, w.id AS ws FROM "user" u JOIN workspaces w ON w.owner_user_id = u.id WHERE u.email = $1`, [email])).rows[0];
   userId = row.id; ws = row.ws;
-  await pool.query(`UPDATE workspaces SET plan = 'free', trial_ends_at = now() - interval '1 day' WHERE id = $1`, [ws]);
+  await pool.query(`UPDATE "user" u SET plan = 'free', trial_ends_at = now() - interval '1 day' FROM workspaces w WHERE w.id = $1 AND u.id = w.owner_user_id`, [ws]);
 });
 after(async () => { server.close(); await pool.query('DELETE FROM "user" WHERE id = $1', [userId]); await pool.end(); });
 

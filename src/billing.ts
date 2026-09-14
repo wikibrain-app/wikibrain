@@ -38,7 +38,10 @@ export async function applySubscriptionEvent(ev: SubscriptionEvent): Promise<Sub
     [ev.workspace_id, ev.provider, ev.provider_customer_id ?? null, ev.provider_subscription_id ?? null, ev.status, ev.plan ?? 'pro', ev.current_period_end ?? null, ev.raw === undefined ? null : JSON.stringify(ev.raw), ev.event_at ?? null]);
   if (rows.length === 0) return (await getSubscription(ev.workspace_id))!; // stale event: keep the newer state
   const next = PAID.has(ev.status) ? 'pro' : 'free';
-  const prev = (await pool.query<{ plan: string }>(`SELECT plan FROM workspaces WHERE id = $1`, [ev.workspace_id])).rows[0]?.plan;
+  /* The webhook still identifies the payer by workspace — live Paddle subscriptions carry that in custom_data and
+     rewriting it would orphan them — but the plan it grants now lands on the account that owns the workspace. */
+  const prev = (await pool.query<{ plan: string }>(
+    `SELECT u.plan FROM workspaces w JOIN "user" u ON u.id = w.owner_user_id WHERE w.id = $1`, [ev.workspace_id])).rows[0]?.plan;
   await setPlan(ev.workspace_id, next);
   if (prev && prev !== next) track(next === 'pro' ? 'upgrade' : 'churn', { workspaceId: ev.workspace_id }, { provider: ev.provider, status: ev.status });
   return rows[0];
