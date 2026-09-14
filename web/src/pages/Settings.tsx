@@ -13,7 +13,7 @@ import { AppliedResult, TemplatePicker } from '../components/TemplatePicker';
 import { RuleUpdates } from '../components/RuleUpdates';
 import { ConnectCursorModal } from '../components/ConnectCursorModal';
 
-const NAV = ['account', 'plan', 'connect', 'ai', 'data', 'templates', 'danger'] as const;
+const NAV = ['account', 'plan', 'connect', 'ai', 'data', 'templates', 'ws', 'danger'] as const;
 
 export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
   const [tokens, setTokens] = useState<TokenInfo[]>([]);
@@ -360,11 +360,9 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
             {applied ? <AppliedResult r={applied} onClose={() => { setApplied(null); api.usage().then(setUsage).catch(() => {}); }} /> : <TemplatePicker compact onApplied={r => { setApplied(r); api.usage().then(setUsage).catch(() => {}); }} />}
           </section>
 
-          <section id="danger" className="rounded-[12px] border border-danger-line bg-danger-mist p-5 sb:p-6 scroll-mt-6" data-testid="danger-zone">
-            {/* Emptying comes before deleting: it is the thing most people actually want, and reaching for the
-                account-deletion button to get a clean workspace is how someone loses an account by accident. */}
-            {/* Listing them here, above emptying and deleting, keeps the three destructive-looking actions in one
-                place and in increasing order of consequence: rename, empty, delete. */}
+          {/* Making another knowledge base is an everyday action, so it does not belong inside the red card;
+              only emptying and deleting do. */}
+          <section id="ws" className="rounded-[12px] border border-line bg-paper p-5 sb:p-6 scroll-mt-6" data-testid="ws-settings">
             <h2 className="text-[15px] font-semibold mb-1">{t('ws.title')}</h2>
             <p className="text-[12.5px] text-ink-soft mb-3 leading-relaxed">{t('ws.body')}</p>
             <ul className="mb-3 space-y-1.5" data-testid="ws-list">
@@ -380,7 +378,11 @@ export default function Settings({ me, onSignedOut }: { me: Me; onSignedOut: () 
             {wsList.length < wsLimit
               ? <button className={btnGhost} onClick={newWs} data-testid="ws-new-settings">{t('ws.new')}</button>
               : <p className="text-[12px] text-ink-faint">{t('ws.limit', { n: wsLimit })}</p>}
-            <hr className="my-6 border-line" />
+          </section>
+
+          <section id="danger" className="rounded-[12px] border border-danger-line bg-danger-mist p-5 sb:p-6 scroll-mt-6" data-testid="danger-zone">
+            {/* Emptying comes before deleting: it is the thing most people actually want, and reaching for the
+                account-deletion button to get a clean workspace is how someone loses an account by accident. */}
             <h2 className="text-[15px] font-semibold mb-1">{t('settings.reset.title')}</h2>
             <p className="text-[12.5px] text-ink-soft mb-1 leading-relaxed">{t('settings.reset.body')}</p>
             <p className="text-[12.5px] text-ink-faint mb-3 leading-relaxed">{t('settings.reset.safety')} {t('settings.reset.exportFirst')}</p>
