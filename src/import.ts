@@ -146,21 +146,98 @@ export function htmlToMarkdown(html: string, url?: string): { title: string; mar
 }
 
 /* ── Crossref: fill in bibliography by DOI (skipped on failure) ── */
-export async function lookupCrossref(doi: string, fetchImpl: Fetcher = fetch): Promise<Partial<SourceMeta>> {
+export async function lookupCrossref(doi: string, fetchImpl: Fetcher = fetch): Promise<Partial<SourceMeta> & { abstract?: string }> {
   try {
     const res = await fetchImpl(`https://api.crossref.org/works/${encodeURIComponent(doi)}`, {
       headers: { 'user-agent': 'WikiBrain/0.1 (mailto:hello@wikibrain.example)' }, signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return {};
     const m = (await res.json())?.message ?? {};
-    const out: Partial<SourceMeta> = { doi };
+    const out: Partial<SourceMeta> & { abstract?: string } = { doi };
     if (m.title?.[0]) out.title = m.title[0];
     if (Array.isArray(m.author) && m.author.length) out.authors = m.author.map((a: any) => [a.family, a.given].filter(Boolean).join(', ') || a.name).filter(Boolean);
     const y = m.issued?.['date-parts']?.[0]?.[0] ?? m.published?.['date-parts']?.[0]?.[0];
     if (y) out.year = Number(y);
     if (m['container-title']?.[0]) out.venue = m['container-title'][0];
+    // Crossref carries a JATS abstract for many non-biomedical journals, which Europe PMC does not index.
+    if (typeof m.abstract === 'string' && m.abstract.trim()) out.abstract = m.abstract
+      .replace(/<title[^>]*>(.*?)<\/title>/gi, '\n\n**$1** ')
+      .replace(/<\/?(p|sec|br)[^>]*>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\n{3,}/g, '\n\n').trim();
     return out;
   } catch { return {}; }
+}
+
+/* ── Open bibliographic sources ──
+   Several large publishers (Elsevier, Wiley) answer a non-browser request with 403, and some others return a page whose
+   body is behind the paywall even when the metadata is not. Scraping harder is the wrong answer: the same works are in
+   open indexes that exist precisely to be queried. Europe PMC covers MEDLINE, PubMed Central and a wide range of
+   publisher deposits, and returns the abstract; Crossref resolves identifiers and carries the bibliography. Between
+   them a blocked paper still becomes a usable source page — bibliography plus abstract, honestly labelled as such. */
+
+/** Europe PMC by DOI, PMID or PMCID. Returns nothing rather than throwing: this is always a best-effort enrichment. */
+export async function europePmcMeta(query: string, fetchImpl: Fetcher = fetch): Promise<Partial<SourceMeta> & { abstract?: string }> {
+  try {
+    const res = await fetchImpl(
+      `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(query)}&resultType=core&format=json&pageSize=1`,
+      { headers: FETCH_HEADERS, signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return {};
+    const r = (await res.json())?.resultList?.result?.[0];
+    if (!r) return {};
+    const out: Partial<SourceMeta> & { abstract?: string } = {};
+    if (r.title) out.title = String(r.title).replace(/\.$/, '');
+    if (r.authorString) out.authors = String(r.authorString).split(/,\s*/).map((a: string) => a.trim()).filter(Boolean);
+    if (r.pubYear) out.year = Number(r.pubYear);
+    const journal = r.journalInfo?.journal?.title;
+    if (journal) out.venue = journal;
+    if (r.doi) out.doi = String(r.doi);
+    // The abstract arrives with JATS markup (<h4>Background</h4>…); turn the headings into sentences rather than strip them.
+    if (r.abstractText) out.abstract = String(r.abstractText)
+      .replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, '\n\n**$1** ')
+      .replace(/<\/?(p|br)[^>]*>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\n{3,}/g, '\n\n').trim();
+    return out;
+  } catch { return {}; }
+}
+
+// ScienceDirect identifies articles by PII, not DOI; Crossref indexes the PII as an alternative id.
+const PII_RE = /sciencedirect\.com\/science\/article\/(?:abs\/|pii\/)?pii\/([A-Z0-9]+)/i;
+export const piiOf = (url: string) => url.match(PII_RE)?.[1];
+
+export async function doiFromPii(pii: string, fetchImpl: Fetcher = fetch): Promise<string | undefined> {
+  try {
+    const res = await fetchImpl(`https://api.crossref.org/works?filter=alternative-id:${encodeURIComponent(pii)}&rows=1&select=DOI`,
+      { headers: { 'user-agent': 'WikiBrain/0.2 (mailto:hello@wikibrain.app)' }, signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return undefined;
+    return (await res.json())?.message?.items?.[0]?.DOI;
+  } catch { return undefined; }
+}
+
+/** Everything we can learn about a work from its identifier alone, with no publisher page involved. */
+export async function fromIdentifiers(url: string, fetchImpl: Fetcher = fetch): Promise<(Converted & { warning?: string }) | null> {
+  let doi = extractDoi(url);
+  const pii = piiOf(url);
+  if (!doi && pii) doi = await doiFromPii(pii, fetchImpl);
+  const pmcid = url.match(/PMC(\d+)/i)?.[0];
+  const query = doi ? `DOI:"${doi}"` : pmcid ? `PMCID:${pmcid}` : null;
+  if (!query) return null;
+
+  const [cr, ep] = await Promise.all([
+    doi ? lookupCrossref(doi, fetchImpl) : Promise.resolve({} as Partial<SourceMeta> & { abstract?: string }),
+    europePmcMeta(query, fetchImpl),
+  ]);
+  const title = cr.title ?? ep.title;
+  if (!title) return null;
+  const meta: SourceMeta = {
+    source_type: 'paper', title, source_url: url, fetched_at: new Date().toISOString(),
+    authors: cr.authors ?? ep.authors, year: cr.year ?? ep.year, venue: cr.venue ?? ep.venue, doi: doi ?? ep.doi,
+  };
+  meta.citation_key = citationKey(meta);
+  const abstract = ep.abstract ?? cr.abstract;
+  const body = abstract ? `## 摘要 / Abstract\n\n${abstract}\n` : '';
+  return { meta, markdown: `# ${title}\n\n${body}`, warning: abstract ? undefined : 'noAbstract' };
 }
 
 // First author surname: "Chen, Amy" → before the comma; "Hsiao-Yuan Su" → last word; Chinese names without spaces are used whole.
@@ -280,6 +357,13 @@ export async function convertUrl(rawUrl: string, opts: { fetchImpl?: Fetcher; al
         if (viaBrowser) return { ...viaBrowser, warning: viaBrowser.warning ?? '網站擋自動抓取，已改用 headless 瀏覽器擷取。' };
       }
     }
+    /* Blocked, but a paper is not only its publisher's page. If the URL names a work — a DOI, an Elsevier PII, a PMC
+       id — the bibliography and abstract are in Crossref and Europe PMC, which is enough for a source page the agent
+       can compile. Better a labelled abstract than a dead end. */
+    const open = await fromIdentifiers(res.url || url.href, fetchImpl).catch(() => null);
+    if (open) return { ...open, warning: open.warning === 'noAbstract'
+      ? '出版社擋下自動抓取，只取得書目（沒有摘要）。要全文請上傳 PDF 或用「貼上文字」。'
+      : '出版社擋下自動抓取，已改用 Crossref 與 Europe PMC 取得書目與摘要；全文不在其中。' };
     throw new NoteError('BAD_PATH', { 'zh-TW': `抓取失敗：HTTP ${res.status}${res.status === 403 ? '（網站拒絕自動抓取，請改用貼上文字或上傳 PDF）' : ''}`, en: `Fetch failed: HTTP ${res.status}${res.status === 403 ? ' (the site refuses automated fetching; paste the text or upload a PDF instead)' : ''}` });
   }
   const buf = res.body;
@@ -368,6 +452,18 @@ async function finishHtml(
       throw new NoteError('BAD_PATH', challenge
         ? { 'zh-TW': '網站有機器人驗證，抓不到正文。請改用「貼上文字」或上傳 PDF。', en: 'The site has a bot check and the main text could not be fetched. Use "Paste text" or upload a PDF instead.' }
         : { 'zh-TW': '抓不到正文（網頁可能需要 JavaScript 才會顯示內容）。請改用「貼上文字」或上傳 PDF。', en: 'Could not extract the main text (the page may need JavaScript to show its content). Use "Paste text" or upload a PDF instead.' });
+    }
+    /* Metadata came through but the body did not — a paywalled article, or a landing page that carries only the
+       bibliography. The abstract of the same work is usually open in Europe PMC, and an abstract is what makes the
+       page worth compiling at all. */
+    if (hasBiblio) {
+      const ep = await europePmcMeta(m.doi ? `DOI:"${m.doi}"` : `TITLE:"${(m.title ?? '').slice(0, 120)}"`, fetchImpl);
+      const abstract = ep.abstract ?? (m.doi ? (await lookupCrossref(m.doi, fetchImpl)).abstract : undefined);
+      if (abstract && abstract.length > chars) {
+        out.markdown = `# ${out.meta.title}\n\n## 摘要 / Abstract\n\n${abstract}\n`;
+        out.warning = '出版社頁面沒有可擷取的正文，已改用 Crossref／Europe PMC 的摘要；全文不在其中。';
+        return out;
+      }
     }
     out.warning = challenge ? '出版社網站有機器人驗證，只保留書目，正文請另行貼上或上傳 PDF。' : '正文極短，只保留書目與摘要。';
     if (challenge) { out.markdown = `（正文無法自動擷取：${m.source_url}）`; delete out.meta.excerpt; if (CHALLENGE_TITLES.test(out.meta.title)) out.meta.title = m.doi ?? url.href; }

@@ -45,7 +45,7 @@ test('the workspace name has to be typed, and a wrong one changes nothing', asyn
 test('emptying clears every note, revokes shares, and leaves the history recoverable', async () => {
   await createNote(ws, 'raw/sources/a-source.md', '# 來源\n\n內文。\n', actor);
   await createNote(ws, 'wiki/page.md', '# 一頁\n\n第一版。\n', actor);
-  const share = await createShare(ws, 'wiki/page.md');
+  const share = await createShare(ws, 'wiki/page.md', userId);
   assert.ok(await readShared(share.token), '清空前分享看得到');
   assert.ok((await listNotes(ws)).length >= 3);
 
