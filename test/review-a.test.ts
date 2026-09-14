@@ -83,3 +83,19 @@ test('A4: inputs that used to reach Postgres and come back as 500s are refused w
   assert.equal(r.status, 413, `3 MB body → ${r.status}`);
   assert.equal((await r.json()).error, 'TOO_LARGE');
 });
+
+test('lint does not count its own report as broken links', async () => {
+  // A report lists what it found as [[target]], which creates real links from the report page. Counting those would
+  // make the number grow on every run — the wiki would look like it got worse each time lint ran.
+  const { lintWorkspace } = await import('../src/lint.js');
+  const actor = { kind: 'agent' as const, name: 'test' };
+  await createNote(ws, 'wiki/ra-real.md', '# 真的一頁\n\n連到不存在的 [[ra-nowhere]]。\n', actor);
+  const before = await lintWorkspace(ws);
+  const mine = before.dangling.filter(d => d.from === 'wiki/ra-real.md');
+  assert.equal(mine.length, 1, '真實頁面的斷連結照樣要報出來');
+
+  await createNote(ws, 'wiki/lint/2099-01-01.md', '# 健檢報告\n\n- wiki/ra-real.md → [[ra-nowhere]]\n- 說明：[[目標]] 找不到頁\n', actor);
+  const after = await lintWorkspace(ws);
+  assert.equal(after.dangling.filter(d => d.from.startsWith('wiki/lint/')).length, 0, '報告頁自己列出的連結不算');
+  assert.equal(after.dangling.length, before.dangling.length, '跑完健檢之後，斷連結數不該因為報告本身而變多');
+});

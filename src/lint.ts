@@ -64,7 +64,10 @@ export async function lintWorkspace(ws: string): Promise<LintReport> {
     generated_at: new Date().toISOString(),
     counts: { wiki_pages: pages.rows.length, links: Number(linkCount.rows[0].n) },
     orphans: orphans.rows.filter(o => !SKIP.has(o.path) && !isSystem(o.path)),
-    dangling: dangling.rows,
+    /* A lint report lists the broken links it found, and it lists them as [[target]] — so those become real links from
+       the report page, and the next run counts them again. Every press made the number grow, which reads as lint having
+       made the wiki worse. System pages quote the wiki; they are not part of it. */
+    dangling: dangling.rows.filter(d => !isSystem(d.from)),
     not_in_index,
     pending_sources: pending.map(p => ({ path: p.path, title: p.title })),
     log_issues,
