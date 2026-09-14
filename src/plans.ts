@@ -16,7 +16,9 @@ export const limitsFor = (plan: 'free' | 'pro'): PlanLimits => plan === 'pro'
   : { notes: num('FREE_NOTES_LIMIT', 200), bytes: num('FREE_STORAGE_BYTES', 20 * 1024 ** 2), tokens: num('FREE_TOKENS_LIMIT', 1), retentionDays: num('FREE_RETENTION_DAYS', 7) };
 export const TRIAL_FREE_RUNS = Number(process.env.TRIAL_FREE_RUNS ?? 50);
 const platformKey = () => process.env.PLATFORM_OPENROUTER_KEY?.trim() || null;
-const platformModel = () => process.env.PLATFORM_TRIAL_MODEL?.trim() || 'google/gemini-2.5-flash-lite';
+/* The cheapest model that can hold a tool loop is not the cheapest useful one: flash-lite gets through the motions
+   but the pages it compiles are not worth the trial. Roughly 8x the token price, which the capacity page accounts for. */
+const platformModel = () => process.env.PLATFORM_TRIAL_MODEL?.trim() || 'google/gemini-3.8-flash';
 
 export interface PlanStatus {
   plan: 'free' | 'pro';
