@@ -4,11 +4,11 @@ WikiBrain stores personal knowledge bases and users' API keys, so we take report
 
 ## Reporting a vulnerability
 
-Please e-mail **hello@wikibrain.app** with a description, reproduction steps and the affected version (from `/healthz` or the page footer). Do not open a public issue for security problems. We aim to acknowledge within 3 working days and to fix confirmed issues in the hosted service before publishing details.
+Please e-mail **hello@wikibrain.app** with a description, reproduction steps and the affected version (from `/healthz` or the page footer). Do not open a public issue for security problems. We aim to acknowledge within 3 working days and to fix confirmed issues in this repository before publishing details.
 
 ## Scope
 
-- This repository (the open-source core) and the hosted service at https://wikibrain.app.
+- This repository. (The hosted service at wikibrain.app was shut down on 2026-11-09.)
 - Out of scope: third-party providers you connect with your own keys (AI providers, Zotero), and self-hosted instances run by others.
 
 ## What we already do

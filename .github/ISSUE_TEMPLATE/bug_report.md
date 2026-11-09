@@ -12,7 +12,7 @@ labels: bug
 1.
 2.
 
-**Where**: hosted (wikibrain.app) / self-hosted (docker compose) — version from the footer or `/healthz`:
+**Version**: from the page footer or `/healthz`, and how you run it (docker compose / other):
 
 **AI client involved** (Cursor, Claude.ai, ChatGPT, web with own key, none):
 
