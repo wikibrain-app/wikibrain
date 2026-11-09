@@ -10,10 +10,11 @@ const OPERATOR_EN = 'Daniel Huang';
 const CONTACT = 'hello@wikibrain.app';
 const REPO = 'https://github.com/wikibrain-app/wikibrain';
 const UPDATED = '2026-09-08';
+const PRIVACY_UPDATED = '2026-10-05';
 
 export const privacy: LegalDoc = {
   slug: 'privacy',
-  updated: UPDATED,
+  updated: PRIVACY_UPDATED,
   title: { 'zh-TW': '隱私權政策', en: 'Privacy Policy' },
   body: {
     'zh-TW': `生效日期：${UPDATED}　版本 1.1
@@ -32,9 +33,11 @@ export const privacy: LegalDoc = {
 
 ## 你們會追蹤我嗎？
 
-不會。沒有 Google Analytics，沒有廣告像素，沒有第三方追蹤程式，也沒有任何資料離開我們的伺服器。網站只用一個登入用的 session cookie（必要性 cookie），所以也不需要 cookie 同意橫幅。伺服器日誌會記 IP、時間與路徑，用來限流與查資安問題，最多保留 90 天。
+**登入後的知識庫不會被追蹤**：工作區、設定、分享頁、密碼重設連結都不載入任何第三方程式，也沒有廣告像素。登入只用一個 session cookie（必要性 cookie）。
 
-公開頁面（首頁、說明、比較、法律頁）的瀏覽次數我們自己在伺服器上計數，用來知道哪個管道帶來訪客。每一筆記的是頁面、來源網站或活動標籤，以及一個「當日訪客代碼」——那是由位址與瀏覽器字串經加鹽雜湊而來，**每天重置、無法還原成 IP，也無法把昨天的你和今天的你連起來**。登入中的訪客與機器人不列入。不想被計入的話，開啟 /?noanalytics=1 就會在該瀏覽器永久排除（用 /?noanalytics=0 恢復）。
+公開頁面（首頁、說明、比較、法律頁、登入與註冊頁）使用 Google Analytics 4，用來了解哪些頁面有用、訪客從哪裡來。傳給 Google 的只有頁面網址（只保留語言與活動標籤參數）、頁面標題、來源網站，以及 Google 從你的瀏覽器取得的一般資訊（大略地區、裝置與瀏覽器類型）。我們關閉了廣告訊號與 Google 信號，不和 Google Ads 串接。底部的同意列：**按「接受」**才會設定 Google Analytics 的 cookie；**還沒選擇時**只送不帶 cookie 的匿名訊號；**按「拒絕」**就完全不再載入。想重新選擇，清除本站的網站資料即可。Google 如何處理這些資料見 [Google 的說明](https://policies.google.com/technologies/partner-sites)。伺服器日誌會記 IP、時間與路徑，用來限流與查資安問題，最多保留 90 天。
+
+公開頁面（首頁、說明、比較、法律頁）的瀏覽次數我們自己在伺服器上計數，用來知道哪個管道帶來訪客。每一筆記的是頁面、來源網站或活動標籤，以及一個「當日訪客代碼」——那是由位址與瀏覽器字串經加鹽雜湊而來，**每天重置、無法還原成 IP，也無法把昨天的你和今天的你連起來**。登入中的訪客與機器人不列入。不想被計入的話，開啟 /?noanalytics=1 就會在該瀏覽器永久排除，Google Analytics 也一起停用（用 /?noanalytics=0 恢復）。
 
 ## 資料放在哪裡？
 
@@ -116,7 +119,7 @@ You, and the clients you authorise (Cursor, Claude Code, Claude.ai, ChatGPT, thr
 
 ## Do you track me?
 
-No. No Google Analytics, no ad pixels, no third-party trackers, and no data leaves our servers. The site uses one essential login-session cookie, so no consent banner is needed. Server logs keep the IP, time and path for rate limiting and security investigation, for at most 90 days.\n\nWe count views of the public pages (landing, help, comparison, legal) on our own server, to see which channels bring visitors. Each row holds the page, the referring site or campaign tag, and a daily visitor code: a salted hash of the address and browser string that **resets every day, cannot be turned back into an IP, and cannot link you across days**. Signed-in visitors and crawlers are not counted. To be excluded entirely, open /?noanalytics=1 in your browser (/?noanalytics=0 restores counting).
+**Your workspace is never tracked**: the workspace, settings, shared pages and password-reset links load no third-party script and no ad pixel. Signing in uses one essential session cookie.\n\nThe public pages (landing, help, comparisons, legal, sign-in and sign-up) use Google Analytics 4 to learn which pages help and where visitors come from. Google receives the page URL (only the language and campaign parameters are kept), the page title, the referring site, and what it reads from your browser in general (approximate region, device and browser type). Advertising features and Google signals are off and nothing is linked to Google Ads. The consent bar at the bottom: **Accept** sets the Google Analytics cookie; **before you choose**, only cookieless pings are sent; **Decline** stops it from loading at all. To choose again, clear this site's data. How Google handles this data: [Google's explanation](https://policies.google.com/technologies/partner-sites). Server logs keep the IP, time and path for rate limiting and security investigation, for at most 90 days.\n\nWe count views of the public pages (landing, help, comparison, legal) on our own server, to see which channels bring visitors. Each row holds the page, the referring site or campaign tag, and a daily visitor code: a salted hash of the address and browser string that **resets every day, cannot be turned back into an IP, and cannot link you across days**. Signed-in visitors and crawlers are not counted. To be excluded entirely, open /?noanalytics=1 in your browser; this also turns off Google Analytics there (/?noanalytics=0 restores counting).
 
 ## Where is my data?
 

@@ -17,6 +17,8 @@ import Landing from './pages/Landing';
 import Share from './pages/Share';
 import Compare from './pages/Compare';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { GaConsent } from './components/GaConsent';
+import { syncGa } from './lib/ga';
 
 /* The operator console (/admin) ships only with the hosted deployment. A glob resolves to an empty object when the page
    is not part of the build, so the route simply does not exist there. */
@@ -38,11 +40,13 @@ export default function App() {
   // Only 401 means logged out; transient failures (429, network errors) keep the current state so rate limiting never bounces the user to the login page
   const refresh = () => api.me().then(setMe).catch(e => { if ((e as { status?: number }).status === 401 || me === undefined) setMe(null); });
   useEffect(() => { refresh(); }, [location.pathname === '/login', location.pathname === '/register']);
+  // GA on public pages only; lib/ga.ts disables it everywhere else and for signed-in visitors
+  useEffect(() => { if (me !== undefined) syncGa(location.pathname, location.search, !!me, () => api.config().then(c => c.gaId)); }, [location.pathname, location.search, !!me, me === undefined]);
 
   if (me === undefined) return <div className="flex h-full items-center justify-center text-ink-soft">{t('app.loading')}</div>;
   const guard = (el: React.ReactNode) => (me ? el : <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />);
   const from = (location.state as { from?: string } | null)?.from;
-  return (
+  return (<>
     <Routes>
       <Route path="/login" element={me ? <Navigate to={from && from.startsWith('/') ? from : '/'} replace /> : <Login onSignedIn={refresh} />} />
       <Route path="/register" element={me ? <Navigate to="/" replace /> : <Register />} />
@@ -68,5 +72,6 @@ export default function App() {
       <Route path="/" element={me ? <ErrorBoundary><Workspace me={me} onSignedOut={() => setMe(null)} /></ErrorBoundary> : <Landing />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  );
+    <GaConsent signedIn={!!me} />
+  </>);
 }

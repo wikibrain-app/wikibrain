@@ -110,7 +110,7 @@ export interface NoteProps { path: string; title: string; version: number; creat
 export interface Graph { nodes: { path: string; title: string; layer: 'raw' | 'wiki' | 'schema'; created_at?: string }[]; edges: { from: string; to: string }[] }
 
 export const api = {
-  config: () => request<{ googleEnabled: boolean; mcpUrl: string; version: string; commit: string; turnstileSiteKey: string | null }>('GET', '/api/config'),
+  config: () => request<{ googleEnabled: boolean; mcpUrl: string; version: string; commit: string; turnstileSiteKey: string | null; gaId?: string | null }>('GET', '/api/config'),
   me: () => request<Me>('GET', '/api/me'),
   signIn: (email: string, password: string) => request('POST', '/api/auth/sign-in/email', { email, password }),
   signUp: (email: string, password: string, name: string, turnstileToken?: string) =>
